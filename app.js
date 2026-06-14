@@ -12,6 +12,14 @@ const viewerDemoResources = [
   { id: "demo-google-viewer", title: "Google Doc Planning Template", type: "Google Docs URL", meta: "Google Doc", audience: "Teacher", url: "https://docs.google.com/document/d/1", shareability: "Private", source: "Demo Google Docs placeholder", description: "Google Docs resources open in a new tab so permissions remain with Google.", tags: ["google doc", "planning"] },
   { id: "demo-text-viewer", title: "Plain Text Scaffold", type: "Plain text", meta: "Text resource", audience: "Student", url: "", shareability: "Teacher-created", source: "Teacher-created", description: "A plain text resource rendered directly inside the app.", tags: ["text", "scaffold"], textContent: "Use this scaffold: A successful palm farm design should support farmers by ___ and support orangutans by ___. One constraint is ___. One criterion is ___." },
 ];
+const classroomDemoResources = [
+  { id: "demo-openscied-palm-oil-pdf", title: "OpenSciEd Palm Oil Inquiry PDF", type: "PDF", meta: "Student inquiry reading", audience: "Class", url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf", shareability: "Public/open resource", source: "local", description: "Demo PDF representing the palm oil and orangutan inquiry reading for Lesson 6.", subject: "Science", gradeLevel: "7", tags: ["palm oil", "orangutan", "pdf"], textContent: "" },
+  { id: "demo-vocabulary-support", title: "Vocabulary Support Sheet", type: "Doc", meta: "Vocabulary scaffold", audience: "Student", url: "", shareability: "Teacher-created", source: "local", description: "Teacher-created vocabulary support for ecosystem and design-problem language.", subject: "Science", gradeLevel: "7", tags: ["vocabulary", "support"], textContent: "Key words: habitat, population, plantation, criteria, constraints, stakeholder, evidence, cause and effect.\n\nSentence frame: Palm oil production can affect orangutans because ___. My evidence is ___." },
+  { id: "demo-evidence-organizer", title: "Evidence Organizer", type: "Doc", meta: "Evidence table", audience: "Student", url: "", shareability: "Teacher-created", source: "local", description: "Organizer for connecting claims, evidence, and reasoning during the palm farm design challenge.", subject: "Science", gradeLevel: "7", tags: ["evidence", "organizer"], textContent: "Claim: ___\nEvidence from the lesson: ___\nReasoning: This evidence matters because ___\nDesign criterion or constraint: ___" },
+  { id: "demo-spanish-support", title: "Spanish Support Resource", type: "Doc", meta: "Spanish scaffold", audience: "Student", url: "", shareability: "Teacher-created", source: "local", description: "Spanish-language support for multilingual learners during the inquiry lesson.", subject: "Science", gradeLevel: "7", language: "Spanish", tags: ["spanish", "multilingual"], textContent: "Vocabulario: hábitat, población, plantación, evidencia, causa y efecto.\n\nMarco de oración: La producción de aceite de palma puede afectar a los orangutanes porque ___. Una evidencia es ___." },
+  { id: "demo-extension-reading", title: "Extension Reading: Sustainable Palm Oil", type: "Link", meta: "Extension article", audience: "Student", url: "https://www.worldwildlife.org/pages/which-everyday-products-contain-palm-oil", shareability: "Public/open resource", source: "local", description: "Extension reading for advanced students to consider consumer products, trade-offs, and sustainability.", subject: "Science", gradeLevel: "7", tags: ["extension", "sustainability", "reading"] },
+  { id: "demo-teacher-lesson-slides", title: "Teacher Lesson Slides", type: "Slides", meta: "Demo slide notes", audience: "Teacher", url: "", shareability: "Private", source: "local", description: "Teacher-facing slide sequence summary for the palm oil inquiry demo.", subject: "Science", gradeLevel: "7", tags: ["slides", "teacher"], textContent: "Slide A: Connect to the problem\nSlide B: Define the problem\nSlide C: Set a design goal\nSlide D: Identify criteria and constraints\nSlide E: Write a stronger question\nSlide F: Share with the class" },
+];
 
 let state = loadState();
 const queryRole = new URLSearchParams(location.search).get("role");
@@ -40,9 +48,15 @@ function loadState() {
 function normalizeState(next) {
   next.lessonSetup = { ...defaultState.lessonSetup, ...(next.lessonSetup || {}) };
   next.lessonBuilder = { ...defaultLessonBuilder(next.lessonSetup), ...(next.lessonBuilder || {}) };
+  next.customLessons = normalizeLessons(next.customLessons || defaultLessonTemplates());
+  next.activeLessonId = next.activeLessonId || next.customLessons.find((lesson) => lesson.status === "Launched")?.id || next.customLessons[0]?.id || null;
+  next.selectedLessonId = next.selectedLessonId || next.activeLessonId;
+  next.lessonLaunches = next.lessonLaunches || [];
+  next.lessonBuilderMode = next.lessonBuilderMode || "list";
+  next.selectedLessonStepId = next.selectedLessonStepId || null;
   next.resourceList = next.resourceList || next.resources || structuredClone(defaultState.resourceList || defaultState.resources);
   const savedResourceIds = new Set(next.resourceList.map((resource) => resource.id));
-  [...(defaultState.resourceList || defaultState.resources || []), ...viewerDemoResources].forEach((resource) => {
+  [...(defaultState.resourceList || defaultState.resources || []), ...viewerDemoResources, ...classroomDemoResources].forEach((resource) => {
     if (!savedResourceIds.has(resource.id)) next.resourceList.push(structuredClone(resource));
   });
   next.resources = next.resourceList;
@@ -88,6 +102,7 @@ function normalizeState(next) {
       assignedResources,
       hotlistInfo,
       aiHistory: merged.aiHistory || [],
+      inquiryHistory: merged.inquiryHistory || sampleInquiryHistory(merged),
     };
   });
   next.resourceList = (next.resourceList || []).map((resource, index) => normalizeResource(resource, index, next.lessonSetup));
@@ -96,10 +111,31 @@ function normalizeState(next) {
     if (!isFallbackDemo) return true;
     return !list.some((other, otherIndex) => otherIndex < index && other.title === resource.title && other.type === resource.type);
   });
+  if (!next.resourceAssignmentSeeded) seedDemoResourceAssignments(next);
   syncResourceAssignmentMetadata(next);
+  next.resourceAssignmentSeeded = true;
   next.resources = next.resourceList;
   next.hotListStudents = next.students.filter(isHotList).map((student) => student.id);
   return next;
+}
+function seedDemoResourceAssignments(next = state) {
+  const assignments = {
+    "demo-openscied-palm-oil-pdf": ["s1", "s2", "s3", "s4", "s5", "s6"],
+    "demo-vocabulary-support": ["s1", "s3", "s5"],
+    "demo-evidence-organizer": ["s1", "s2", "s3", "s5"],
+    "demo-spanish-support": ["s2"],
+    "demo-extension-reading": ["s4", "s6"],
+    "demo-teacher-lesson-slides": [],
+  };
+  (next.students || []).forEach((student) => {
+    student.assignedResources = student.assignedResources || [];
+    Object.entries(assignments).forEach(([resourceId, studentIds]) => {
+      if (!studentIds.includes(student.id)) return;
+      if (!student.assignedResources.some((assignment) => assignment.resourceId === resourceId)) {
+        student.assignedResources.push({ resourceId, dateAssigned: "2026-06-12" });
+      }
+    });
+  });
 }
 function defaultLessonBuilder(lessonSetup = defaultState.lessonSetup) {
   return {
@@ -114,6 +150,194 @@ function defaultLessonBuilder(lessonSetup = defaultState.lessonSetup) {
     previewSupportLevel: 50,
     previewResponse: "Palm oil is bad.",
   };
+}
+function sampleInquiryHistory(student = {}) {
+  const commonQuestion = "How can we design palm farms to support orangutans and farmers?";
+  const histories = {
+    s4: [{
+      id: "iq-s4-1",
+      originalQuestion: commonQuestion,
+      studentResponse: "Palm oil affects more than one part of the ecosystem, so the farm design has to balance habitat and people.",
+      aiFollowUp: "How could you evaluate the trade-offs between farmer income and orangutan habitat using evidence from the lesson?",
+      revisedResponse: "One trade-off is that farmers need land and income, but orangutans need connected forest habitat. Evidence from the lesson shows that cleared forest reduces shelter and food, so a stronger design would protect forest corridors while still leaving some land for crops.",
+      timestamp: "2026-06-12 09:18 AM",
+    }],
+    s1: [{
+      id: "iq-s1-1",
+      originalQuestion: commonQuestion,
+      studentResponse: "Palm oil is bad.",
+      aiFollowUp: "How does palm oil production connect to changes in orangutan habitat? What evidence supports that connection?",
+      revisedResponse: "Palm oil can be a problem because forests can be cleared for plantations. One piece of evidence is that orangutans need forest habitat for food and shelter, so losing trees can affect where they live.",
+      timestamp: "2026-06-12 09:24 AM",
+    }],
+    s3: [{
+      id: "iq-s3-1",
+      originalQuestion: commonQuestion,
+      studentResponse: "They can just move somewhere else.",
+      aiFollowUp: "What do orangutans need in a new habitat before they could survive there?",
+      revisedResponse: "They need food and trees. I think moving could be hard if another forest does not have enough space.",
+      timestamp: "2026-06-12 09:31 AM",
+    }, {
+      id: "iq-s3-2",
+      originalQuestion: "What evidence helps explain habitat loss?",
+      studentResponse: "I don't know.",
+      aiFollowUp: "What is one thing you noticed about orangutans, forests, or palm oil?",
+      revisedResponse: "I noticed orangutans need forests, but I still need help finding evidence.",
+      timestamp: "2026-06-12 09:42 AM",
+    }],
+    s5: [{
+      id: "iq-s5-1",
+      originalQuestion: commonQuestion,
+      studentResponse: "People should stop buying palm oil and then the problem is fixed.",
+      aiFollowUp: "What trade-offs might happen if people stopped buying palm oil, and who would be affected?",
+      revisedResponse: "Stopping palm oil might help forests, but farmers and companies could lose money. We need evidence about better farm designs.",
+      timestamp: "2026-06-12 09:37 AM",
+    }],
+  };
+  return structuredClone(histories[student.id] || [{
+    id: `iq-${student.id || "student"}-1`,
+    originalQuestion: commonQuestion,
+    studentResponse: "Orangutans are losing their homes.",
+    aiFollowUp: "What evidence from the lesson helps explain why that habitat is changing?",
+    revisedResponse: "Orangutans need trees for food and shelter. I need to add more evidence about how palm farms change the forest.",
+    timestamp: "2026-06-12 09:29 AM",
+  }]);
+}
+const lessonStepTypes = ["Introduction", "Observation", "Question Generation", "Evidence Collection", "Reflection", "Claim", "Argument", "Discussion", "Exit Ticket"];
+const aiSupportOptions = [0, 5, 10, 15, 20, 25, 30];
+function defaultLessonTemplates() {
+  return [
+    createLessonTemplate({
+      id: "lesson-openscied-ecosystems",
+      title: "OpenSciEd Ecosystems",
+      subject: "Science",
+      gradeLevel: "7",
+      standards: "MS-LS2-4",
+      essentialQuestion: "How do changes in ecosystems affect the organisms that live there?",
+      problemStatement: "Students investigate ecosystem change and explain how evidence can guide design decisions.",
+      resources: ["demo-openscied-palm-oil-pdf", "demo-evidence-organizer"],
+      aiSupportLevel: 15,
+      status: "Draft",
+    }),
+    createLessonTemplate({
+      id: "lesson-palm-oil-investigation",
+      title: "Palm Oil Investigation",
+      subject: "Science",
+      gradeLevel: "7",
+      standards: "MS-LS2-4",
+      essentialQuestion: "If palm oil is not going away, how can we design palm farms to support orangutans and farmers?",
+      problemStatement: "Students define a design problem that balances farmer livelihood with orangutan habitat stability.",
+      resources: ["demo-openscied-palm-oil-pdf", "demo-vocabulary-support", "demo-spanish-support"],
+      aiSupportLevel: 20,
+      status: "Launched",
+    }),
+    createLessonTemplate({
+      id: "lesson-water-quality",
+      title: "Water Quality Investigation",
+      subject: "Science",
+      gradeLevel: "7",
+      standards: "MS-ESS3-3",
+      essentialQuestion: "How can evidence help us decide whether a local water source is healthy?",
+      problemStatement: "Students use observations and data to explain possible causes of water-quality changes.",
+      resources: ["demo-evidence-organizer"],
+      aiSupportLevel: 15,
+      status: "Draft",
+    }),
+    createLessonTemplate({
+      id: "lesson-engineering-design",
+      title: "Engineering Design Challenge",
+      subject: "STEM",
+      gradeLevel: "7",
+      standards: "MS-ETS1-1",
+      essentialQuestion: "How can constraints make a design solution stronger?",
+      problemStatement: "Students design, test, and revise a solution using criteria and constraints.",
+      resources: ["demo-evidence-organizer", "demo-teacher-lesson-slides"],
+      aiSupportLevel: 10,
+      status: "Draft",
+    }),
+    createLessonTemplate({
+      id: "lesson-historical-inquiry",
+      title: "Historical Inquiry Lesson",
+      subject: "Social Studies",
+      gradeLevel: "7",
+      standards: "Historical Inquiry",
+      essentialQuestion: "How do primary sources change the way we explain an event?",
+      problemStatement: "Students compare sources, generate questions, and build evidence-based claims.",
+      resources: ["demo-evidence-organizer"],
+      aiSupportLevel: 15,
+      status: "Draft",
+    }),
+  ];
+}
+function createLessonTemplate(overrides = {}) {
+  const id = overrides.id || `lesson-${Date.now()}`;
+  const title = overrides.title || "New Inquiry Lesson";
+  return {
+    id,
+    title,
+    subject: overrides.subject || "Science",
+    gradeLevel: overrides.gradeLevel || "7",
+    standards: overrides.standards || "Add standard",
+    essentialQuestion: overrides.essentialQuestion || "What question will students investigate?",
+    problemStatement: overrides.problemStatement || "Describe the problem students will explore.",
+    successCriteria: overrides.successCriteria || "Uses evidence\nExplains reasoning\nReflects on new questions",
+    constraints: overrides.constraints || "AI should ask questions, not give final answers.\nStudents should use lesson evidence.",
+    resources: overrides.resources || [],
+    aiGuidance: {
+      supportLevel: overrides.aiSupportLevel ?? 15,
+      directAnswerPolicy: "No direct answers",
+      hintStyle: "Question-first scaffolding",
+    },
+    steps: overrides.steps || defaultLessonSteps(title),
+    status: overrides.status || "Draft",
+    archived: Boolean(overrides.archived),
+    launchTarget: overrides.launchTarget || "",
+    createdAt: overrides.createdAt || "2026-06-12",
+    updatedAt: overrides.updatedAt || "2026-06-12",
+    analytics: overrides.analytics || sampleLessonAnalytics(overrides.status || "Draft"),
+  };
+}
+function defaultLessonSteps(title = "Inquiry Lesson") {
+  return [
+    { id: `step-${Date.now()}-intro`, type: "Introduction", title: "Launch the question", prompt: `Introduce the big question for ${title}.`, minutes: 5 },
+    { id: `step-${Date.now()}-observe`, type: "Observation", title: "Notice and wonder", prompt: "What do you notice? What do you wonder?", minutes: 8 },
+    { id: `step-${Date.now()}-evidence`, type: "Evidence Collection", title: "Gather evidence", prompt: "What evidence helps explain the problem?", minutes: 12 },
+    { id: `step-${Date.now()}-claim`, type: "Claim", title: "Build a claim", prompt: "Make a claim and support it with evidence.", minutes: 10 },
+    { id: `step-${Date.now()}-exit`, type: "Exit Ticket", title: "Reflect", prompt: "What changed in your thinking today?", minutes: 5 },
+  ];
+}
+function sampleLessonAnalytics(status = "Draft") {
+  const launched = status === "Launched";
+  return {
+    activeStudents: launched ? 23 : 0,
+    completionRate: launched ? 68 : 0,
+    questionsGenerated: launched ? 17 : 0,
+    averageReflectionQuality: launched ? 74 : 0,
+    studentsNeedingSupport: launched ? 4 : 0,
+  };
+}
+function normalizeLessons(lessons = []) {
+  const templates = lessons.length ? lessons : defaultLessonTemplates();
+  return templates.map((lesson) => ({
+    ...createLessonTemplate(lesson),
+    ...lesson,
+    aiGuidance: { ...createLessonTemplate(lesson).aiGuidance, ...(lesson.aiGuidance || {}) },
+    steps: (lesson.steps || defaultLessonSteps(lesson.title)).map((step, index) => ({
+      id: step.id || `step-${lesson.id}-${index}-${Date.now()}`,
+      type: step.type || lessonStepTypes[Math.min(index, lessonStepTypes.length - 1)],
+      title: step.title || `${step.type || "Inquiry"} step`,
+      prompt: step.prompt || "Add student-facing prompt.",
+      minutes: Number(step.minutes || 8),
+    })),
+    resources: Array.isArray(lesson.resources) ? lesson.resources : [],
+    analytics: { ...sampleLessonAnalytics(lesson.status), ...(lesson.analytics || {}) },
+  }));
+}
+function currentLesson() {
+  return state.customLessons.find((lesson) => lesson.id === state.selectedLessonId) || state.customLessons[0];
+}
+function launchedLesson() {
+  return state.customLessons.find((lesson) => lesson.id === state.activeLessonId) || currentLesson();
 }
 function syncResourceAssignmentMetadata(next = state) {
   const assignedByResource = new Map();
@@ -338,6 +562,7 @@ function teacherNav() {
   const items = [
     ["overview", icons.dashboard, "Overview"],
     ["setup", icons.folder, "Setup wizard"],
+    ["lessonBuilderDashboard", icons.folder, "Lesson Builder"],
     ["students", icons.users, "Students"],
     ["moderation", icons.message, "DQB moderation"],
     ["analytics", icons.chart, "Analytics"],
@@ -353,7 +578,7 @@ function teacherShell() {
   return `<div class="app">${topbar("Ms. Rivera · 7th Grade Science")}<div class="layout">${teacherNav()}<main class="content">${teacherPage()}</main></div>${activePanelMarkup()}</div>`;
 }
 function teacherPage() {
-  return ({ overview: overviewPage, setup: setupPage, students: studentsPage, studentProfile: studentProfilePage, resourceViewer: resourceViewerPage, moderation: moderationPage, analytics: analyticsPage, usage: usagePage, resources: resourcesPage }[state.teacherTab] || overviewPage)();
+  return ({ overview: overviewPage, setup: setupPage, lessonBuilderDashboard: lessonBuilderDashboardPage, students: studentsPage, studentProfile: studentProfilePage, resourceViewer: resourceViewerPage, moderation: moderationPage, analytics: analyticsPage, usage: usagePage, resources: resourcesPage }[state.teacherTab] || overviewPage)();
 }
 function pageHead(title, subtitle, actions = "") {
   return `<header class="page-head"><div><h1>${title}</h1><p>${subtitle}</p></div><div class="role-actions">${actions}</div></header>`;
@@ -376,7 +601,7 @@ function overviewPage() {
   const hotList = state.students.filter(isHotList);
   const usedCredits = state.students.reduce((sum, s) => sum + Number(s.used || 0), 0);
   const totalCredits = state.students.reduce((sum, s) => sum + Number(s.monthlyCredits || 0), 0);
-  const supportBody = `${state.students.filter(s => s.level === "Intervention" || s.level === "Below level" || isHotList(s)).map(studentMini).join("")}`;
+  const supportBody = teacherAlertBody();
   const hotBody = `${hotList.map(s => `<div class="student-line" style="padding:9px 0;border-top:1px solid var(--line)">${avatar(s)}<span><strong class="student-name">${esc(s.name)}</strong><br/><span class="subtle">${esc(s.hotListMove || "Close to next proficiency level")}</span></span></div>`).join("")}`;
   const misconceptionBody = `${misconceptionSummary().map(([t,c]) => `<div class="bar-row"><span>${esc(t)}</span>${progress(Math.min(100, c * 24 + 20))}<strong>${c}</strong></div>`).join("")}`;
   const aiBody = teacherAIDashboardBody();
@@ -393,7 +618,8 @@ function overviewPage() {
         ${detailCard("Teacher Lesson Builder", `<p class="subtle">Define lesson context so AI scaffolds from teacher goals instead of generic prompts.</p><p class="quality">Preview context-aware Question Matrix support.</p>`, "lessonBuilder", icons.folder)}
         ${detailCard("AI Support Comparison Demo", `<p class="subtle">Same student idea. Different levels of teacher-controlled AI support.</p><p class="quality">Run the 15% / 50% / 85% scaffold comparison.</p>`, "aiComparison", icons.chart)}
         ${detailCard("AI scaffold monitor", aiBody, "aiDashboard", icons.message)}
-        ${detailCard("Students needing support", supportBody, "support", icons.users)}
+        ${detailCard("Students Needing Support", supportBody, "support", icons.users)}
+        ${detailCard("Class Heat Map", classHeatMapBody(), "support", icons.chart)}
         ${detailCard("Hot List movement", hotBody, "hotList", icons.check)}
         ${detailCard("Common misconceptions", misconceptionBody, "misconceptions", icons.chart)}
         ${detailCard("Question quality trends", questionQualityBody(), "questionQuality", icons.message)}
@@ -410,6 +636,107 @@ function questionQualityBody() {
   const strong = state.dqb.filter((q) => q.quality === "Strong").length;
   const investigable = state.dqb.filter((q) => q.quality === "Investigable").length;
   return `<div class="bar-row"><span>Strong</span>${progress(strong * 22)}<strong>${strong}</strong></div><div class="bar-row"><span>Investigable</span>${progress(investigable * 22)}<strong>${investigable}</strong></div><div class="bar-row"><span>Needs revision</span>${progress(24)}<strong>1</strong></div>`;
+}
+function teacherAlertBody() {
+  const alerts = teacherAlertStudents().slice(0, 4);
+  if (!alerts.length) return `<div class="empty">No inquiry flags right now.</div>`;
+  return alerts.map(({ student: s, flags, lastActivity }) => `<div class="student-line click-row" role="button" tabindex="0" onclick="event.stopPropagation(); openStudentProfile('${s.id}')" onkeydown="studentKey(event,'${s.id}')" style="padding:9px 0;border-top:1px solid var(--line)">${avatar(s)}<span><strong class="student-name">${esc(s.name)}</strong><br/><span class="subtle">${flags.length} flag${flags.length === 1 ? "" : "s"} · Last activity ${esc(lastActivity)}</span></span></div>`).join("");
+}
+function teacherAlertStudents() {
+  return state.students
+    .map((student) => {
+      const flags = studentInsightFlags(student).filter((flag) => flag.type !== "strong");
+      return { student, flags, lastActivity: latestInquiryTimestamp(student) || "No activity" };
+    })
+    .filter((item) => item.flags.length)
+    .sort((a, b) => b.flags.length - a.flags.length || String(b.lastActivity).localeCompare(String(a.lastActivity)));
+}
+function classHeatMapBody() {
+  const metrics = classInsightMetrics();
+  return Object.entries(metrics).map(([label, value]) => `<div class="bar-row heat-row"><span>${esc(label)}</span>${progress(value)}<strong>${value}%</strong></div>`).join("");
+}
+function classInsightMetrics() {
+  const profiles = state.students.map(studentInsightProfile);
+  const avg = (key) => Math.round(profiles.reduce((sum, item) => sum + item[key], 0) / Math.max(1, profiles.length));
+  return {
+    "Questioning Skills": avg("questioning"),
+    "Evidence Use": avg("evidence"),
+    "Reasoning Quality": avg("reasoning"),
+    "Reflection Quality": avg("reflection"),
+  };
+}
+function studentInsightProfile(student) {
+  const entries = student.inquiryHistory || [];
+  if (!entries.length) return { questioning: 45, evidence: 45, reasoning: 45, reflection: 45 };
+  const scores = entries.map((entry) => {
+    const combined = `${entry.studentResponse || ""} ${entry.revisedResponse || ""}`.toLowerCase();
+    const revised = String(entry.revisedResponse || "").toLowerCase();
+    return {
+      questioning: hasAny(entry.aiFollowUp, ["what", "how", "why", "evidence", "trade-off", "extent"]) ? 84 : 58,
+      evidence: hasAny(combined, ["evidence", "lesson", "shows", "data", "piece", "because"]) ? 82 : 44,
+      reasoning: hasAny(combined, ["because", "cause", "effect", "connect", "so", "therefore", "trade-off"]) ? 78 : 42,
+      reflection: revised.length > String(entry.studentResponse || "").length + 25 ? 80 : 48,
+    };
+  });
+  const avg = (key) => Math.round(scores.reduce((sum, item) => sum + item[key], 0) / scores.length);
+  return { questioning: avg("questioning"), evidence: avg("evidence"), reasoning: avg("reasoning"), reflection: avg("reflection") };
+}
+function studentInsightFlags(student) {
+  const flags = [];
+  const misconceptionHits = new Map();
+  (student.inquiryHistory || []).forEach((entry) => {
+    const entryFlags = analyzeInquiryEntry(entry);
+    entryFlags.forEach((flag) => {
+      if (flag.type === "misconception") misconceptionHits.set(flag.reason, (misconceptionHits.get(flag.reason) || 0) + 1);
+      flags.push(flag);
+    });
+  });
+  misconceptionHits.forEach((count, reason) => {
+    if (count > 1) flags.push({ type: "misconception", label: "Possible Misconception", reason: `Repeated: ${reason}` });
+  });
+  return dedupeFlags(flags);
+}
+function analyzeInquiryEntry(entry = {}) {
+  const response = String(entry.studentResponse || "");
+  const revised = String(entry.revisedResponse || "");
+  const combined = `${response} ${revised}`.toLowerCase();
+  const flags = [];
+  const hasEvidence = hasAny(combined, ["evidence", "lesson", "shows", "data", "piece of evidence", "according"]);
+  const hasReasoning = hasAny(combined, ["because", "cause", "effect", "connect", "so", "therefore", "trade-off"]);
+  if (!hasEvidence) flags.push({ type: "evidence", label: "Needs Evidence", reason: "Response does not clearly cite lesson evidence." });
+  if (hasAny(response, ["bad", "good", "should", "always", "never"]) && !hasAny(response, ["because", "evidence", "data", "lesson"])) {
+    flags.push({ type: "weak", label: "Weak Reasoning", reason: "Claim needs a reason or evidence connection." });
+  }
+  if (hasAny(combined, ["just move", "somewhere else", "stop buying", "problem is fixed", "palm oil is bad", "i don't know", "i dont know"])) {
+    flags.push({ type: "misconception", label: "Possible Misconception", reason: "May oversimplify a complex ecosystem problem." });
+  }
+  if (!hasReasoning || revised.split(/\s+/).filter(Boolean).length < 12) {
+    flags.push({ type: "weak", label: "Weak Reasoning", reason: "Reasoning is incomplete or too brief." });
+  }
+  if (hasEvidence && hasReasoning && revised.length > response.length + 20) {
+    flags.push({ type: "strong", label: "Strong Reasoning", reason: "Revision connects evidence with cause-and-effect reasoning." });
+  }
+  return dedupeFlags(flags);
+}
+function dedupeFlags(flags) {
+  const seen = new Set();
+  return flags.filter((flag) => {
+    const key = `${flag.type}-${flag.label}-${flag.reason}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+function hasAny(value = "", terms = []) {
+  const text = String(value).toLowerCase();
+  return terms.some((term) => text.includes(String(term).toLowerCase()));
+}
+function insightBadge(flag) {
+  const iconsByType = { evidence: "🟡", weak: "🟠", misconception: "🔴", strong: "🟢" };
+  return `<span class="insight-badge ${esc(flag.type)}">${iconsByType[flag.type] || "🟡"} ${esc(flag.label)}</span>`;
+}
+function latestInquiryTimestamp(student) {
+  return (student.inquiryHistory || [])[0]?.timestamp || "";
 }
 
 function activePanelMarkup() {
@@ -434,6 +761,7 @@ function activePanelMarkup() {
     editStudent: editStudentPanel,
     addNote: addNotePanel,
     editNote: editNotePanel,
+    studentInquiryReport: studentInquiryReportPanel,
     editHotlist: editHotlistPanel,
     assignResource: assignResourcePanel,
     assignResourceStudents: assignResourceStudentsPanel,
@@ -473,8 +801,23 @@ function hotListPanel() {
     <div class="panel-stack">${hot.length ? hot.map((s) => studentPanelCard(s, true)).join("") : `<article class="panel-card empty"><h3>No Hot List students yet.</h3><p class="subtle">Add a student or mark an existing profile as Hot List to start tracking targeted support.</p><button class="btn" onclick="openPanel('addStudent')">Add student</button></article>`}</div>`;
 }
 function supportPanel() {
-  const students = state.students.filter((s) => s.level === "Intervention" || s.level === "Below level" || s.support.includes("IEP/504") || isHotList(s));
-  return `${panelHeader("Students needing support", "Use this view to plan targeted scaffolds before the next activity.")}<div class="panel-stack">${students.map((s) => studentPanelCard(s)).join("")}</div>`;
+  const students = teacherAlertStudents();
+  return `${panelHeader("Students Needing Support", "Inquiry flags help you spot missing evidence, weak reasoning, and possible misconceptions.")}
+    <div class="panel-stack">
+      <article class="panel-card"><h3>Class Heat Map</h3>${classHeatMapBody()}</article>
+      ${students.length ? students.map(({ student: s, flags, lastActivity }) => teacherAlertPanelCard(s, flags, lastActivity)).join("") : `<article class="panel-card empty">No inquiry support flags right now.</article>`}
+    </div>`;
+}
+function teacherAlertPanelCard(s, flags, lastActivity) {
+  return `<article class="panel-card">
+    <div class="card-action-head">
+      <div class="student-line">${avatar(s)}<span><strong>${esc(s.name)}</strong><br/><span class="subtle">${esc(s.proficiency)} · ${esc(s.level)} · Last activity ${esc(lastActivity)}</span></span></div>
+      <span class="pill">${flags.length} flag${flags.length === 1 ? "" : "s"}</span>
+    </div>
+    <div class="badge-row">${flags.slice(0, 4).map(insightBadge).join("")}</div>
+    <p class="recommendation">${esc(recommendedScaffold(s))}</p>
+    <button class="btn secondary" onclick="openStudentProfile('${s.id}')">Open Profile</button>
+  </article>`;
 }
 function extensionPanel() {
   const students = state.students.filter((s) => s.proficiency === "Distinguished" || s.support.includes("Gifted") || s.hotListMove === "Proficient close to Distinguished");
@@ -860,11 +1203,25 @@ function resourceKind(resource) {
   if (type.includes("youtube") || url.includes("youtube.com") || url.includes("youtu.be")) return "youtube";
   if (type.includes("image") || ["png", "jpg", "jpeg", "gif", "webp", "svg"].includes(type) || /\.(png|jpe?g|gif|webp|svg)(\?|$)/.test(url) || url.startsWith("data:image")) return "image";
   if (type.includes("google doc") || type.includes("google slides") || url.includes("docs.google.com")) return "google";
-  if (type.includes("text") || resource.textContent) return "text";
   if (type.includes("pdf") || /\.pdf(\?|$)/.test(url) || url.startsWith("data:application/pdf")) return "pdf";
+  if (type.includes("text") || type.includes("doc") || type.includes("slide") || resource.textContent) return "text";
   if (["docx", "pptx", "doc", "ppt"].includes(type) || type.includes("google slides")) return "office";
   if (url) return "website";
   return "missing";
+}
+function resourceDisplayType(resource) {
+  const kind = resourceKind(resource);
+  if (kind === "pdf") return "PDF";
+  if (kind === "image") return "Image";
+  if (kind === "youtube") return "Video";
+  if (kind === "google") return String(resource.type || "").toLowerCase().includes("slide") ? "Slides" : "Doc";
+  if (kind === "text") {
+    const type = String(resource.type || "").toLowerCase();
+    if (type.includes("slide")) return "Slides";
+    if (type.includes("doc") || type.includes("text") || resource.textContent) return "Doc";
+  }
+  if (kind === "website") return "Link";
+  return "Other";
 }
 function youtubeEmbedUrl(url) {
   const value = String(url || "");
@@ -878,7 +1235,7 @@ function resourcePreview(resource) {
   const kind = resourceKind(resource);
   const url = resource.url || "";
   if (kind === "pdf") {
-    return url ? `<div class="viewer-frame"><iframe title="${esc(resource.title)} PDF preview" src="${esc(url)}"></iframe></div><p class="subtle">If the PDF does not display in the browser, open it in a new tab.</p><a class="btn" href="${esc(url)}" target="_blank" rel="noreferrer">Open PDF in new tab</a>` : `<div class="empty">Resource link is missing. Add a PDF link to preview it here.</div>`;
+    return url ? `<div class="viewer-frame"><iframe title="${esc(resource.title)} PDF preview" src="${esc(url)}"></iframe></div><p class="subtle">If the PDF does not display in the browser, use Open externally.</p><button class="btn" onclick="openResourceExternally('${resource.id}')">Open externally</button>` : `<div class="empty">Resource link is missing. Add a PDF link to preview it here.</div>`;
   }
   if (kind === "image") {
     return url ? `<div class="image-preview"><img src="${esc(url)}" alt="${esc(resource.title)} preview" onerror="this.closest('.image-preview').innerHTML='<div class=&quot;empty&quot;>Image cannot load. Check the resource link.</div>'"></div>` : `<div class="empty">Resource link is missing. Add an image URL to preview it here.</div>`;
@@ -888,18 +1245,18 @@ function resourcePreview(resource) {
     return embed ? `<div class="viewer-frame video"><iframe title="${esc(resource.title)} YouTube video" src="${esc(embed)}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div><a class="btn secondary" href="${esc(url)}" target="_blank" rel="noreferrer">Open on YouTube</a>` : `<div class="empty">YouTube link cannot be embedded. Check the URL.</div>`;
   }
   if (kind === "google") {
-    return url ? `<div class="empty">Google Docs and Slides open in a new tab so permissions stay with Google.</div><a class="btn" href="${esc(url)}" target="_blank" rel="noreferrer">Open Google resource</a>` : `<div class="empty">Google resource link is missing.</div>`;
+    return url ? `<div class="empty">Google Docs and Slides open in a new tab so permissions stay with Google.</div><button class="btn" onclick="openResourceExternally('${resource.id}')">Open externally</button>` : `<div class="empty">Google resource link is missing.</div>`;
   }
   if (kind === "text") {
-    return `<div class="text-resource">${esc(resource.textContent || resource.description || "No text content has been added yet.")}</div>`;
+    return `<div class="text-resource">${esc(resource.textContent || resource.description || "No text content has been added yet.")}</div>${url ? `<div class="role-actions" style="margin-top:12px"><button class="btn secondary" onclick="openResourceExternally('${resource.id}')">Open externally</button></div>` : ""}`;
   }
   if (kind === "website") {
-    return `<div class="empty">External website resources open safely in a new tab.</div><a class="btn" href="${esc(url)}" target="_blank" rel="noreferrer">Open Website</a>`;
+    return `<div class="empty">External website resources open safely in a new tab.</div><button class="btn" onclick="openResourceExternally('${resource.id}')">Open externally</button>`;
   }
   if (kind === "office") {
-    return url ? `<div class="empty">Office files cannot be previewed directly in this demo, but the uploaded file can be opened or downloaded.</div><button class="btn" onclick="openResourceUrl('${esc(resource.id)}')">Download / Open File</button>` : `<div class="empty">Office file placeholder has no uploaded file yet.</div>`;
+    return url ? `<div class="empty">Office files cannot be previewed directly in this demo, but the uploaded file can be opened or downloaded.</div><button class="btn" onclick="openResourceExternally('${resource.id}')">Open externally</button>` : `<div class="empty">Office file placeholder has no uploaded file yet.</div>`;
   }
-  return `<div class="empty">Resource link is missing. Add a URL or text content to make this resource viewable.</div>`;
+  return `<div class="empty">Resource link is missing. Add a URL or text content to make this resource viewable.</div>${url ? `<button class="btn" onclick="openResourceExternally('${resource.id}')">Open externally</button>` : ""}`;
 }
 function resourceTags(resource) {
   return (resource.tags || []).length ? resource.tags.map(tag).join("") : `<span class="tag">No tags</span>`;
@@ -909,6 +1266,39 @@ function isSharedResource(resource) {
   const visibility = String(resource.visibility || "");
   if (["class", "school", "district", "public"].includes(visibility)) return true;
   return Boolean(value && value !== "Private" && !value.includes("Copyright restricted"));
+}
+function resourceAssignmentSummary(resource) {
+  const students = studentsAssignedToResource(resource.id);
+  const classAssigned = students.length === state.students.length && state.students.length > 0;
+  const groups = assignedGroupsForResource(resource.id);
+  if (classAssigned) return "Whole class";
+  const parts = [];
+  if (students.length) parts.push(`${students.length} student${students.length === 1 ? "" : "s"}`);
+  if (groups.length) parts.push(groups.join(", "));
+  return parts.length ? parts.join(" · ") : "Not assigned";
+}
+function assignedGroupsForResource(resourceId) {
+  const students = studentsAssignedToResource(resourceId);
+  const ids = new Set(students.map((student) => student.id));
+  const groups = [];
+  const groupMap = {
+    Advanced: state.students.filter(isAdvancedLearner).map((student) => student.id),
+    Typical: state.students.filter(isTypicalLearner).map((student) => student.id),
+    Struggling: state.students.filter(isStrugglingLearner).map((student) => student.id),
+  };
+  Object.entries(groupMap).forEach(([label, groupIds]) => {
+    if (groupIds.length && groupIds.every((id) => ids.has(id))) groups.push(label);
+  });
+  return groups;
+}
+function isAdvancedLearner(student) {
+  return student.proficiency === "Distinguished" || student.level === "Above level" || (student.support || []).includes("Gifted") || Number(student.aiSupportLevel) === 15;
+}
+function isStrugglingLearner(student) {
+  return student.level === "Intervention" || student.level === "Below level" || (student.support || []).some((item) => ["IEP/504", "Intervention"].includes(item)) || Number(student.aiSupportLevel) === 85;
+}
+function isTypicalLearner(student) {
+  return !isAdvancedLearner(student) && !isStrugglingLearner(student);
 }
 function resourceTypeOptions() {
   return Array.from(new Set([...resourceTypes, "Image", "Website URL", "YouTube URL", "Google Docs URL", "Plain text"]));
@@ -923,18 +1313,20 @@ function resourceViewerPage() {
       <article class="card card-pad empty"><h3>No resources exist yet.</h3><p>Add a resource from the Teacher Resources page.</p><button class="btn" onclick="openPanel('addResource')">Add resource</button></article>`;
   }
   const assignedStudents = studentsAssignedToResource(r.id);
-  return `${pageHead("Resource Details", "Open and inspect classroom materials from the library.", `<button class="btn secondary" onclick="teacherTab('${esc(state.resourceReturnTab || "resources")}')">Back</button>${r.url ? `<button class="btn" onclick="openResourceExternally('${r.id}')">Open Resource</button>` : ""}<button class="btn secondary" onclick="openPanel('assignResourceStudents',{resourceId:'${r.id}'})">Assign Students</button><button class="btn secondary" onclick="openPanel('editResource',{resourceId:'${r.id}'})">Edit Resource</button><button class="btn danger" onclick="openPanel('deleteResource',{resourceId:'${r.id}'})">Delete Resource</button>`)}
+  return `${pageHead("Resource Details", "Open and inspect classroom materials from the library.", `<button class="btn secondary" onclick="teacherTab('${esc(state.resourceReturnTab || "resources")}')">Back</button>${r.url ? `<button class="btn" onclick="openResourceExternally('${r.id}')">Open Resource</button>` : ""}<button class="btn secondary" onclick="openPanel('assignResourceStudents',{resourceId:'${r.id}'})">Assign</button><button class="btn secondary" onclick="openPanel('editResource',{resourceId:'${r.id}'})">Edit Resource</button><button class="btn danger" onclick="openPanel('deleteResource',{resourceId:'${r.id}'})">Delete Resource</button>`)}
     <section class="grid two-col resource-view-layout">
       <article class="card card-pad">
-        <div class="student-line"><span class="resource-icon">${esc(r.type.slice(0,2).toUpperCase())}</span><span><h1>${esc(r.title)}</h1><span class="subtle">${esc(r.category)} · ${esc(r.subject)} · Grade ${esc(r.gradeLevel)}</span></span></div>
+        <div class="student-line"><span class="resource-icon">${esc(resourceDisplayType(r).slice(0,2).toUpperCase())}</span><span><h1>${esc(r.title)}</h1><span class="subtle">${esc(resourceDisplayType(r))} · ${esc(r.subject)} · Grade ${esc(r.gradeLevel)}</span></span></div>
         <div class="detail-grid">
           <span>Title</span><strong>${esc(r.title)}</strong>
           <span>Description</span><strong>${esc(r.description || "No description added.")}</strong>
+          <span>Type</span><strong>${esc(resourceDisplayType(r))}</strong>
           <span>Category</span><strong>${esc(r.category || r.type)}</strong>
           <span>Subject</span><strong>${esc(r.subject || "Not set")}</strong>
           <span>Grade level</span><strong>${esc(r.gradeLevel || "Not set")}</strong>
           <span>Tags</span><strong>${resourceTags(r)}</strong>
           <span>Date added</span><strong>${esc(r.dateAdded || "Not recorded")}</strong>
+          <span>Assigned</span><strong>${esc(resourceAssignmentSummary(r))}</strong>
           <span>Link / file</span><strong>${r.url ? esc(r.url) : "No link attached"}</strong>
         </div>
         <div class="role-actions" style="margin-top:14px">${r.url ? `<button class="btn" onclick="openResourceExternally('${r.id}')">Open Resource</button>` : `<span class="pill">No external link</span>`}${resourceKind(r) === "missing" ? `<span class="pill">Missing link</span>` : ""}</div>
@@ -967,11 +1359,18 @@ function filteredResources() {
 function setResourceSearch(value) { state.resourceSearch = value; save(); render(); }
 function setResourceFilter(value) { state.resourceFilter = value; save(); render(); }
 function resourceManagerPanel() {
-  return `${panelHeader("Teacher Resource Manager", "Add, inspect, and share resource metadata for this lesson.")}${resourceManagerForm()}<p class="warning">Only share resources you created, have permission to share, or that are openly licensed.</p><div class="panel-stack resource-list">${state.resourceList.length ? state.resourceList.map(resourceListItem).join("") : `<div class="empty">No resources exist yet. Add a resource to start the library.</div>`}</div>`;
+  const resources = filteredResources();
+  return `${panelHeader("Resource Library", "Open, assign, and manage classroom materials for this lesson.")}
+    ${resourceManagerForm()}
+    <p class="warning">Only share resources you created, have permission to share, or that are openly licensed.</p>
+    <div class="panel-stack resource-list">${state.resourceList.length ? resources.length ? resources.map(resourceListItem).join("") : `<div class="empty">No resources match this search or filter.</div>` : `<div class="empty">No resources exist yet. Add a resource to start the library.</div>`}</div>`;
 }
 function resourceLibraryRow(r) {
   const isShared = isSharedResource(r);
-  return `<div class="resource-row click-row" role="button" tabindex="0" onclick="openResourceViewer('${r.id}','resources')" onkeydown="resourceKey(event,'${r.id}')"><div class="student-line"><span class="resource-icon">${esc(r.type.slice(0,2).toUpperCase())}</span><span><strong class="student-name">${esc(r.title)}</strong><br/><span class="subtle">${esc(r.category || r.type)} · ${esc(r.subject)} · Grade ${esc(r.gradeLevel)}</span><br/><span class="quality">${resourceTags(r)} ${isShared ? `<span class="pill">Shared</span>` : ""}</span></span></div><div class="role-actions" onclick="event.stopPropagation()"><button class="btn secondary" onclick="openResourceViewer('${r.id}','resources')">Open</button><button class="btn secondary" onclick="ResourceStorage.toggleShareability('${r.id}')">${isShared ? "Make Private" : "Share"}</button><button class="btn secondary" onclick="openPanel('editResource',{resourceId:'${r.id}'})">Edit</button><button class="btn danger" onclick="openPanel('deleteResource',{resourceId:'${r.id}'})">Delete</button></div></div>`;
+  return `<div class="resource-row click-row library-resource-row" role="button" tabindex="0" onclick="openResourceViewer('${r.id}','resources')" onkeydown="resourceKey(event,'${r.id}')">
+    <div class="student-line"><span class="resource-icon">${esc(resourceDisplayType(r).slice(0,2).toUpperCase())}</span><span><strong class="student-name">${esc(r.title)}</strong><br/><span class="subtle">${esc(resourceDisplayType(r))} · ${esc(resourceAssignmentSummary(r))}</span><br/><span class="quality">${resourceTags(r)} ${isShared ? `<span class="pill">Shared</span>` : ""}</span></span></div>
+    <div class="role-actions" onclick="event.stopPropagation()"><button class="btn secondary" onclick="openResourceViewer('${r.id}','resources')">Open</button><button class="btn secondary" onclick="openPanel('assignResourceStudents',{resourceId:'${r.id}'})">Assign</button><button class="btn secondary" onclick="ResourceStorage.toggleShareability('${r.id}')">${isShared ? "Unshare" : "Share"}</button><button class="btn danger" onclick="openPanel('deleteResource',{resourceId:'${r.id}'})">Remove</button></div>
+  </div>`;
 }
 function editResourcePanel() {
   const r = currentResource();
@@ -1017,10 +1416,23 @@ function confirmDeleteResource(resourceId) {
   ResourceStorage.deleteResource(resourceId);
 }
 function resourceManagerForm() {
-  return `<article class="panel-card"><div class="card-action-head"><h3>Add resource metadata</h3><button class="btn secondary" onclick="openPanel('addResource')">Open add panel</button></div><p class="subtle">Use the add panel for file/link metadata, audience, language, and shareability.</p></article>`;
+  const filterOptions = ["All", "pdf", "image", "website", "youtube", "google", "text"];
+  return `<article class="panel-card">
+    <div class="card-action-head"><h3>Add or find resources</h3><button class="btn secondary" onclick="openPanel('addResource')">Add resource</button></div>
+    <div class="form-grid resource-form" style="margin-top:12px">
+      <label><span class="subtle">Search resources</span><input id="panel-resource-search" type="text" value="${esc(state.resourceSearch || "")}" placeholder="Search title, tag, subject..."></label>
+      <label><span class="subtle">Filter</span><select id="panel-resource-filter" onchange="setResourceFilter(this.value)">${filterOptions.map((option) => `<option value="${esc(option)}" ${option === state.resourceFilter ? "selected" : ""}>${esc(option === "All" ? "All resource types" : option)}</option>`).join("")}</select></label>
+    </div>
+    <div class="role-actions" style="margin-top:12px"><button class="btn secondary" onclick="setResourceSearch(document.querySelector('#panel-resource-search').value)">Search</button><button class="btn ghost" onclick="setResourceSearch('')">Clear</button></div>
+  </article>`;
 }
 function resourceListItem(r) {
-  return `<article class="panel-card resource-click" role="button" tabindex="0" onclick="openResourceViewer('${r.id}','resources')" onkeydown="resourceKey(event,'${r.id}')"><div class="resource-row"><div class="student-line"><span class="resource-icon">${esc(r.type.slice(0,2).toUpperCase())}</span><span><strong>${esc(r.title)}</strong><br/><span class="subtle">${esc(r.category)} · Grade ${esc(r.gradeLevel)} · ${esc(r.subject)}</span><br/><span class="quality">${esc(r.shareability || "Private")}</span></span></div><span class="view-details">Open resource ${icons.arrow}</span></div></article>`;
+  const isShared = isSharedResource(r);
+  return `<article class="panel-card resource-click" role="button" tabindex="0" onclick="openResourceViewer('${r.id}','resources')" onkeydown="resourceKey(event,'${r.id}')">
+    <div class="card-action-head"><div class="student-line"><span class="resource-icon">${esc(resourceDisplayType(r).slice(0,2).toUpperCase())}</span><span><strong>${esc(r.title)}</strong><br/><span class="subtle">${esc(resourceDisplayType(r))} · ${esc(resourceAssignmentSummary(r))}</span></span></div><span class="pill">${esc(resourceDisplayType(r))}</span></div>
+    <p class="subtle">${esc(r.description || r.meta || "Classroom resource")}</p>
+    <div class="role-actions" onclick="event.stopPropagation()"><button class="btn secondary" onclick="openResourceViewer('${r.id}','resources')">Open</button><button class="btn secondary" onclick="openPanel('assignResourceStudents',{resourceId:'${r.id}'})">Assign</button><button class="btn secondary" onclick="ResourceStorage.toggleShareability('${r.id}')">${isShared ? "Unshare" : "Share"}</button><button class="btn danger" onclick="openPanel('deleteResource',{resourceId:'${r.id}'})">Remove</button></div>
+  </article>`;
 }
 function resourceKey(event, resourceId) {
   if (event.key === "Enter" || event.key === " ") {
@@ -1148,11 +1560,285 @@ function fileToDataUrl(file) {
     reader.readAsDataURL(file);
   });
 }
-function studentMini(s) { return `<div class="student-line click-row" role="button" tabindex="0" onclick="openStudentProfile('${s.id}')" onkeydown="studentKey(event,'${s.id}')" style="padding:8px;border-top:1px solid var(--line)">${avatar(s)}<span style="flex:1"><strong class="student-name">${esc(s.name)}</strong><br/><span class="subtle">${esc(s.proficiency)} · ${esc(s.level)}</span></span>${supportTag(s.support[0] || "Check-in")}</div>`; }
+function studentMini(s) { return `<div class="student-line click-row" role="button" tabindex="0" onclick="event.stopPropagation(); openStudentProfile('${s.id}')" onkeydown="studentKey(event,'${s.id}')" style="padding:8px;border-top:1px solid var(--line)">${avatar(s)}<span style="flex:1"><strong class="student-name">${esc(s.name)}</strong><br/><span class="subtle">${esc(s.proficiency)} · ${esc(s.level)}</span></span>${supportTag(s.support[0] || "Check-in")}</div>`; }
 function misconceptionSummary() {
   const counts = {};
   state.misconceptionLog.forEach((item) => counts[item.type] = (counts[item.type] || 0) + 1);
   return Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 5);
+}
+
+function lessonBuilderDashboardPage() {
+  const lesson = currentLesson();
+  return `${pageHead("Lesson Builder", "Create, edit, preview, and launch inquiry lessons without developer support.", `<button class="btn" onclick="createInquiryLesson()">Create lesson</button><button class="btn secondary" onclick="previewLesson('${lesson?.id || ""}')">Preview selected</button>`)}
+    <section class="grid two-col">
+      <div class="grid">
+        <article class="card card-pad">
+          <div class="card-action-head"><h3 class="section-title">Lesson templates and drafts</h3><span class="pill">${state.customLessons.length} lessons</span></div>
+          <div class="panel-stack">${state.customLessons.map(lessonCard).join("")}</div>
+        </article>
+      </div>
+      <div class="grid">
+        ${lesson ? lessonEditorCard(lesson) : `<article class="card card-pad empty">Create a lesson to start building.</article>`}
+        ${lesson && state.lessonBuilderMode === "preview" ? lessonPreviewCard(lesson) : ""}
+        ${lesson ? lessonFlowEditorCard(lesson) : ""}
+        ${lesson ? lessonAnalyticsCard(lesson) : ""}
+      </div>
+    </section>`;
+}
+function lessonCard(lesson) {
+  const active = lesson.id === state.selectedLessonId;
+  const launched = lesson.id === state.activeLessonId;
+  return `<article class="panel-card ${active ? "selected-card" : ""}">
+    <div class="card-action-head"><div><h3>${esc(lesson.title)}</h3><p class="subtle">${esc(lesson.subject)} · Grade ${esc(lesson.gradeLevel)} · ${esc(lesson.standards)}</p></div><span class="pill">${launched ? "Launched" : lesson.archived ? "Archived" : esc(lesson.status)}</span></div>
+    <p class="recommendation">${esc(lesson.essentialQuestion)}</p>
+    <div class="role-actions">
+      <button class="btn secondary" onclick="selectInquiryLesson('${lesson.id}')">Edit</button>
+      <button class="btn secondary" onclick="duplicateInquiryLesson('${lesson.id}')">Duplicate</button>
+      <button class="btn secondary" onclick="archiveInquiryLesson('${lesson.id}')">${lesson.archived ? "Restore" : "Archive"}</button>
+      <button class="btn" onclick="launchInquiryLesson('${lesson.id}')">Launch</button>
+    </div>
+  </article>`;
+}
+function lessonEditorCard(lesson) {
+  return `<article class="card card-pad">
+    <div class="card-action-head"><h3 class="section-title">Lesson Structure</h3><span class="pill">${lesson.steps.length} steps</span></div>
+    <div class="form-grid resource-form">
+      ${lessonInput("Lesson Title", "title", lesson.title)}
+      ${lessonInput("Subject", "subject", lesson.subject)}
+      ${lessonInput("Grade Level", "gradeLevel", lesson.gradeLevel)}
+      ${lessonInput("Standards", "standards", lesson.standards)}
+    </div>
+    ${lessonTextarea("Essential Question", "essentialQuestion", lesson.essentialQuestion)}
+    ${lessonTextarea("Problem Statement", "problemStatement", lesson.problemStatement)}
+    ${lessonTextarea("Success Criteria", "successCriteria", lesson.successCriteria)}
+    ${lessonTextarea("Constraints", "constraints", lesson.constraints)}
+    <div class="form-grid resource-form" style="margin-top:12px">
+      <label><span class="subtle">AI Support Level</span><select onchange="updateInquiryLesson('${lesson.id}','aiSupportLevel',this.value)">${aiSupportOptions.map((level) => `<option value="${level}" ${Number(lesson.aiGuidance.supportLevel) === level ? "selected" : ""}>${level}% Support</option>`).join("")}</select></label>
+      <label><span class="subtle">Launch target</span><select onchange="updateInquiryLesson('${lesson.id}','launchTarget',this.value)">${["Entire Class","Advanced","Typical","Struggling"].map((target) => `<option ${target === (lesson.launchTarget || "Entire Class") ? "selected" : ""}>${target}</option>`).join("")}</select></label>
+    </div>
+    <div class="form-grid resource-form" style="margin-top:12px">
+      <label><span class="subtle">Resources</span><select onchange="attachResourceToLesson('${lesson.id}',this.value)"><option value="">Attach resource...</option>${state.resourceList.map((resource) => `<option value="${esc(resource.id)}">${esc(resource.title)}</option>`).join("")}</select></label>
+    </div>
+    <div class="badge-row" style="margin-top:10px">${lesson.resources.length ? lesson.resources.map((id) => {
+      const r = state.resourceList.find((resource) => resource.id === id);
+      return r ? `<span class="tag">${esc(r.title)} <button class="tiny-remove" onclick="removeResourceFromLesson('${lesson.id}','${r.id}')" aria-label="Remove ${esc(r.title)}">×</button></span>` : "";
+    }).join("") : `<span class="subtle">No resources attached yet.</span>`}</div>
+  </article>`;
+}
+function lessonPreviewCard(lesson) {
+  return `<article class="card card-pad">
+    <div class="card-action-head"><h3 class="section-title">Student Preview</h3><span class="pill">${esc(lesson.aiGuidance.supportLevel)}% AI Support</span></div>
+    <p class="recommendation">${esc(lesson.essentialQuestion)}</p>
+    <div class="timeline">${lesson.steps.map((step, index) => `<div class="timeline-item"><strong>Step ${index + 1}: ${esc(step.title)}</strong><p>${esc(step.prompt)}</p><span class="quality">${esc(step.type)} · ${esc(step.minutes)} min</span></div>`).join("")}</div>
+  </article>`;
+}
+function lessonInput(label, key, value) {
+  const lesson = currentLesson();
+  return `<label><span class="subtle">${label}</span><input type="text" value="${esc(value)}" onchange="updateInquiryLesson('${lesson.id}','${key}',this.value)"></label>`;
+}
+function lessonTextarea(label, key, value) {
+  const lesson = currentLesson();
+  return `<label class="lesson-builder-field"><span class="subtle">${label}</span><textarea onchange="updateInquiryLesson('${lesson.id}','${key}',this.value)">${esc(value)}</textarea></label>`;
+}
+function lessonFlowEditorCard(lesson) {
+  return `<article class="card card-pad">
+    <div class="card-action-head"><h3 class="section-title">Inquiry Flow Editor</h3><button class="btn secondary" onclick="addLessonStep('${lesson.id}')">Add step</button></div>
+    <div class="panel-stack">${lesson.steps.map((step, index) => lessonStepEditor(lesson, step, index)).join("")}</div>
+  </article>`;
+}
+function lessonStepEditor(lesson, step, index) {
+  return `<div class="timeline-item">
+    <div class="card-action-head"><strong>Step ${index + 1}</strong><span class="role-actions"><button class="btn secondary" onclick="moveLessonStep('${lesson.id}','${step.id}',-1)">↑</button><button class="btn secondary" onclick="moveLessonStep('${lesson.id}','${step.id}',1)">↓</button><button class="btn secondary" onclick="duplicateLessonStep('${lesson.id}','${step.id}')">Duplicate</button><button class="btn danger" onclick="removeLessonStep('${lesson.id}','${step.id}')">Remove</button></span></div>
+    <div class="form-grid resource-form">
+      <label><span class="subtle">Step Type</span><select onchange="updateLessonStep('${lesson.id}','${step.id}','type',this.value)">${lessonStepTypes.map((type) => `<option ${type === step.type ? "selected" : ""}>${esc(type)}</option>`).join("")}</select></label>
+      <label><span class="subtle">Title</span><input type="text" value="${esc(step.title)}" onchange="updateLessonStep('${lesson.id}','${step.id}','title',this.value)"></label>
+    </div>
+    <label class="lesson-builder-field"><span class="subtle">Student prompt</span><textarea onchange="updateLessonStep('${lesson.id}','${step.id}','prompt',this.value)">${esc(step.prompt)}</textarea></label>
+    <label class="lesson-builder-field"><span class="subtle">Minutes</span><input type="number" min="1" max="60" value="${esc(step.minutes)}" onchange="updateLessonStep('${lesson.id}','${step.id}','minutes',this.value)"></label>
+  </div>`;
+}
+function lessonAnalyticsCard(lesson) {
+  const analytics = lesson.id === state.activeLessonId ? activeLessonAnalytics(lesson) : lesson.analytics;
+  return `<article class="card card-pad">
+    <div class="card-action-head"><h3 class="section-title">Lesson Analytics</h3><span class="pill">${lesson.id === state.activeLessonId ? "Live" : "Preview"}</span></div>
+    <div class="bar-row"><span>Active Students</span>${progress(Math.min(100, analytics.activeStudents * 4))}<strong>${analytics.activeStudents}</strong></div>
+    <div class="bar-row"><span>Completion Rate</span>${progress(analytics.completionRate)}<strong>${analytics.completionRate}%</strong></div>
+    <div class="bar-row"><span>Questions Generated</span>${progress(Math.min(100, analytics.questionsGenerated * 5))}<strong>${analytics.questionsGenerated}</strong></div>
+    <div class="bar-row"><span>Reflection Quality</span>${progress(analytics.averageReflectionQuality)}<strong>${analytics.averageReflectionQuality}%</strong></div>
+    <div class="bar-row"><span>Need Support</span>${progress(Math.min(100, analytics.studentsNeedingSupport * 18))}<strong>${analytics.studentsNeedingSupport}</strong></div>
+  </article>`;
+}
+function activeLessonAnalytics(lesson) {
+  const supportCount = teacherAlertStudents().length;
+  const completion = Math.round((state.studentActivityIndex + 1) / Math.max(1, activeLessonActivities().length) * 100);
+  return {
+    activeStudents: 23,
+    completionRate: Math.max(lesson.analytics.completionRate || 0, Math.min(96, completion)),
+    questionsGenerated: state.dqb.length,
+    averageReflectionQuality: classInsightMetrics()["Reflection Quality"],
+    studentsNeedingSupport: supportCount,
+  };
+}
+function selectInquiryLesson(lessonId) {
+  state.selectedLessonId = lessonId;
+  state.lessonBuilderMode = "edit";
+  save();
+  render();
+}
+function createInquiryLesson() {
+  const lesson = createLessonTemplate({ id: `lesson-${Date.now()}`, title: "New Inquiry Lesson", status: "Draft", createdAt: today(), updatedAt: today() });
+  state.customLessons.unshift(lesson);
+  state.selectedLessonId = lesson.id;
+  save();
+  render();
+}
+function duplicateInquiryLesson(lessonId) {
+  const source = state.customLessons.find((lesson) => lesson.id === lessonId);
+  if (!source) return;
+  const copy = structuredClone(source);
+  copy.id = `lesson-${Date.now()}`;
+  copy.title = `${source.title} Copy`;
+  copy.status = "Draft";
+  copy.archived = false;
+  copy.createdAt = today();
+  copy.updatedAt = today();
+  copy.steps = copy.steps.map((step, index) => ({ ...step, id: `step-${copy.id}-${index}` }));
+  state.customLessons.unshift(copy);
+  state.selectedLessonId = copy.id;
+  save();
+  render();
+}
+function archiveInquiryLesson(lessonId) {
+  const lesson = state.customLessons.find((item) => item.id === lessonId);
+  if (!lesson) return;
+  lesson.archived = !lesson.archived;
+  lesson.status = lesson.archived ? "Archived" : "Draft";
+  if (state.activeLessonId === lessonId && lesson.archived) state.activeLessonId = state.customLessons.find((item) => !item.archived)?.id || lessonId;
+  save();
+  render();
+}
+function launchInquiryLesson(lessonId) {
+  const lesson = state.customLessons.find((item) => item.id === lessonId);
+  if (!lesson) return;
+  state.customLessons.forEach((item) => { if (item.status === "Launched") item.status = "Draft"; });
+  lesson.status = "Launched";
+  lesson.archived = false;
+  lesson.analytics = { activeStudents: 23, completionRate: 12, questionsGenerated: state.dqb.length, averageReflectionQuality: classInsightMetrics()["Reflection Quality"], studentsNeedingSupport: teacherAlertStudents().length };
+  state.activeLessonId = lesson.id;
+  state.selectedLessonId = lesson.id;
+  state.lessonLaunches.unshift({ lessonId, target: lesson.launchTarget || "Entire Class", launchedAt: new Date().toLocaleString() });
+  state.lessonSetup.lessonTitle = lesson.title;
+  state.lessonSetup.subject = lesson.subject;
+  state.lessonSetup.gradeLevel = lesson.gradeLevel;
+  state.lessonSetup.standard = lesson.standards;
+  state.studentActivityIndex = 0;
+  assignLessonResourcesToTarget(lesson);
+  save();
+  render();
+}
+function assignLessonResourcesToTarget(lesson) {
+  const target = lesson.launchTarget || "Entire Class";
+  const students = state.students.filter((student) => {
+    if (target === "Advanced") return isAdvancedLearner(student);
+    if (target === "Struggling") return isStrugglingLearner(student);
+    if (target === "Typical") return isTypicalLearner(student);
+    return true;
+  });
+  (lesson.resources || []).forEach((resourceId) => {
+    students.forEach((student) => {
+      student.assignedResources = student.assignedResources || [];
+      if (!student.assignedResources.some((assignment) => assignment.resourceId === resourceId)) {
+        student.assignedResources.unshift({ resourceId, dateAssigned: today() });
+      }
+    });
+  });
+  syncResourceAssignmentMetadata();
+}
+function updateInquiryLesson(lessonId, key, value) {
+  const lesson = state.customLessons.find((item) => item.id === lessonId);
+  if (!lesson) return;
+  if (key === "aiSupportLevel") lesson.aiGuidance.supportLevel = Number(value);
+  else lesson[key] = value;
+  lesson.updatedAt = today();
+  save();
+  render();
+}
+function attachResourceToLesson(lessonId, resourceId) {
+  if (!resourceId) return;
+  const lesson = state.customLessons.find((item) => item.id === lessonId);
+  if (!lesson) return;
+  lesson.resources = Array.from(new Set([...(lesson.resources || []), resourceId]));
+  save();
+  render();
+}
+function removeResourceFromLesson(lessonId, resourceId) {
+  const lesson = state.customLessons.find((item) => item.id === lessonId);
+  if (!lesson) return;
+  lesson.resources = (lesson.resources || []).filter((id) => id !== resourceId);
+  save();
+  render();
+}
+function addLessonStep(lessonId) {
+  const lesson = state.customLessons.find((item) => item.id === lessonId);
+  if (!lesson) return;
+  lesson.steps.push({ id: `step-${Date.now()}`, type: "Observation", title: "New inquiry step", prompt: "What should students do or think about here?", minutes: 8 });
+  save();
+  render();
+}
+function updateLessonStep(lessonId, stepId, key, value) {
+  const lesson = state.customLessons.find((item) => item.id === lessonId);
+  const step = lesson?.steps.find((item) => item.id === stepId);
+  if (!step) return;
+  step[key] = key === "minutes" ? Number(value) : value;
+  lesson.updatedAt = today();
+  save();
+  render();
+}
+function removeLessonStep(lessonId, stepId) {
+  const lesson = state.customLessons.find((item) => item.id === lessonId);
+  if (!lesson) return;
+  lesson.steps = lesson.steps.filter((step) => step.id !== stepId);
+  save();
+  render();
+}
+function duplicateLessonStep(lessonId, stepId) {
+  const lesson = state.customLessons.find((item) => item.id === lessonId);
+  const index = lesson?.steps.findIndex((step) => step.id === stepId) ?? -1;
+  if (!lesson || index < 0) return;
+  const copy = { ...lesson.steps[index], id: `step-${Date.now()}`, title: `${lesson.steps[index].title} Copy` };
+  lesson.steps.splice(index + 1, 0, copy);
+  save();
+  render();
+}
+function moveLessonStep(lessonId, stepId, direction) {
+  const lesson = state.customLessons.find((item) => item.id === lessonId);
+  const index = lesson?.steps.findIndex((step) => step.id === stepId) ?? -1;
+  const nextIndex = index + direction;
+  if (!lesson || index < 0 || nextIndex < 0 || nextIndex >= lesson.steps.length) return;
+  const [step] = lesson.steps.splice(index, 1);
+  lesson.steps.splice(nextIndex, 0, step);
+  save();
+  render();
+}
+function previewLesson(lessonId) {
+  if (lessonId) state.selectedLessonId = lessonId;
+  state.lessonBuilderMode = "preview";
+  save();
+  render();
+}
+function activeLessonActivities() {
+  const lesson = launchedLesson();
+  return (lesson?.steps?.length ? lesson.steps : activities).map((step, index) => ({
+    id: step.id || `lesson-step-${index}`,
+    eyebrow: step.type || "Inquiry",
+    title: step.title || `Step ${index + 1}`,
+    prompt: step.prompt || "Add a student response.",
+    hint: lesson?.essentialQuestion || "Use evidence and reasoning.",
+    context: lesson?.problemStatement || "",
+    slide: index + 1,
+    minutes: step.minutes || 8,
+    placeholder: "Type your thinking here...",
+  }));
 }
 
 function setupPage() {
@@ -1354,7 +2040,12 @@ function studentProfilePage() {
           </div>
         </article>
         <article class="card card-pad">
-          <h3 class="section-title">Notes / Intervention Timeline</h3>
+          <div class="card-action-head"><h3 class="section-title">Student Thinking Timeline</h3><button class="btn secondary" onclick="openPanel('studentInquiryReport',{studentId:'${s.id}'})">Generate Student Inquiry Report</button></div>
+          ${studentThinkingTimeline(s)}
+        </article>
+        <article class="card card-pad">
+          <h3 class="section-title">Teacher Notes / Intervention Timeline</h3>
+          <p class="subtle">Teacher-only notes stored locally for this demo.</p>
           <div class="role-actions"><button class="btn" onclick="openPanel('addNote',{studentId:'${s.id}'})">Add Note</button></div>
           <div class="timeline">${(s.profileNotes || []).length ? s.profileNotes.map((note) => noteItem(s, note)).join("") : `<div class="empty">No notes yet. Add the first intervention note for this student.</div>`}</div>
         </article>
@@ -1372,6 +2063,7 @@ function studentProfilePage() {
             ${isHotList(s) ? `<button class="btn secondary" onclick="removeStudentFromHotlist('${s.id}')">Remove from Hotlist</button>` : `<button class="btn secondary" onclick="addStudentToHotlist('${s.id}')">Add to Hotlist</button>`}
             <button class="btn secondary" onclick="openPanel('editHotlist',{studentId:'${s.id}'})">Edit Hotlist Info</button>
             <button class="btn secondary" onclick="openPanel('assignResource',{studentId:'${s.id}'})">Assign Resource</button>
+            <button class="btn secondary" onclick="openPanel('studentInquiryReport',{studentId:'${s.id}'})">Generate Inquiry Report</button>
             <button class="btn danger" onclick="openPanel('deleteStudent',{studentId:'${s.id}'})">Delete Student</button>
           </div>
         </article>
@@ -1391,6 +2083,61 @@ function studentProfilePage() {
       </aside>
     </section>`;
 }
+function studentThinkingTimeline(student) {
+  const entries = student.inquiryHistory || [];
+  if (!entries.length) return `<div class="empty">No inquiry timeline entries yet.</div>`;
+  return `<div class="timeline">${entries.map((entry) => {
+    const flags = analyzeInquiryEntry(entry);
+    return `<div class="timeline-item thinking-entry">
+      <div class="card-action-head"><strong>${esc(entry.timestamp || "Time not recorded")}</strong><span class="ai-badge-row">${flags.map(insightBadge).join("")}</span></div>
+      <div class="thinking-grid">
+        <span>Original Question</span><p>${esc(entry.originalQuestion || "Not recorded")}</p>
+        <span>Student Response</span><p>${esc(entry.studentResponse || "No response recorded")}</p>
+        <span>AI Follow-Up Question</span><p>${esc(entry.aiFollowUp || "No follow-up recorded")}</p>
+        <span>Revised Student Response</span><p>${esc(entry.revisedResponse || "No revision recorded")}</p>
+      </div>
+    </div>`;
+  }).join("")}</div>`;
+}
+function studentInquiryReportPanel() {
+  const s = profileStudentOrError();
+  if (!s) return `${panelHeader("Student Inquiry Report")}<p class="empty">Student not found.</p>`;
+  const flags = studentInsightFlags(s);
+  const concerns = flags.filter((flag) => flag.type !== "strong");
+  const strengths = flags.filter((flag) => flag.type === "strong");
+  const questions = (s.inquiryHistory || []).map((entry) => entry.originalQuestion);
+  return `${panelHeader("Student Inquiry Report", "Printable local demo summary for teacher planning.")}
+    <article class="panel-card report-card">
+      <div class="card-action-head"><h3>${esc(s.name)}</h3><button class="btn secondary" onclick="window.print()">Print Report</button></div>
+      <div class="detail-grid">
+        <span>Student</span><strong>${esc(s.name)} · Grade ${esc(s.grade)} · ${esc(s.level)}</strong>
+        <span>Questions Asked</span><strong>${questions.length ? questions.map(esc).join("; ") : "No inquiry questions recorded."}</strong>
+        <span>Reasoning Growth</span><strong>${esc(reasoningGrowthSummary(s))}</strong>
+        <span>Areas of Concern</span><strong>${concerns.length ? concerns.map((flag) => esc(flag.label)).join(", ") : "No current concerns flagged."}</strong>
+        <span>Areas of Strength</span><strong>${strengths.length ? strengths.map((flag) => esc(flag.reason)).join(" ") : esc(areasOfStrength(s))}</strong>
+      </div>
+    </article>
+    <article class="panel-card">
+      <h3>Teacher Notes</h3>
+      ${(s.profileNotes || []).length ? s.profileNotes.map((note) => `<div class="timeline-item"><strong>${esc(note.date)} · ${esc(note.type)}</strong><p>${esc(note.note)}</p><span class="quality">${esc(note.teacher)}</span></div>`).join("") : `<div class="empty">No teacher notes yet.</div>`}
+    </article>`;
+}
+function reasoningGrowthSummary(student) {
+  const entries = student.inquiryHistory || [];
+  if (!entries.length) return "No inquiry growth evidence recorded yet.";
+  const improved = entries.filter((entry) => String(entry.revisedResponse || "").length > String(entry.studentResponse || "").length + 20).length;
+  return improved ? `${improved} of ${entries.length} response${entries.length === 1 ? "" : "s"} show expanded reasoning after AI follow-up.` : "Responses show early thinking; student may need more support revising with evidence.";
+}
+function areasOfStrength(student) {
+  const profile = studentInsightProfile(student);
+  const strongest = Object.entries({
+    "Questioning Skills": profile.questioning,
+    "Evidence Use": profile.evidence,
+    "Reasoning Quality": profile.reasoning,
+    "Reflection Quality": profile.reflection,
+  }).sort((a, b) => b[1] - a[1])[0];
+  return strongest ? `${strongest[0]} is the strongest current inquiry signal.` : "Strengths will appear after more inquiry entries.";
+}
 function noteItem(student, note) {
   return `<div class="timeline-item">
     <div class="card-action-head"><div><strong>${esc(note.date)}</strong><p>${esc(note.note)}</p><span class="quality">${esc(note.type)} · ${esc(note.teacher)}</span></div><div class="role-actions"><button class="btn secondary" onclick="openPanel('editNote',{studentId:'${student.id}',noteId:'${note.id}'})">Edit</button><button class="btn danger" onclick="deleteProfileNote('${student.id}','${note.id}')">Delete</button></div></div>
@@ -1403,15 +2150,10 @@ function assignedResourceDetails(student) {
   })).filter((entry) => entry.item);
 }
 function studentVisibleResourceDetails(student) {
-  const assigned = assignedResourceDetails(student).map((entry) => ({ ...entry, access: "Assigned" }));
-  const assignedIds = new Set(assigned.map((entry) => entry.item.id));
-  const shared = state.resourceList
-    .filter((resource) => isSharedResource(resource) && !assignedIds.has(resource.id))
-    .map((item) => ({ item, assignedOn: "with class", access: "Shared" }));
-  return [...assigned, ...shared];
+  return assignedResourceDetails(student).map((entry) => ({ ...entry, access: "Assigned" }));
 }
 function resourceAssignmentItem(student, resource, assignedOn) {
-  return `<div class="resource-row click-row" role="button" tabindex="0" onclick="openResourceViewer('${resource.id}','studentProfile')" onkeydown="resourceKey(event,'${resource.id}')"><div class="student-line"><span class="resource-icon">${esc(resource.type.slice(0,2).toUpperCase())}</span><span><strong class="student-name">${esc(resource.title)}</strong><br/><span class="subtle">${esc(resource.type)} · Assigned ${esc(assignedOn || "today")}</span></span></div><button class="btn danger" onclick="event.stopPropagation(); removeAssignedResource('${student.id}','${resource.id}')">Remove</button></div>`;
+  return `<div class="resource-row click-row" role="button" tabindex="0" onclick="openResourceViewer('${resource.id}','studentProfile')" onkeydown="resourceKey(event,'${resource.id}')"><div class="student-line"><span class="resource-icon">${esc(resourceDisplayType(resource).slice(0,2).toUpperCase())}</span><span><strong class="student-name">${esc(resource.title)}</strong><br/><span class="subtle">${esc(resourceDisplayType(resource))} · Assigned ${esc(assignedOn || "today")}</span></span></div><button class="btn danger" onclick="event.stopPropagation(); removeAssignedResource('${student.id}','${resource.id}')">Remove</button></div>`;
 }
 function updateStudent(id, key, value) { state.students.find(s => s.id === id)[key] = value; save(); render(); }
 function toggleHotList(id, checked) {
@@ -1573,8 +2315,17 @@ function assignResourcePanel() {
 function assignResourceStudentsPanel() {
   const r = currentResource();
   if (!r) return `${panelHeader("Assign Students")}<p class="empty">Resource not found.</p>`;
-  return `${panelHeader("Assign Students", `Assign ${r.title} to one or more students.`)}
+  return `${panelHeader("Assign Resource", `Assign ${r.title} to the class, a group, or individual students.`)}
     <article class="panel-card">${formError()}
+      <h3>Quick assignment</h3>
+      <div class="role-actions" style="margin:8px 0 14px">
+        <button class="btn secondary" onclick="assignResourceToClass('${r.id}')">Whole class</button>
+        <button class="btn secondary" onclick="assignResourceToGroup('${r.id}','advanced')">Advanced</button>
+        <button class="btn secondary" onclick="assignResourceToGroup('${r.id}','typical')">Typical</button>
+        <button class="btn secondary" onclick="assignResourceToGroup('${r.id}','struggling')">Struggling</button>
+        <button class="btn danger" onclick="unassignResourceFromAll('${r.id}')">Unassign all</button>
+      </div>
+      <h3>Individual students</h3>
       <div class="panel-stack">${state.students.map((student) => {
         const checked = (student.assignedResources || []).some((assignment) => assignment.resourceId === r.id);
         return `<label class="toggle-line"><input class="assign-student-check" type="checkbox" value="${esc(student.id)}" ${checked ? "checked" : ""}> ${esc(student.name)} <span class="subtle">${esc(student.level)} · ${esc(student.proficiency)}</span></label>`;
@@ -1599,6 +2350,42 @@ function saveResourceStudentAssignments(resourceId) {
   });
   syncResourceAssignmentMetadata();
   closePanel();
+}
+function assignResourceToClass(resourceId) {
+  assignResourceToStudents(resourceId, state.students.map((student) => student.id), "Assigned to whole class");
+}
+function assignResourceToGroup(resourceId, group) {
+  const groupStudents = state.students.filter((student) => {
+    if (group === "advanced") return isAdvancedLearner(student);
+    if (group === "struggling") return isStrugglingLearner(student);
+    return isTypicalLearner(student);
+  });
+  const label = group === "advanced" ? "advanced group" : group === "struggling" ? "struggling group" : "typical group";
+  assignResourceToStudents(resourceId, groupStudents.map((student) => student.id), `Assigned to ${label}`);
+}
+function assignResourceToStudents(resourceId, studentIds, noteType = "Resource assigned") {
+  const resource = state.resourceList.find((item) => item.id === resourceId);
+  const ids = new Set(studentIds);
+  state.students.forEach((student) => {
+    if (!ids.has(student.id)) return;
+    student.assignedResources = student.assignedResources || [];
+    if (!student.assignedResources.some((assignment) => assignment.resourceId === resourceId)) {
+      student.assignedResources.unshift({ resourceId, dateAssigned: today() });
+      student.profileNotes = student.profileNotes || [];
+      student.profileNotes.unshift({ id: `n${Date.now()}-${student.id}`, date: today(), teacher: "Ms. Rivera", type: noteType, note: `Assigned resource: ${resource?.title || resourceId}.` });
+    }
+  });
+  syncResourceAssignmentMetadata();
+  save();
+  render();
+}
+function unassignResourceFromAll(resourceId) {
+  state.students.forEach((student) => {
+    student.assignedResources = (student.assignedResources || []).filter((assignment) => assignment.resourceId !== resourceId);
+  });
+  syncResourceAssignmentMetadata();
+  save();
+  render();
 }
 function assignResourceToStudent(studentId) {
   const s = state.students.find((student) => student.id === studentId);
@@ -1690,17 +2477,19 @@ function studentShell() {
   return `<div class="student-shell">${topbar(`${s.name} · Period 2`)}<div class="student-layout">${studentSidebar()}<main class="student-main">${(pages[state.studentTab] || studentLesson)()}</main></div></div>`;
 }
 function studentSidebar() {
-  return `<aside class="sidebar"><p class="sidebar-label">Lesson progress</p><ul class="steps">${activities.map((a,i) => `<li class="step ${i === state.studentActivityIndex ? "active" : ""} ${i < state.studentActivityIndex ? "done" : ""}"><span class="number">${i < state.studentActivityIndex ? "✓" : i+1}</span><span>${esc(a.title)}</span></li>`).join("")}</ul><div class="toolbar" style="margin:14px 0"><button class="btn secondary" onclick="studentTab('lesson')">Lesson</button><button class="btn secondary" onclick="studentTab('resources')">My Resources</button><button class="btn secondary" onclick="studentTab('board')">Class DQB</button></div><div class="sidebar-note">Use AI for a quick nudge, then bring your thinking back to your group.</div></aside>`;
+  const lessonActivities = activeLessonActivities();
+  return `<aside class="sidebar"><p class="sidebar-label">Lesson progress</p><ul class="steps">${lessonActivities.map((a,i) => `<li class="step ${i === state.studentActivityIndex ? "active" : ""} ${i < state.studentActivityIndex ? "done" : ""}"><span class="number">${i < state.studentActivityIndex ? "✓" : i+1}</span><span>${esc(a.title)}</span></li>`).join("")}</ul><div class="toolbar" style="margin:14px 0"><button class="btn secondary" onclick="studentTab('lesson')">Lesson</button><button class="btn secondary" onclick="studentTab('resources')">My Resources</button><button class="btn secondary" onclick="studentTab('board')">Class DQB</button></div><div class="sidebar-note">Use AI for a quick nudge, then bring your thinking back to your group.</div></aside>`;
 }
 function studentLesson() {
-  const s = student(), a = activities[state.studentActivityIndex], response = state.responses[s.id]?.[a.id] || "";
+  const lessonActivities = activeLessonActivities();
+  const s = student(), a = lessonActivities[state.studentActivityIndex] || lessonActivities[0], response = state.responses[s.id]?.[a.id] || "";
   const isDqb = a.id === "dqb";
-  return `${pageHead(`Lesson 6 · Step ${state.studentActivityIndex + 1}`, `${a.eyebrow} · Slide ${a.slide} · ${a.minutes} min`, `<span class="pill">${esc(state.lessonSetup.sessionLimit)} · ${state.lessonSetup.promptLimit} prompts</span><button class="btn secondary" onclick="studentTab('resources')">My Resources</button><button class="btn secondary" onclick="studentTab('board')">${icons.message} Class DQB</button>`)}
+  return `${pageHead(`${esc(launchedLesson()?.title || "Lesson")} · Step ${state.studentActivityIndex + 1}`, `${a.eyebrow} · Step ${a.slide} · ${a.minutes} min`, `<span class="pill">${esc(state.lessonSetup.sessionLimit)} · ${state.lessonSetup.promptLimit} prompts</span><button class="btn secondary" onclick="studentTab('resources')">My Resources</button><button class="btn secondary" onclick="studentTab('board')">${icons.message} Class DQB</button>`)}
     <section class="student-grid"><article class="card activity-card"><span class="eyebrow" style="margin-left:0">${esc(a.eyebrow)}</span><h1>${esc(a.title)}</h1><p class="subtle">${esc(a.hint)}</p>${a.context ? `<div class="context">${esc(a.context)}</div>` : ""}<div class="prompt">${esc(a.prompt)}</div>
     ${isDqb ? `<label class="subtle">Question category</label><br/><select id="category">${categories.map(c => `<option>${esc(c)}</option>`).join("")}</select><br/><br/>` : ""}
     <textarea id="activity-response" placeholder="${esc(a.placeholder)}">${esc(response)}</textarea>
     ${a.id === "questions" || a.id === "dqb" ? `<div class="row" style="margin-top:9px"><button class="btn secondary" onclick="improveCurrentQuestion()">Improve my question</button><span class="subtle">AI will suggest a more investigable version.</span></div>` : ""}
-    <div class="step-actions"><button class="btn secondary" ${state.studentActivityIndex === 0 ? "disabled" : ""} onclick="moveActivity(-1)">Back</button><button class="btn" onclick="${isDqb ? "submitDqb()" : "saveAndNext()"}">${isDqb ? "Submit for teacher review" : state.studentActivityIndex === activities.length - 1 ? "Finish lesson" : "Save and continue"}</button></div></article>${aiPanel(a, s)}</section>`;
+    <div class="step-actions"><button class="btn secondary" ${state.studentActivityIndex === 0 ? "disabled" : ""} onclick="moveActivity(-1)">Back</button><button class="btn" onclick="${isDqb ? "submitDqb()" : "saveAndNext()"}">${isDqb ? "Submit for teacher review" : state.studentActivityIndex === lessonActivities.length - 1 ? "Finish lesson" : "Save and continue"}</button></div></article>${aiPanel(a, s)}</section>`;
 }
 function aiPanel(a, s) {
   const chats = state.chats[s.id] || [];
@@ -1741,22 +2530,22 @@ function sendChat(event, activityId) {
 function persistCurrentResponse() {
   const area = document.querySelector("#activity-response");
   if (!area) return;
-  const s = student(), a = activities[state.studentActivityIndex];
+  const s = student(), a = activeLessonActivities()[state.studentActivityIndex];
   state.responses[s.id] ||= {};
   state.responses[s.id][a.id] = area.value.trim();
 }
-function saveAndNext() { persistCurrentResponse(); if (state.studentActivityIndex < activities.length - 1) state.studentActivityIndex++; save(); render(); }
-function moveActivity(delta) { persistCurrentResponse(); state.studentActivityIndex = Math.max(0, Math.min(activities.length - 1, state.studentActivityIndex + delta)); save(); render(); }
+function saveAndNext() { persistCurrentResponse(); if (state.studentActivityIndex < activeLessonActivities().length - 1) state.studentActivityIndex++; save(); render(); }
+function moveActivity(delta) { persistCurrentResponse(); state.studentActivityIndex = Math.max(0, Math.min(activeLessonActivities().length - 1, state.studentActivityIndex + delta)); save(); render(); }
 function improveCurrentQuestion() {
   const area = document.querySelector("#activity-response");
   area.value = window.InquiryAI.improveQuestion(area.value);
 }
 function submitDqb() {
   persistCurrentResponse();
-  const s = student(), a = activities[state.studentActivityIndex], question = state.responses[s.id][a.id];
+  const s = student(), a = activeLessonActivities()[state.studentActivityIndex], question = state.responses[s.id][a.id];
   if (!question) return;
   state.dqb.push({ id: `q${Date.now()}`, studentId: s.id, category: document.querySelector("#category").value, question, status: "pending", quality: "Ready to review" });
-  if (state.studentActivityIndex < activities.length - 1) state.studentActivityIndex++;
+  if (state.studentActivityIndex < activeLessonActivities().length - 1) state.studentActivityIndex++;
   save(); render();
 }
 function studentBoard() {
@@ -1768,7 +2557,7 @@ function studentResourcesPage() {
   const s = student();
   const resources = studentVisibleResourceDetails(s);
   return `${pageHead("My Resources", "Open assigned and teacher-shared materials for this lesson.", `<button class="btn secondary" onclick="studentTab('lesson')">Back to lesson</button>`)}
-    <article class="card card-pad">${resources.length ? resources.map(({ item, assignedOn, access }) => `<div class="resource-row click-row" role="button" tabindex="0" onclick="openStudentResourceViewer('${item.id}')" onkeydown="studentResourceKey(event,'${item.id}')"><div class="student-line"><span class="resource-icon">${esc(item.type.slice(0,2).toUpperCase())}</span><span><strong class="student-name">${esc(item.title)}</strong><br/><span class="subtle">${esc(item.category || item.type)} · ${esc(access)} ${esc(assignedOn || "today")}</span><br/><span class="quality">${resourceTags(item)}</span></span></div><button class="btn secondary" onclick="event.stopPropagation(); openStudentResourceViewer('${item.id}')">Open Resource</button></div>`).join("") : `<div class="empty">No resources have been assigned or shared yet.</div>`}</article>`;
+    <article class="card card-pad">${resources.length ? resources.map(({ item, assignedOn, access }) => `<div class="resource-row click-row" role="button" tabindex="0" onclick="openStudentResourceViewer('${item.id}')" onkeydown="studentResourceKey(event,'${item.id}')"><div class="student-line"><span class="resource-icon">${esc(resourceDisplayType(item).slice(0,2).toUpperCase())}</span><span><strong class="student-name">${esc(item.title)}</strong><br/><span class="subtle">${esc(resourceDisplayType(item))} · ${esc(access)} ${esc(assignedOn || "today")}</span><br/><span class="quality">${resourceTags(item)}</span></span></div><button class="btn secondary" onclick="event.stopPropagation(); openStudentResourceViewer('${item.id}')">Open Resource</button></div>`).join("") : `<div class="empty">No resources assigned yet.</div>`}</article>`;
 }
 function studentResourceKey(event, resourceId) {
   if (event.key === "Enter" || event.key === " ") {
@@ -1809,6 +2598,7 @@ async function hydrateSupabaseReadOnly() {
       state.students = students.map((student) => ({
         ...student,
         className: student.className === "Supabase class" ? classLabel : student.className,
+        inquiryHistory: student.inquiryHistory || sampleInquiryHistory(student),
       }));
       applySupabaseHotlistItems(hotlistItems || []);
       state.selectedStudent = state.selectedStudent && state.students.some((student) => student.id === state.selectedStudent)
@@ -1844,5 +2634,77 @@ function applySupabaseHotlistItems(items = []) {
     student.allocation = Number(item.inquiry_credit_percent ?? student.allocation ?? 85);
   });
 }
+Object.assign(window, {
+  ResourceStorage,
+  addPanelResource,
+  addPanelStudent,
+  addLessonStep,
+  addResource,
+  addStudentToHotlist,
+  assignResourceToClass,
+  assignResourceToGroup,
+  assignResourceToStudent,
+  archiveInquiryLesson,
+  closePanel,
+  confirmDeleteResource,
+  confirmDeleteStudent,
+  confirmRestartDemo,
+  createInquiryLesson,
+  copyMakeathonDemoScript,
+  cycleAIComparisonIdea,
+  deleteProfileNote,
+  duplicateInquiryLesson,
+  duplicateLessonStep,
+  improveCurrentQuestion,
+  launchInquiryLesson,
+  moderate,
+  moveActivity,
+  moveLessonStep,
+  openPanel,
+  openResourceExternally,
+  openResourceUrl,
+  openResourceViewer,
+  openStudentProfile,
+  openStudentResourceViewer,
+  panelKey,
+  previewScaffoldForStudent,
+  previewLesson,
+  refreshLessonBuilderPreview,
+  removeLessonStep,
+  removeResourceFromLesson,
+  removeAssignedResource,
+  removeStudentFromHotlist,
+  requestRestartDemo,
+  resourceKey,
+  runAIComparisonDemo,
+  saveAndNext,
+  saveHotlistInfo,
+  saveProfileNote,
+  saveResourceEdits,
+  saveResourceStudentAssignments,
+  saveStudentEdits,
+  sendChat,
+  selectInquiryLesson,
+  setModerationFilter,
+  setResourceFilter,
+  setResourceSearch,
+  setRole,
+  setStudentFilter,
+  studentKey,
+  studentResourceKey,
+  studentTab,
+  submitDqb,
+  syncLessonBuilderToSetup,
+  teacherTab,
+  toggleHotList,
+  unassignResourceFromAll,
+  updateAISupportLevel,
+  updateAllocation,
+  updateInquiryLesson,
+  updateLessonStep,
+  updateLessonBuilder,
+  updateSetup,
+  updateStudent,
+});
 render();
 hydrateSupabaseReadOnly().then(render);

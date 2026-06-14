@@ -57,6 +57,7 @@
     }
 
     async uploadResource({ file, metadata = {} }) {
+      // TODO Supabase Storage later: upload file bytes to a protected bucket, then store resource metadata separately.
       if (!file) throw new Error("Choose a file before uploading.");
       if (file.size > 8 * 1024 * 1024) throw new Error("File too large. Use a file under 8MB for this local demo.");
       const state = this.getState();
@@ -96,6 +97,7 @@
     }
 
     async openResource(resourceId) {
+      // TODO provider swap: local demo opens data URLs/links now; Google Drive and Supabase Storage will resolve signed/view URLs here.
       const resource = (this.getState().resourceList || []).find((item) => item.id === resourceId);
       const openUrl = resource?.webViewLink || resource?.downloadUrl || resource?.url;
       if (!resource || !openUrl) {
@@ -119,6 +121,7 @@
     }
 
     async shareResource(resourceId, shareability) {
+      // TODO permissions later: map local visibility to Drive permissions or Supabase RLS-backed access records.
       const resource = (this.getState().resourceList || []).find((item) => item.id === resourceId);
       if (!resource) return null;
       const nextShareability = shareability || (resource.shareability === "Private" ? "Share with school" : "Private");
@@ -333,7 +336,7 @@
     }
 
     async pickFile() {
-      // Future: open Google Drive Picker so teachers can choose existing Docs, Slides, PDFs, images, or folders.
+      // TODO Google Picker: open Google Drive Picker so teachers can choose existing Docs, Slides, PDFs, images, or folders.
       throw new Error("Google Drive Picker is not connected yet.");
     }
 
@@ -343,7 +346,7 @@
     }
 
     async listResources() {
-      // Future: initialize Google OAuth, then use Drive API files.list scoped to the school resource folder.
+      // TODO OAuth login: initialize Google Identity Services, then use Drive API files.list scoped to the school resource folder.
       // Future: include files from a district shared drive or shared folder when an administrator grants access.
       return [];
     }
@@ -359,8 +362,8 @@
     }
 
     async uploadResource() {
-      // Future: use Google OAuth access token and Drive API files.create for uploads.
-      // Future: use Google Drive Picker for selecting an existing Doc, Slide, Sheet, PDF, image, or folder item.
+      // TODO OAuth login: use Google OAuth access token and Drive API files.create for uploads.
+      // TODO Google Picker: use Google Drive Picker for selecting an existing Doc, Slide, Sheet, PDF, image, or folder item.
       // Future: store returned driveFileId, webViewLink, downloadUrl, MIME type, owners, and permission metadata.
       throw new Error("Google Drive upload is not connected yet.");
     }
@@ -378,6 +381,7 @@
     async openResource(resourceId) {
       // Future: resolve resourceId to Drive file metadata and open webViewLink or export link.
       // Future: for Google Docs/Slides/Sheets, rely on Workspace permissions and open in a new tab.
+      // TODO student view-only access: students should receive view-only Drive links or app-mediated signed URLs.
       throw new Error(`Google Drive open is not connected yet for ${resourceId}.`);
     }
 
@@ -409,7 +413,8 @@
 
     async shareResource(resourceId) {
       // Future: use Drive API permissions.create/update for teacher, school, district, or public sharing.
-      // Future: map app shareability labels to Workspace groups, shared drives, and domain-restricted links.
+      // TODO Drive file permissions: map app shareability labels to Workspace groups, shared drives, and domain-restricted links.
+      // TODO domain-restricted sharing: support school-domain only links and district Shared Drive policies.
       throw new Error(`Google Drive sharing is not connected yet for ${resourceId}.`);
     }
   }
