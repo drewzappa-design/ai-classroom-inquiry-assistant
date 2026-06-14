@@ -150,15 +150,18 @@ window.InquiryAIProvider = (() => {
     constructor(options = {}) {
       this.mode = "demo";
       this.lessonTitle = options.lessonTitle || "OpenSciEd palm oil and orangutan design problem";
+      this.customInstructions = options.customInstructions || "";
     }
 
     scaffold({ message = "", activity = {}, student = {}, lessonSetup = {}, existingPromptCount = 0 }) {
       const cleanMessage = String(message).trim();
-      const supportLevel = normalizeSupportLevel(student.aiSupportLevel ?? student.allocation ?? 50);
+      const supportLevel = normalizeSupportLevel(student.aiSupportLevel ?? lessonSetup.aiSupportLevel ?? lessonSetup.supportLevelPercent ?? student.allocation ?? 15);
       const scriptedCase = findScriptedCase(cleanMessage);
       const tag = scriptedCase?.tag || detectMisconception(cleanMessage);
       const status = scriptedCase?.status || progressStatus(tag, supportLevel, cleanMessage);
       const limitReached = Number(lessonSetup.promptLimit || 5) <= Number(existingPromptCount || 0);
+      const customInstructions = lessonSetup.aiCustomInstructions || this.customInstructions || "Science inquiry coach";
+      const safety = safetyRedirect(cleanMessage, supportLevel, tag, customInstructions);
 
       if (limitReached) {
         return response({
@@ -172,14 +175,9 @@ window.InquiryAIProvider = (() => {
         });
       }
 
-      const directAnswerRequest = /\b(answer|tell me|do it for me|write it for me|complete it|solve it)\b/i.test(cleanMessage);
-      if (directAnswerRequest) {
+      if (safety) {
         return response({
-          scaffold: bySupportLevel(supportLevel, {
-            low: "I will not give the answer. What evidence from the lesson could you use first?",
-            mid: "I will not give the answer. Try this starter: One piece of evidence is ___. How does that evidence connect to the design problem?",
-            high: "I will not give the answer. Evidence means information from the lesson. Start with: The lesson says ___, so I think ___. What part of the resource can you use?",
-          }),
+          scaffold: safety,
           supportLevel,
           tag: "Needs Evidence",
           status: "Needs revision",
@@ -191,18 +189,18 @@ window.InquiryAIProvider = (() => {
 
       if (scriptedCase) {
         return response({
-          scaffold: scriptedCase.responses[supportLevel],
+          scaffold: scriptedCase.responses[supportResponseKey(supportLevel)],
           supportLevel,
           tag: scriptedCase.tag,
-          status: scriptedCase.statuses?.[supportLevel] || scriptedCase.status,
+          status: scriptedCase.statuses?.[supportResponseKey(supportLevel)] || scriptedCase.status,
           ruleAction: "scripted-inquiry-scaffold",
-          questionStem: scriptedCase.stems?.[supportLevel] || getQuestionStem({ supportLevel, misconceptionTag: scriptedCase.tag, lessonTopic: lessonSetup.lessonTitle }),
+          questionStem: scriptedCase.stems?.[supportResponseKey(supportLevel)] || getQuestionStem({ supportLevel, misconceptionTag: scriptedCase.tag, lessonTopic: lessonSetup.lessonTitle }),
           creditsUsed: 1,
         });
       }
 
       return response({
-        scaffold: buildScaffold(cleanMessage, activity, supportLevel, tag),
+        scaffold: buildScaffold(cleanMessage, activity, supportLevel, tag, customInstructions),
         supportLevel,
         tag,
         status,
@@ -217,32 +215,66 @@ window.InquiryAIProvider = (() => {
     constructor(options = {}) {
       this.mode = "openai-ready";
       this.endpoint = options.endpoint || "";
+      this.apiKey = options.apiKey || "";
+      this.fallback = options.fallback || new DemoAIProvider(options);
     }
 
-    async scaffold() {
+    scaffold(input) {
       // Production Note:
-      // This is where a secure server-side AI endpoint should be called.
-      // Do not expose OpenAI API keys in frontend code. Send only the minimum
-      // lesson/student context needed, enforce no-direct-answer behavior on the
-      // server, and log teacher-visible scaffold metadata for review.
-      throw new Error("OpenAI provider is not enabled. Use DemoAIProvider until a secure server endpoint exists.");
+      // Call a secure server-side OpenAI endpoint here. Do not expose OpenAI API
+      // keys in frontend code. The server must enforce inquiry-coach behavior,
+      // safety redirects, and structured metadata before returning to the app.
+      if (!this.apiKey && !this.endpoint) return { ...this.fallback.scaffold(input), providerFallback: "Demo Provider", requestedProvider: "OpenAI" };
+      return { ...this.fallback.scaffold(input), providerFallback: "Demo Provider", requestedProvider: "OpenAI", mode: "openai-placeholder" };
+    }
+  }
+
+  class AnthropicReadyProvider extends OpenAIReadyProvider {
+    constructor(options = {}) {
+      super(options);
+      this.mode = "anthropic-ready";
+    }
+
+    scaffold(input) {
+      // Future: call a secure server-side Anthropic endpoint and request
+      // structured inquiry-coach JSON with misconception tags and scores.
+      if (!this.apiKey && !this.endpoint) return { ...this.fallback.scaffold(input), providerFallback: "Demo Provider", requestedProvider: "Anthropic" };
+      return { ...this.fallback.scaffold(input), providerFallback: "Demo Provider", requestedProvider: "Anthropic", mode: "anthropic-placeholder" };
+    }
+  }
+
+  class GeminiReadyProvider extends OpenAIReadyProvider {
+    constructor(options = {}) {
+      super(options);
+      this.mode = "gemini-ready";
+    }
+
+    scaffold(input) {
+      // Future: call a secure server-side Gemini endpoint and request
+      // structured inquiry-coach JSON with misconception tags and scores.
+      if (!this.apiKey && !this.endpoint) return { ...this.fallback.scaffold(input), providerFallback: "Demo Provider", requestedProvider: "Google Gemini" };
+      return { ...this.fallback.scaffold(input), providerFallback: "Demo Provider", requestedProvider: "Google Gemini", mode: "gemini-placeholder" };
     }
   }
 
   function createAIProvider(mode = "demo", options = {}) {
-    if (mode === "openai") return new OpenAIReadyProvider(options);
+    const fallback = new DemoAIProvider(options);
+    if (mode === "openai") return new OpenAIReadyProvider({ ...options, apiKey: options.openAIKey, endpoint: options.openAIEndpoint, fallback });
+    if (mode === "anthropic") return new AnthropicReadyProvider({ ...options, apiKey: options.anthropicKey, endpoint: options.anthropicEndpoint, fallback });
+    if (mode === "gemini") return new GeminiReadyProvider({ ...options, apiKey: options.geminiKey, endpoint: options.geminiEndpoint, fallback });
     return new DemoAIProvider(options);
   }
 
-  function buildScaffold(message, activity, supportLevel, tag) {
+  function buildScaffold(message, activity, supportLevel, tag, customInstructions = "") {
     const lower = message.toLowerCase();
     const activityHint = activityHintFromActivity(activity);
+    const coachFrame = coachFrameFor(customInstructions);
 
     if (tag === "Oversimplified Cause") {
       return bySupportLevel(supportLevel, {
-        low: "What trade-offs might appear if that idea were used as the solution?",
-        mid: "Why might that idea be too simple for a system with farmers, consumers, forests, and orangutans? Try: Palm oil affects ___ because ___.",
-        high: "What groups or needs are part of this problem? Try: One group is ___, and they need ___.",
+        low: `${coachFrame} What trade-offs might appear if that idea were used as the solution?`,
+        mid: `${coachFrame} Why might that idea be too simple for a system with multiple stakeholders? Try: This affects ___ because ___.`,
+        high: `${coachFrame} What groups or needs are part of this problem? Try: One group is ___, and they need ___.`,
       });
     }
 
@@ -302,7 +334,7 @@ window.InquiryAIProvider = (() => {
 
   function progressStatus(tag, supportLevel, message) {
     if (tag === "Ready to Share") return "Ready to share";
-    if (tag === "Developing Explanation") return supportLevel >= 85 ? "Developing with support" : "Developing";
+    if (tag === "Developing Explanation") return supportLevel >= 25 ? "Developing with support" : "Developing";
     if (tag === "Limited Understanding") return "Needs teacher check-in";
     if (String(message).trim().length < 12) return "Needs more detail";
     return "Needs evidence";
@@ -310,21 +342,33 @@ window.InquiryAIProvider = (() => {
 
   function normalizeSupportLevel(value) {
     const number = Number(value);
-    if (number <= 20) return 15;
-    if (number >= 75) return 85;
+    if (!Number.isFinite(number)) return 15;
+    if (number > 30) {
+      if (number <= 20) return 10;
+      if (number >= 75) return 30;
+      return 20;
+    }
+    return Math.max(0, Math.min(30, Math.round(number / 5) * 5));
+  }
+
+  function supportResponseKey(level) {
+    const normalized = normalizeSupportLevel(level);
+    if (normalized <= 10) return 15;
+    if (normalized >= 25) return 85;
     return 50;
   }
 
   function bySupportLevel(level, variants) {
-    if (level === 15) return variants.low;
-    if (level === 85) return variants.high;
+    const normalized = normalizeSupportLevel(level);
+    if (normalized <= 10) return variants.low;
+    if (normalized >= 25) return variants.high;
     return variants.mid;
   }
 
   function getQuestionMatrixLevel(supportLevel) {
     const level = normalizeSupportLevel(supportLevel);
-    if (level === 85) return "Foundational";
-    if (level === 15) return "Transfer";
+    if (level >= 25) return "Foundational";
+    if (level <= 10) return "Transfer";
     return "Reasoning";
   }
 
@@ -348,6 +392,39 @@ window.InquiryAIProvider = (() => {
     return "How does";
   }
 
+  function safetyRedirect(message, supportLevel, tag, customInstructions) {
+    const directAnswerRequest = /\b(answer|tell me|do it for me|write it for me|complete it|solve it|write my essay|write an essay|do my assignment)\b/i.test(message);
+    if (!directAnswerRequest) return "";
+    return bySupportLevel(supportLevel, {
+      low: `${coachFrameFor(customInstructions)} I will not give the answer. What evidence from the lesson could you use first?`,
+      mid: `${coachFrameFor(customInstructions)} I will not complete the assignment for you. Try this starter: One piece of evidence is ___. How does that evidence connect to your claim?`,
+      high: `${coachFrameFor(customInstructions)} I will not write the answer. Evidence means information from the lesson. Start with: The lesson says ___, so I think ___. What resource can you use?`,
+    });
+  }
+
+  function coachFrameFor(customInstructions = "") {
+    const text = String(customInstructions).toLowerCase();
+    if (text.includes("historical")) return "Think like a historical investigator.";
+    if (text.includes("engineering") || text.includes("design")) return "Think like an engineering design mentor.";
+    if (text.includes("socratic")) return "Use Socratic questioning.";
+    if (text.includes("science")) return "Think like a science inquiry coach.";
+    return "Think like an inquiry coach.";
+  }
+
+  function reflectionScores(message = "", scaffold = "", tag = "Needs Evidence") {
+    const text = `${message} ${scaffold}`.toLowerCase();
+    const hasQuestion = /\?|\b(what|how|why|which|when|where)\b/.test(scaffold.toLowerCase());
+    const hasEvidence = /\b(evidence|data|lesson|shows|because|source|observation)\b/.test(text);
+    const hasReasoning = /\b(because|cause|effect|therefore|connect|trade-off|so)\b/.test(text);
+    const hasReflection = /\b(thinking|changed|wonder|notice|reflect|next)\b/.test(text) || String(message).length > 35;
+    return {
+      questioning: hasQuestion ? 82 : 48,
+      evidence: hasEvidence ? 78 : tag === "Needs Evidence" ? 38 : 56,
+      reasoning: hasReasoning ? 76 : tag === "Weak Reasoning" ? 34 : 52,
+      reflection: hasReflection ? 72 : 45,
+    };
+  }
+
   function response({ scaffold, supportLevel, tag, status, ruleAction, questionStem, creditsUsed }) {
     const questionMatrixLevel = getQuestionMatrixLevel(supportLevel);
     const selectedStem = questionStem || getQuestionStem({ supportLevel, misconceptionTag: tag });
@@ -361,6 +438,7 @@ window.InquiryAIProvider = (() => {
       misconceptionTag: tag,
       progressStatus: status,
       flags: [tag],
+      scores: reflectionScores("", scaffold, tag),
       ruleAction,
       mode: ruleAction === "scripted-inquiry-scaffold" ? "scripted-demo" : "demo",
       creditsUsed,
@@ -370,6 +448,8 @@ window.InquiryAIProvider = (() => {
   return {
     DemoAIProvider,
     OpenAIReadyProvider,
+    AnthropicReadyProvider,
+    GeminiReadyProvider,
     createAIProvider,
     detectMisconception,
     getQuestionMatrixLevel,

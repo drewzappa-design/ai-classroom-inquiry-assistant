@@ -54,6 +54,8 @@ function normalizeState(next) {
   next.lessonLaunches = next.lessonLaunches || [];
   next.lessonBuilderMode = next.lessonBuilderMode || "list";
   next.selectedLessonStepId = next.selectedLessonStepId || null;
+  next.aiSettings = { provider: "demo", customInstructions: "Science inquiry coach", ...(next.aiSettings || {}) };
+  next.aiPromptLog = next.aiPromptLog || [];
   next.resourceList = next.resourceList || next.resources || structuredClone(defaultState.resourceList || defaultState.resources);
   const savedResourceIds = new Set(next.resourceList.map((resource) => resource.id));
   [...(defaultState.resourceList || defaultState.resources || []), ...viewerDemoResources, ...classroomDemoResources].forEach((resource) => {
@@ -285,6 +287,8 @@ function createLessonTemplate(overrides = {}) {
     resources: overrides.resources || [],
     aiGuidance: {
       supportLevel: overrides.aiSupportLevel ?? 15,
+      provider: overrides.provider || "demo",
+      customInstructions: overrides.customInstructions || "Science inquiry coach",
       directAnswerPolicy: "No direct answers",
       hintStyle: "Question-first scaffolding",
     },
@@ -447,9 +451,26 @@ const resourceProvider = window.ResourceProviders.createResourceProvider(provide
     render();
   },
 });
-const aiProvider = window.InquiryAIProvider?.createAIProvider("demo", {
-  lessonTitle: defaultState.lessonSetup.lessonTitle,
-});
+const aiProvider = {
+  scaffold(input) {
+    return currentAIProvider(input?.lessonSetup).scaffold(input);
+  },
+};
+function currentAIProvider(lessonSetup = state?.lessonSetup || defaultState.lessonSetup) {
+  const lesson = launchedLesson?.();
+  const provider = lesson?.aiGuidance?.provider || state?.aiSettings?.provider || "demo";
+  const customInstructions = lesson?.aiGuidance?.customInstructions || state?.aiSettings?.customInstructions || "Science inquiry coach";
+  return window.InquiryAIProvider?.createAIProvider(provider, {
+    lessonTitle: lessonSetup.lessonTitle || defaultState.lessonSetup.lessonTitle,
+    customInstructions,
+    openAIKey: runtimeConfig.OPENAI_API_KEY,
+    anthropicKey: runtimeConfig.ANTHROPIC_API_KEY,
+    geminiKey: runtimeConfig.GEMINI_API_KEY,
+    openAIEndpoint: runtimeConfig.OPENAI_ENDPOINT,
+    anthropicEndpoint: runtimeConfig.ANTHROPIC_ENDPOINT,
+    geminiEndpoint: runtimeConfig.GEMINI_ENDPOINT,
+  }) || window.InquiryAIProvider?.createAIProvider("demo", { lessonTitle: lessonSetup.lessonTitle });
+}
 const ResourceStorage = {
   async uploadFile(file, metadata = {}) {
     try {
@@ -1094,15 +1115,15 @@ function misconceptionTagBadge(tag) {
   return `<span class="ai-badge misconception ${aiBadgeClass(label, "misconception")}">${esc(label)}</span>`;
 }
 function questionMatrixLevelForSupport(level) {
-  const supportLevel = Number(level || 50);
-  if (supportLevel >= 75) return "Foundational";
-  if (supportLevel <= 20) return "Transfer";
+  const supportLevel = Number(level || 15);
+  if (supportLevel >= 25) return "Foundational";
+  if (supportLevel <= 10) return "Transfer";
   return "Reasoning";
 }
 function questionStemForSupport(level) {
-  const supportLevel = Number(level || 50);
-  if (supportLevel >= 75) return "What did";
-  if (supportLevel <= 20) return "How might";
+  const supportLevel = Number(level || 15);
+  if (supportLevel >= 25) return "What did";
+  if (supportLevel <= 10) return "How might";
   return "How can";
 }
 function questionMatrixBadge(level) {
@@ -1139,7 +1160,14 @@ function aiDashboardPanel() {
         </div>
         <div class="role-actions" style="margin-top:12px"><button class="btn secondary" onclick="openStudentProfile('${s.id}')">Open Profile</button><button class="btn secondary" onclick="previewScaffoldForStudent('${s.id}')">Demo "Palm oil is bad."</button></div>
       </article>`;
-    }).join("")}</div>`;
+    }).join("")}${aiPromptLogCard()}</div>`;
+}
+function aiPromptLogCard() {
+  const logs = state.aiPromptLog || [];
+  return `<article class="panel-card">
+    <div class="card-action-head"><h3>Prompt Logging</h3><span class="pill">${logs.length} local log${logs.length === 1 ? "" : "s"}</span></div>
+    ${logs.length ? logs.slice(0, 6).map((log) => `<div class="timeline-item"><strong>${esc(log.studentName)} · ${esc(log.timestamp)}</strong><p><strong>Student:</strong> ${esc(log.studentResponse)}</p><p><strong>AI:</strong> ${esc(log.aiResponse)}</p><span class="ai-badge-row">${supportLevelBadge(log.supportLevel)}${misconceptionTagBadge(log.misconceptionTag)}${progressStatusBadge(log.progressStatus)}<span class="ai-badge stem">${esc(log.provider)}</span></span></div>`).join("") : `<div class="empty">No AI prompts logged yet. Use student mode or a dashboard demo button to generate a local log.</div>`}
+  </article>`;
 }
 function aiDashboardStudents() {
   const demoIds = ["s4", "s1", "s3"];
@@ -1153,8 +1181,17 @@ function dashboardAIItem(student) {
 }
 function generateDemoScaffoldForStudent(student, prompt = "Palm oil is bad.") {
   const activity = activities.find((item) => item.id === "define") || activities[0];
+  const lesson = launchedLesson();
+  const lessonSetup = {
+    ...state.lessonSetup,
+    lessonTitle: lesson?.title || state.lessonSetup.lessonTitle,
+    aiSupportLevel: lesson?.aiGuidance?.supportLevel ?? student.aiSupportLevel ?? 15,
+    aiProvider: lesson?.aiGuidance?.provider || state.lessonSetup.aiProvider || "demo",
+    aiCustomInstructions: lesson?.aiGuidance?.customInstructions || state.lessonSetup.aiCustomInstructions || state.aiSettings.customInstructions,
+  };
+  const aiStudent = { ...student, aiSupportLevel: lessonSetup.aiSupportLevel };
   const result = aiProvider?.scaffold
-    ? aiProvider.scaffold({ message: prompt, activity, student, lessonSetup: state.lessonSetup, existingPromptCount: 0 })
+    ? aiProvider.scaffold({ message: prompt, activity, student: aiStudent, lessonSetup, existingPromptCount: 0 })
     : { finalResponse: "What evidence from the lesson supports that idea?", misconceptionTag: "Needs Evidence", progressStatus: "Developing explanation", supportLevel: student.aiSupportLevel || 50 };
   return {
     response: prompt,
@@ -1164,6 +1201,7 @@ function generateDemoScaffoldForStudent(student, prompt = "Palm oil is bad.") {
     supportLevel: result.supportLevel || student.aiSupportLevel || 50,
     questionMatrixLevel: result.questionMatrixLevel || questionMatrixLevelForSupport(result.supportLevel || student.aiSupportLevel || 50),
     questionStem: result.questionStem || questionStemForSupport(result.supportLevel || student.aiSupportLevel || 50),
+    scores: result.scores || {},
   };
 }
 function sampleAIInteraction(student) {
@@ -1173,12 +1211,29 @@ function previewScaffoldForStudent(studentId) {
   const s = state.students.find((student) => student.id === studentId);
   if (!s) return;
   const item = generateDemoScaffoldForStudent(s, "Palm oil is bad.");
+  const timestamp = new Date().toLocaleString();
   s.latestAIInteraction = {
     ...item,
     activityId: "define",
     activityTitle: "Define the problem",
-    createdAt: new Date().toLocaleTimeString(),
+    createdAt: timestamp,
   };
+  state.aiPromptLog = state.aiPromptLog || [];
+  state.aiPromptLog.unshift({
+    id: `log-${Date.now()}-${s.id}`,
+    studentId: s.id,
+    studentName: s.name,
+    lessonId: launchedLesson()?.id || "",
+    lessonTitle: launchedLesson()?.title || state.lessonSetup.lessonTitle,
+    provider: providerLabelFor(launchedLesson()?.aiGuidance?.provider || "demo"),
+    supportLevel: item.supportLevel,
+    studentResponse: item.response,
+    aiResponse: item.scaffold,
+    misconceptionTag: item.misconceptionTag,
+    progressStatus: item.progressStatus,
+    scores: item.scores || {},
+    timestamp,
+  });
   state.aiDashboardUpdatedStudent = s.id;
   state.activePanel = "aiDashboard";
   render();
@@ -1614,9 +1669,11 @@ function lessonEditorCard(lesson) {
     ${lessonTextarea("Constraints", "constraints", lesson.constraints)}
     <div class="form-grid resource-form" style="margin-top:12px">
       <label><span class="subtle">AI Support Level</span><select onchange="updateInquiryLesson('${lesson.id}','aiSupportLevel',this.value)">${aiSupportOptions.map((level) => `<option value="${level}" ${Number(lesson.aiGuidance.supportLevel) === level ? "selected" : ""}>${level}% Support</option>`).join("")}</select></label>
-      <label><span class="subtle">Launch target</span><select onchange="updateInquiryLesson('${lesson.id}','launchTarget',this.value)">${["Entire Class","Advanced","Typical","Struggling"].map((target) => `<option ${target === (lesson.launchTarget || "Entire Class") ? "selected" : ""}>${target}</option>`).join("")}</select></label>
+      <label><span class="subtle">AI Provider</span><select onchange="updateInquiryLesson('${lesson.id}','aiProvider',this.value)">${[["demo","Local Demo Provider"],["openai","OpenAI"],["anthropic","Anthropic"],["gemini","Google Gemini"]].map(([value,label]) => `<option value="${value}" ${value === (lesson.aiGuidance.provider || "demo") ? "selected" : ""}>${label}</option>`).join("")}</select></label>
     </div>
+    <label class="lesson-builder-field"><span class="subtle">How should the AI behave?</span><textarea onchange="updateInquiryLesson('${lesson.id}','aiCustomInstructions',this.value)" placeholder="Socratic questioning, science inquiry coach, historical investigator, engineering design mentor...">${esc(lesson.aiGuidance.customInstructions || "")}</textarea></label>
     <div class="form-grid resource-form" style="margin-top:12px">
+      <label><span class="subtle">Launch target</span><select onchange="updateInquiryLesson('${lesson.id}','launchTarget',this.value)">${["Entire Class","Advanced","Typical","Struggling"].map((target) => `<option ${target === (lesson.launchTarget || "Entire Class") ? "selected" : ""}>${target}</option>`).join("")}</select></label>
       <label><span class="subtle">Resources</span><select onchange="attachResourceToLesson('${lesson.id}',this.value)"><option value="">Attach resource...</option>${state.resourceList.map((resource) => `<option value="${esc(resource.id)}">${esc(resource.title)}</option>`).join("")}</select></label>
     </div>
     <div class="badge-row" style="margin-top:10px">${lesson.resources.length ? lesson.resources.map((id) => {
@@ -1629,8 +1686,12 @@ function lessonPreviewCard(lesson) {
   return `<article class="card card-pad">
     <div class="card-action-head"><h3 class="section-title">Student Preview</h3><span class="pill">${esc(lesson.aiGuidance.supportLevel)}% AI Support</span></div>
     <p class="recommendation">${esc(lesson.essentialQuestion)}</p>
+    <p class="subtle">Provider: ${esc(providerLabelFor(lesson.aiGuidance.provider))} · ${esc(lesson.aiGuidance.customInstructions || "Inquiry coach")}</p>
     <div class="timeline">${lesson.steps.map((step, index) => `<div class="timeline-item"><strong>Step ${index + 1}: ${esc(step.title)}</strong><p>${esc(step.prompt)}</p><span class="quality">${esc(step.type)} · ${esc(step.minutes)} min</span></div>`).join("")}</div>
   </article>`;
+}
+function providerLabelFor(provider = "demo") {
+  return { demo: "Local Demo Provider", openai: "OpenAI", anthropic: "Anthropic", gemini: "Google Gemini" }[provider] || "Local Demo Provider";
 }
 function lessonInput(label, key, value) {
   const lesson = currentLesson();
@@ -1731,6 +1792,9 @@ function launchInquiryLesson(lessonId) {
   state.lessonSetup.subject = lesson.subject;
   state.lessonSetup.gradeLevel = lesson.gradeLevel;
   state.lessonSetup.standard = lesson.standards;
+  state.lessonSetup.aiSupportLevel = lesson.aiGuidance.supportLevel;
+  state.lessonSetup.aiProvider = lesson.aiGuidance.provider || "demo";
+  state.lessonSetup.aiCustomInstructions = lesson.aiGuidance.customInstructions || "Science inquiry coach";
   state.studentActivityIndex = 0;
   assignLessonResourcesToTarget(lesson);
   save();
@@ -1758,6 +1822,8 @@ function updateInquiryLesson(lessonId, key, value) {
   const lesson = state.customLessons.find((item) => item.id === lessonId);
   if (!lesson) return;
   if (key === "aiSupportLevel") lesson.aiGuidance.supportLevel = Number(value);
+  else if (key === "aiProvider") lesson.aiGuidance.provider = value;
+  else if (key === "aiCustomInstructions") lesson.aiGuidance.customInstructions = value;
   else lesson[key] = value;
   lesson.updatedAt = today();
   save();
@@ -2493,7 +2559,9 @@ function studentLesson() {
 }
 function aiPanel(a, s) {
   const chats = state.chats[s.id] || [];
-  return `<aside class="card ai-card"><div class="ai-head"><strong>Scaffolding Engine</strong><span>${esc(s.learnerDemoType || "Learner")} · ${Number(s.aiSupportLevel || 50)}% support · no direct answers</span></div><div class="chat">${chats.map(m => `<div class="bubble ${m.role === "user" ? "user" : ""}">${esc(m.text)}${m.meta ? `<br/><small>${esc(m.meta)}</small>` : ""}</div>`).join("")}</div><form class="chat-form" onsubmit="sendChat(event,'${a.id}')"><input id="chat-input" type="text" placeholder="Ask for a hint..."/><button class="icon-btn" title="Send message">${icons.arrow}</button></form></aside>`;
+  const lesson = launchedLesson();
+  const supportLevel = lesson?.aiGuidance?.supportLevel ?? state.lessonSetup.aiSupportLevel ?? s.aiSupportLevel ?? 15;
+  return `<aside class="card ai-card"><div class="ai-head"><strong>Scaffolding Engine</strong><span>${esc(providerLabelFor(lesson?.aiGuidance?.provider || "demo"))} · ${Number(supportLevel)}% support · no direct answers</span></div><div class="chat">${chats.map(m => `<div class="bubble ${m.role === "user" ? "user" : ""}">${esc(m.text)}${m.meta ? `<br/><small>${esc(m.meta)}</small>` : ""}</div>`).join("")}</div><form class="chat-form" onsubmit="sendChat(event,'${a.id}')"><input id="chat-input" type="text" placeholder="Ask for a hint..."/><button class="icon-btn" title="Send message">${icons.arrow}</button></form></aside>`;
 }
 function sendChat(event, activityId) {
   event.preventDefault();
@@ -2504,13 +2572,23 @@ function sendChat(event, activityId) {
   chats.push({ role: "user", text });
   const activity = activities.find((item) => item.id === activityId) || activities[0];
   const existingPromptCount = chats.filter((msg) => msg.role === "user").length;
+  const lesson = launchedLesson();
+  const lessonSetup = {
+    ...state.lessonSetup,
+    lessonTitle: lesson?.title || state.lessonSetup.lessonTitle,
+    aiSupportLevel: lesson?.aiGuidance?.supportLevel ?? state.lessonSetup.aiSupportLevel,
+    aiProvider: lesson?.aiGuidance?.provider || state.lessonSetup.aiProvider || "demo",
+    aiCustomInstructions: lesson?.aiGuidance?.customInstructions || state.lessonSetup.aiCustomInstructions || state.aiSettings.customInstructions,
+  };
+  const aiStudent = { ...s, aiSupportLevel: lessonSetup.aiSupportLevel ?? s.aiSupportLevel };
   const result = aiProvider?.scaffold
-    ? aiProvider.scaffold({ message: text, activity, student: s, lessonSetup: state.lessonSetup, existingPromptCount })
+    ? aiProvider.scaffold({ message: text, activity, student: aiStudent, lessonSetup, existingPromptCount })
     : window.AIScaffoldingEngine.run({ message: text, activity, student: s, lessonSetup: state.lessonSetup, existingPromptCount });
   const tagText = result.misconceptionTag || result.flags?.[0] || result.ruleAction;
   const matrixLevel = result.questionMatrixLevel || questionMatrixLevelForSupport(result.supportLevel || s.aiSupportLevel || 50);
   const stem = result.questionStem || questionStemForSupport(result.supportLevel || s.aiSupportLevel || 50);
   chats.push({ role: "assistant", text: result.finalResponse, meta: `${result.supportLevel || s.aiSupportLevel || 50}% support · ${matrixLevel} Questions · Stem: ${stem} · ${tagText}` });
+  const timestamp = new Date().toLocaleString();
   s.latestAIInteraction = {
     activityId,
     activityTitle: activity.title,
@@ -2521,8 +2599,37 @@ function sendChat(event, activityId) {
     supportLevel: result.supportLevel || s.aiSupportLevel || 50,
     questionMatrixLevel: matrixLevel,
     questionStem: stem,
-    createdAt: new Date().toLocaleTimeString(),
+    scores: result.scores || {},
+    provider: result.providerFallback || providerLabelFor(lessonSetup.aiProvider),
+    createdAt: timestamp,
   };
+  s.inquiryHistory = s.inquiryHistory || [];
+  s.inquiryHistory.unshift({
+    id: `iq-${Date.now()}-${s.id}`,
+    originalQuestion: activity.prompt || lessonSetup.lessonTitle,
+    studentResponse: text,
+    aiFollowUp: result.finalResponse,
+    revisedResponse: "",
+    timestamp,
+  });
+  s.aiHistory = s.aiHistory || [];
+  s.aiHistory.unshift({ date: today(), type: "Inquiry coach", summary: `${text} → ${result.finalResponse}` });
+  state.aiPromptLog = state.aiPromptLog || [];
+  state.aiPromptLog.unshift({
+    id: `log-${Date.now()}-${s.id}`,
+    studentId: s.id,
+    studentName: s.name,
+    lessonId: lesson?.id || "",
+    lessonTitle: lesson?.title || state.lessonSetup.lessonTitle,
+    provider: result.providerFallback || providerLabelFor(lessonSetup.aiProvider),
+    supportLevel: result.supportLevel || lessonSetup.aiSupportLevel || s.aiSupportLevel || 15,
+    studentResponse: text,
+    aiResponse: result.finalResponse,
+    misconceptionTag: result.misconceptionTag || "Needs Evidence",
+    progressStatus: result.progressStatus || "Developing",
+    scores: result.scores || {},
+    timestamp,
+  });
   s.used = Number(s.used || 0) + result.creditsUsed;
   (result.flags || []).forEach((type) => state.misconceptionLog.push({ id: `m${Date.now()}-${Math.random()}`, studentId: s.id, type, activityId, createdAt: new Date().toLocaleTimeString() }));
   save(); render();
