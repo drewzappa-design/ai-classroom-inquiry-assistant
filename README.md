@@ -6,6 +6,8 @@ EduMemory is a Sui Overflow hackathon branch of the AI Classroom Inquiry Assista
 
 **Track:** Agentic Web, Walrus-aligned concept
 
+**Hackathon proof-of-concept:** This demo uses mock Sui and Walrus records. It is designed to demonstrate the product workflow, user experience, and real-world impact before production blockchain transactions or Walrus uploads are added.
+
 ## Hackathon Demo
 
 Run a local server, then open:
@@ -52,11 +54,11 @@ The key message:
 
 ## Why Sui
 
-Sui represents student ownership, verifiable credentials, and portable achievement records. In the hackathon demo, the Sui credential is mocked as a testnet-style learning credential so judges can understand the product workflow without requiring production blockchain infrastructure.
+Sui represents student ownership, verifiable credentials, and portable achievement records. In this hackathon proof-of-concept, the Sui credential is a mock testnet-style learning credential so judges can understand the workflow without requiring production blockchain infrastructure.
 
 ## Why Walrus
 
-Walrus represents long-term learning memory: reflections, design notebooks, prototype images, teacher feedback, and AI growth analysis. In the demo, Walrus is mocked as a durable evidence layer aligned with lifelong student ownership.
+Walrus represents long-term learning memory: reflections, design notebooks, prototype images, teacher feedback, and AI growth analysis. In this hackathon proof-of-concept, Walrus is represented by a mock durable evidence record aligned with lifelong student ownership.
 
 ## Demo Flow
 
