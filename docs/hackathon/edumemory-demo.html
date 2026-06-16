@@ -1,0 +1,685 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>EduMemory Demo Mode</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #1f2933;
+      --muted: #62707f;
+      --line: #d8e0e7;
+      --paper: #f6f8fa;
+      --panel: #ffffff;
+      --teal: #137c72;
+      --teal-soft: #dff3ef;
+      --gold: #b7791f;
+      --gold-soft: #fff2cf;
+      --blue: #2f6db3;
+      --blue-soft: #e3efff;
+      --rose: #b5475b;
+      --shadow: 0 18px 45px rgba(31, 41, 51, 0.09);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--paper);
+      color: var(--ink);
+    }
+
+    button {
+      font: inherit;
+    }
+
+    .shell {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 280px minmax(0, 1fr);
+    }
+
+    .sidebar {
+      background: #10232d;
+      color: #eef7f7;
+      padding: 24px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 22px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .mark {
+      width: 42px;
+      height: 42px;
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      background: var(--teal);
+      color: #fff;
+      font-weight: 800;
+    }
+
+    .brand strong {
+      display: block;
+      font-size: 18px;
+      letter-spacing: 0;
+    }
+
+    .brand span,
+    .small {
+      color: #b8c8ce;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .demo-button {
+      width: 100%;
+      border: 0;
+      border-radius: 8px;
+      padding: 12px 14px;
+      background: #f7c948;
+      color: #182026;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 10px 24px rgba(247, 201, 72, 0.22);
+    }
+
+    .nav {
+      display: grid;
+      gap: 8px;
+    }
+
+    .nav button {
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(255, 255, 255, 0.06);
+      color: #eef7f7;
+      border-radius: 8px;
+      padding: 11px 12px;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .nav button.active {
+      background: #eef7f7;
+      color: #10232d;
+      border-color: #eef7f7;
+      font-weight: 750;
+    }
+
+    .main {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .topbar {
+      background: rgba(255, 255, 255, 0.86);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--line);
+      padding: 16px 28px;
+      display: flex;
+      justify-content: space-between;
+      gap: 18px;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 3;
+    }
+
+    .topbar h1 {
+      margin: 0;
+      font-size: 22px;
+      letter-spacing: 0;
+    }
+
+    .status-pill {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 8px 12px;
+      background: #fff;
+      color: var(--muted);
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    .content {
+      padding: 28px;
+      display: grid;
+      gap: 22px;
+    }
+
+    .band {
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr);
+      gap: 20px;
+      align-items: stretch;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      padding: 20px;
+      min-width: 0;
+    }
+
+    .profile {
+      display: grid;
+      grid-template-columns: 96px minmax(0, 1fr);
+      gap: 18px;
+      align-items: center;
+    }
+
+    .portrait {
+      width: 96px;
+      height: 96px;
+      border-radius: 8px;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 52% 34%, #805740 0 14%, transparent 15%),
+        linear-gradient(150deg, #dfeefa 0 34%, #f9d5b8 35% 62%, #2f6db3 63% 100%);
+      border: 1px solid var(--line);
+    }
+
+    h2,
+    h3 {
+      margin: 0 0 10px;
+      letter-spacing: 0;
+    }
+
+    h2 {
+      font-size: 24px;
+    }
+
+    h3 {
+      font-size: 16px;
+    }
+
+    p {
+      margin: 0;
+      line-height: 1.55;
+    }
+
+    .muted {
+      color: var(--muted);
+    }
+
+    .tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .tag {
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 12px;
+      background: var(--teal-soft);
+      color: #0d5e56;
+      font-weight: 700;
+    }
+
+    .tag.gold {
+      background: var(--gold-soft);
+      color: #8a580f;
+    }
+
+    .tag.blue {
+      background: var(--blue-soft);
+      color: #24558d;
+    }
+
+    .reflection {
+      background: #f9fbfc;
+      border-left: 4px solid var(--teal);
+      padding: 14px;
+      border-radius: 6px;
+      color: #33424f;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .primary,
+    .secondary {
+      border-radius: 8px;
+      padding: 10px 12px;
+      cursor: pointer;
+      border: 1px solid transparent;
+      font-weight: 760;
+    }
+
+    .primary {
+      background: var(--teal);
+      color: #fff;
+    }
+
+    .secondary {
+      background: #fff;
+      color: var(--ink);
+      border-color: var(--line);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .metric,
+    .item {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 14px;
+      background: #fff;
+      min-width: 0;
+    }
+
+    .metric strong {
+      display: block;
+      font-size: 24px;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .artifact {
+      min-height: 170px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+      background: #fff;
+    }
+
+    .artifact-visual {
+      height: 112px;
+      background:
+        linear-gradient(90deg, transparent 0 16%, rgba(255,255,255,.7) 17% 19%, transparent 20% 44%, rgba(255,255,255,.65) 45% 47%, transparent 48%),
+        linear-gradient(0deg, #9fc7c1 0 22%, #f7c948 23% 31%, #d8e0e7 32% 100%);
+      position: relative;
+    }
+
+    .artifact-visual::before,
+    .artifact-visual::after {
+      content: "";
+      position: absolute;
+      bottom: 30px;
+      width: 44px;
+      height: 64px;
+      border: 6px solid #10232d;
+      border-top: 0;
+      transform: skewX(-10deg);
+    }
+
+    .artifact-visual::before {
+      left: 54px;
+    }
+
+    .artifact-visual::after {
+      right: 54px;
+      transform: skewX(10deg);
+    }
+
+    .artifact figcaption {
+      padding: 12px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .timeline {
+      display: grid;
+      gap: 12px;
+    }
+
+    .timeline .item {
+      display: grid;
+      grid-template-columns: 92px minmax(0, 1fr);
+      gap: 12px;
+      align-items: start;
+    }
+
+    .date {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .credential {
+      border-color: #cae6dc;
+      background: #f5fcf9;
+    }
+
+    .credential.approved {
+      border-color: #94d3b6;
+      background: #e9f8f0;
+    }
+
+    .match {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 86px;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .score {
+      width: 68px;
+      height: 68px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      border: 7px solid var(--blue);
+      color: var(--blue);
+      font-weight: 850;
+      justify-self: end;
+    }
+
+    .view {
+      display: none;
+    }
+
+    .view.active {
+      display: grid;
+      gap: 22px;
+    }
+
+    @media (max-width: 900px) {
+      .shell {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        position: static;
+      }
+
+      .band,
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      .topbar {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .content {
+        padding: 18px;
+      }
+    }
+
+    @media (max-width: 520px) {
+      .profile,
+      .timeline .item,
+      .match {
+        grid-template-columns: 1fr;
+      }
+
+      .score {
+        justify-self: start;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="mark">EM</div>
+        <div>
+          <strong>EduMemory</strong>
+          <span>AI-powered learning passport</span>
+        </div>
+      </div>
+
+      <button class="demo-button" data-view="student">EduMemory Demo</button>
+
+      <nav class="nav" aria-label="Demo views">
+        <button class="active" data-view="student">Student</button>
+        <button data-view="teacher">Teacher</button>
+        <button data-view="portfolio">Portfolio</button>
+        <button data-view="opportunities">Opportunities</button>
+      </nav>
+
+      <p class="small">Mock Sui and Walrus records are used for the Sui Overflow branch.</p>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div>
+          <h1 id="viewTitle">Student View</h1>
+          <p class="muted">Maya Rodriguez, 7th Grade Engineering Student</p>
+        </div>
+        <div class="status-pill" id="credentialStatus">Credential pending teacher approval</div>
+      </header>
+
+      <section class="content">
+        <div class="view active" id="student">
+          <div class="band">
+            <section class="panel profile">
+              <div class="portrait" role="img" aria-label="Abstract portrait of Maya Rodriguez"></div>
+              <div>
+                <h2>Maya Rodriguez</h2>
+                <p class="muted">7th Grade Engineering Student</p>
+                <div class="tags">
+                  <span class="tag">Engineering Design</span>
+                  <span class="tag blue">Robotics</span>
+                  <span class="tag gold">TSA Prep</span>
+                </div>
+              </div>
+            </section>
+
+            <figure class="artifact">
+              <div class="artifact-visual" role="img" aria-label="Engineering tower prototype sketch"></div>
+              <figcaption>Wind-resistant tower prototype, version 2</figcaption>
+            </figure>
+          </div>
+
+          <section class="panel">
+            <h3>Engineering Reflection</h3>
+            <p class="reflection">My first tower was tall but it bent when the fan turned on. I changed the base to a triangle, shortened the top section, and used cross braces. The second version held more weight because I thought about wind and material limits before rebuilding.</p>
+            <div class="actions">
+              <button class="primary" id="analyzeBtn">Analyze Growth</button>
+              <button class="secondary" id="memoryBtn">Create Learning Memory</button>
+            </div>
+          </section>
+
+          <section class="panel hidden" id="analysisPanel">
+            <h3>AI Growth Analysis</h3>
+            <p>Maya shows growth in engineering design. She identified constraints, tested a prototype, diagnosed failure, and improved the structure through iteration. Recommended evidence summary: <strong>Engineering Design Level 1</strong>.</p>
+            <div class="grid" style="margin-top: 14px;">
+              <div class="metric"><strong>4</strong><span class="muted">Evidence signals</span></div>
+              <div class="metric"><strong>Strong</strong><span class="muted">Recommendation</span></div>
+              <div class="metric"><strong>Level 1</strong><span class="muted">Credential target</span></div>
+            </div>
+          </section>
+
+          <section class="panel hidden" id="memoryPanel">
+            <h3>Learning Memory Created</h3>
+            <p>Mock Walrus evidence record: <strong>walrus://maya-rodriguez/engineering-tower-v2</strong></p>
+            <div class="tags">
+              <span class="tag">constraints</span>
+              <span class="tag">iteration</span>
+              <span class="tag">prototype testing</span>
+              <span class="tag">reflection</span>
+            </div>
+          </section>
+        </div>
+
+        <div class="view" id="teacher">
+          <section class="panel">
+            <h2>Pending Achievement Approval</h2>
+            <p class="muted">Engineering Design Level 1 for Maya Rodriguez</p>
+            <div class="grid" style="margin-top: 16px;">
+              <div class="metric"><strong>Strong</strong><span class="muted">Evidence quality</span></div>
+              <div class="metric"><strong>4</strong><span class="muted">Skill signals</span></div>
+              <div class="metric"><strong>1</strong><span class="muted">Credential pending</span></div>
+            </div>
+            <div class="actions">
+              <button class="secondary" id="reviewBtn">Review Evidence</button>
+              <button class="primary" id="approveBtn">Approve Engineering Design Level 1</button>
+            </div>
+          </section>
+
+          <section class="panel hidden" id="evidencePanel">
+            <h3>Evidence Review</h3>
+            <div class="timeline">
+              <div class="item">
+                <div class="date">Reflection</div>
+                <p>Maya explains how her design failed, names the wind and material constraints, and describes specific structural changes.</p>
+              </div>
+              <div class="item">
+                <div class="date">Analysis</div>
+                <p>The AI identifies improved use of iteration, constraint reasoning, and prototype testing.</p>
+              </div>
+              <div class="item">
+                <div class="date">Artifact</div>
+                <p>Engineering notebook image and tower version notes stored as mock Walrus learning evidence.</p>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel credential" id="credentialPanel">
+            <h3>Mock Sui Credential</h3>
+            <p id="credentialText">Waiting for teacher approval.</p>
+          </section>
+        </div>
+
+        <div class="view" id="portfolio">
+          <section class="panel">
+            <h2>Maya's Portfolio</h2>
+            <p class="muted">Verified achievements, STEM artifacts, and evidence history</p>
+          </section>
+
+          <div class="grid">
+            <article class="item credential" id="portfolioCredential">
+              <h3>Engineering Design Level 1</h3>
+              <p class="muted" id="portfolioCredentialText">Pending teacher verification</p>
+            </article>
+            <article class="item">
+              <h3>Robotics Examples</h3>
+              <p>Drive train prototype notes, team debugging reflection, and sensor calibration checklist.</p>
+            </article>
+            <article class="item">
+              <h3>TSA Examples</h3>
+              <p>Prepared design brief, competition planning artifact, and presentation practice feedback.</p>
+            </article>
+          </div>
+
+          <section class="panel">
+            <h3>Evidence History</h3>
+            <div class="timeline">
+              <div class="item">
+                <div class="date">May 2026</div>
+                <p>Wind-resistant tower challenge reflection and prototype evidence.</p>
+              </div>
+              <div class="item">
+                <div class="date">Apr 2026</div>
+                <p>Robotics sensor troubleshooting reflection.</p>
+              </div>
+              <div class="item">
+                <div class="date">Mar 2026</div>
+                <p>TSA engineering design notebook checkpoint.</p>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <div class="view" id="opportunities">
+          <section class="panel">
+            <h2>Opportunity Matching</h2>
+            <p class="muted">Matches generated from Maya's verified and emerging STEM evidence</p>
+          </section>
+
+          <section class="panel match">
+            <div>
+              <h3>NASA STEM Fellowship</h3>
+              <p>Strong fit for engineering reflection, prototype testing, and sustained STEM interest.</p>
+            </div>
+            <div class="score">92%</div>
+          </section>
+
+          <section class="panel match">
+            <div>
+              <h3>Engineering Summer Academy</h3>
+              <p>Good fit for design challenge experience and readiness for structured engineering coursework.</p>
+            </div>
+            <div class="score">87%</div>
+          </section>
+
+          <section class="panel match">
+            <div>
+              <h3>Robotics Leadership Scholarship</h3>
+              <p>Excellent fit for robotics evidence, reflection quality, and team-based problem solving.</p>
+            </div>
+            <div class="score">95%</div>
+          </section>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const titles = {
+      student: "Student View",
+      teacher: "Teacher View",
+      portfolio: "Portfolio View",
+      opportunities: "Opportunity Matching View"
+    };
+
+    const navButtons = document.querySelectorAll("[data-view]");
+    const views = document.querySelectorAll(".view");
+    const title = document.getElementById("viewTitle");
+    const status = document.getElementById("credentialStatus");
+    let approved = false;
+
+    function showView(viewName) {
+      views.forEach((view) => view.classList.toggle("active", view.id === viewName));
+      navButtons.forEach((button) => button.classList.toggle("active", button.dataset.view === viewName));
+      title.textContent = titles[viewName];
+    }
+
+    navButtons.forEach((button) => {
+      button.addEventListener("click", () => showView(button.dataset.view));
+    });
+
+    document.getElementById("analyzeBtn").addEventListener("click", () => {
+      document.getElementById("analysisPanel").classList.remove("hidden");
+    });
+
+    document.getElementById("memoryBtn").addEventListener("click", () => {
+      document.getElementById("analysisPanel").classList.remove("hidden");
+      document.getElementById("memoryPanel").classList.remove("hidden");
+      status.textContent = approved ? "Credential approved and added to portfolio" : "Learning memory created; teacher approval pending";
+    });
+
+    document.getElementById("reviewBtn").addEventListener("click", () => {
+      document.getElementById("evidencePanel").classList.remove("hidden");
+    });
+
+    document.getElementById("approveBtn").addEventListener("click", () => {
+      approved = true;
+      status.textContent = "Credential approved and added to portfolio";
+      document.getElementById("credentialPanel").classList.add("approved");
+      document.getElementById("credentialText").innerHTML = "Approved credential: <strong>sui://credential/engineering-design-level-1/maya-rodriguez</strong><br>Evidence hash: <strong>0xEDU-MAYA-TOWER-V2</strong>";
+      document.getElementById("portfolioCredential").classList.add("approved");
+      document.getElementById("portfolioCredentialText").textContent = "Verified by Ms. Chen; mock Sui credential created";
+    });
+  </script>
+</body>
+</html>

@@ -23,7 +23,7 @@ const classroomDemoResources = [
 
 let state = loadState();
 const queryRole = new URLSearchParams(location.search).get("role");
-if (queryRole === "teacher" || queryRole === "student") state.activeRole = queryRole;
+if (queryRole === "teacher" || queryRole === "student" || queryRole === "edumemory") state.activeRole = queryRole;
 state.dataProviderMode = providerMode;
 
 const icons = {
@@ -574,6 +574,7 @@ function rolePage() {
       <p>Choose a demo workspace. Everything is preloaded so you can explore the complete Lesson 6 flow.</p>
       <button class="role-card" onclick="setRole('teacher')"><span class="role-icon">${icons.users}</span><span><strong>Teacher workspace</strong><span class="subtle">Launch the lesson, review insights, and moderate questions</span></span></button>
       <button class="role-card" onclick="setRole('student')"><span class="role-icon">${icons.leaf}</span><span><strong>Student lesson</strong><span class="subtle">Join Ms. Rivera's class with code ECOSYS</span></span></button>
+      <button class="role-card edumemory-entry" onclick="setRole('edumemory')"><span class="role-icon">${icons.check}</span><span><strong>EduMemory Demo</strong><span class="subtle">Sui Overflow learning passport and opportunity network</span></span></button>
       <button class="btn ghost" onclick="requestRestartDemo()">Reset demo data</button>
     </section>
   </main>`;
@@ -591,6 +592,7 @@ function teacherNav() {
     ["resources", icons.folder, "Resources"],
   ];
   return `<aside class="sidebar"><p class="sidebar-label">Teacher workspace</p>${items.map(([id, icon, label]) => `<button class="nav-btn ${state.teacherTab === id ? "active" : ""}" onclick="teacherTab('${id}')">${icon}<span>${label}</span></button>`).join("")}
+    <button class="nav-btn edumemory-nav-entry" onclick="setRole('edumemory')">${icons.check}<span>EduMemory Demo</span></button>
     <div class="sidebar-note"><strong>Short, purposeful sessions</strong><br/>This lesson support tool is designed for focused 5-10 minute check-ins.</div></aside>`;
 }
 function teacherTab(tab) { state.teacherTab = tab; save(); render(); }
@@ -2680,8 +2682,135 @@ function studentResourceViewerPage() {
 }
 function studentTab(tab) { state.studentTab = tab; save(); render(); }
 
+const edumemoryDemo = {
+  student: {
+    name: "Maya Rodriguez",
+    initials: "MR",
+    grade: "7th Grade Engineering Student",
+    focus: "Engineering design, robotics, and TSA preparation",
+    reflection: "My first tower was tall but it bent when the fan turned on. I changed the base to a triangle, shortened the top section, and used cross braces. The second version held more weight because I thought about wind and material limits before rebuilding.",
+  },
+  analysis: "Maya shows growth in engineering design. She identified constraints, tested a prototype, diagnosed failure, and improved the structure through iteration. Recommended evidence summary: Engineering Design Level 1.",
+  walrusMemory: {
+    id: "walrus-memory-maya-tower-v2",
+    uri: "walrus://maya-rodriguez/engineering-tower-v2",
+    type: "learning_evidence_bundle",
+    owner: "Maya Rodriguez",
+    evidence: ["engineering reflection", "tower prototype notes", "iteration photo", "teacher rubric"],
+    skillTags: ["constraints", "iteration", "prototype testing", "reflection"],
+  },
+  suiCredential: {
+    id: "sui-credential-engineering-design-level-1",
+    uri: "sui://credential/engineering-design-level-1/maya-rodriguez",
+    achievement: "Engineering Design Level 1",
+    owner: "Maya Rodriguez",
+    issuer: "Ms. Chen",
+    status: "teacher_verified",
+    evidenceHash: "0xEDU-MAYA-TOWER-V2",
+  },
+  opportunities: [
+    ["NASA STEM Fellowship", 92, "Strong fit for engineering reflection, prototype testing, and sustained STEM interest."],
+    ["Engineering Summer Academy", 87, "Good fit for design challenge experience and readiness for structured engineering coursework."],
+    ["Robotics Leadership Scholarship", 95, "Excellent fit for robotics evidence, reflection quality, and team-based problem solving."],
+  ],
+};
+
+function edumemoryShell() {
+  return `<div class="app edumemory-app">${topbar("Sui Overflow 2026 · EduMemory")}
+    <div class="edumemory-layout">${edumemoryNav()}<main class="content">${edumemoryPage()}</main></div>
+  </div>`;
+}
+function edumemoryNav() {
+  const selected = state.edumemoryView || "student";
+  const items = [
+    ["student", icons.leaf, "Student"],
+    ["teacher", icons.users, "Teacher"],
+    ["portfolio", icons.folder, "Portfolio"],
+    ["opportunities", icons.chart, "Opportunities"],
+  ];
+  return `<aside class="sidebar edumemory-sidebar"><p class="sidebar-label">EduMemory Demo</p>${items.map(([id, icon, label]) => `<button class="nav-btn ${selected === id ? "active" : ""}" onclick="edumemoryTab('${id}')">${icon}<span>${label}</span></button>`).join("")}
+    <div class="sidebar-note"><strong>Mock-first Sui + Walrus</strong><br/>Credential ownership and long-term learning memory are represented with realistic demo records.</div></aside>`;
+}
+function edumemoryPage() {
+  const pages = {
+    student: edumemoryStudentPage,
+    teacher: edumemoryTeacherPage,
+    portfolio: edumemoryPortfolioPage,
+    opportunities: edumemoryOpportunitiesPage,
+  };
+  return (pages[state.edumemoryView || "student"] || edumemoryStudentPage)();
+}
+function edumemoryHeroActions() {
+  return `<button class="btn sun" onclick="edumemoryTab('student')">Start demo</button><button class="btn secondary" onclick="setRole('teacher')">Back to classroom app</button>`;
+}
+function edumemoryStudentPage() {
+  const memoryReady = state.edumemoryMemoryCreated;
+  const analysisReady = state.edumemoryAnalysisVisible || memoryReady;
+  return `${pageHead("EduMemory Demo Mode", "A lifelong AI-powered learning passport and opportunity network.", edumemoryHeroActions())}
+    <section class="edumemory-hero card">
+      <div class="edumemory-hero-copy">
+        <span class="pill"><span class="dot"></span> Maya Rodriguez · 7th Grade Engineering</span>
+        <h2>Preserve verified learning before students forget what they built.</h2>
+        <p>EduMemory observes classroom evidence, recommends achievements, routes them to teachers, creates mock Sui credentials, and updates a student-owned opportunity portfolio.</p>
+      </div>
+      <div class="tower-sketch" role="img" aria-label="Wind-resistant engineering tower prototype"></div>
+    </section>
+    <section class="grid two-col">
+      <article class="card card-pad">
+        <div class="student-line"><span class="avatar">${edumemoryDemo.student.initials}</span><span><h3>${esc(edumemoryDemo.student.name)}</h3><span class="subtle">${esc(edumemoryDemo.student.grade)}</span></span></div>
+        <div class="tags-block"><span class="tag">Engineering Design</span><span class="tag">Robotics</span><span class="tag hot">TSA Prep</span></div>
+        <p class="recommendation">${esc(edumemoryDemo.student.reflection)}</p>
+        <div class="role-actions"><button class="btn" onclick="edumemoryAnalyze()">Analyze Growth</button><button class="btn secondary" onclick="edumemoryMemory()">Create Learning Memory</button></div>
+      </article>
+      <article class="card card-pad">
+        <h3 class="section-title">EduMemory Agent Role</h3>
+        <div class="mini-grid"><div><span class="subtle">Observe</span><strong>Conversations, reflections, artifacts</strong></div><div><span class="subtle">Analyze</span><strong>Skills, misconceptions, mastery</strong></div><div><span class="subtle">Act</span><strong>Recommend next steps</strong></div><div><span class="subtle">Preserve</span><strong>Verified learning evidence</strong></div></div>
+      </article>
+    </section>
+    ${analysisReady ? `<section class="card card-pad edumemory-signal"><h3>AI Growth Analysis</h3><p>${esc(edumemoryDemo.analysis)}</p><div class="grid three-col panel-stats"><div class="metric"><span class="metric-label">Evidence signals</span><strong>4</strong><div class="metric-foot">Constraints, iteration, testing, reflection</div></div><div class="metric"><span class="metric-label">Recommendation</span><strong>Strong</strong><div class="metric-foot">Teacher review needed</div></div><div class="metric"><span class="metric-label">Credential target</span><strong>Level 1</strong><div class="metric-foot">Engineering Design</div></div></div></section>` : ""}
+    ${memoryReady ? `<section class="card card-pad edumemory-signal"><h3>Mock Walrus Memory Object</h3>${edumemoryObjectCard(edumemoryDemo.walrusMemory)}<div class="tags-block">${edumemoryDemo.walrusMemory.skillTags.map((item) => `<span class="tag">${esc(item)}</span>`).join("")}</div></section>` : ""}`;
+}
+function edumemoryTeacherPage() {
+  const reviewed = state.edumemoryEvidenceReviewed;
+  const approved = state.edumemoryCredentialApproved;
+  return `${pageHead("Teacher Verification", "The teacher verifies AI-recommended achievements before credentials are created.", `<button class="btn secondary" onclick="edumemoryTab('student')">Student evidence</button><button class="btn" onclick="edumemoryApproveCredential()">Approve Engineering Design Level 1</button>`)}
+    <section class="grid three-col">
+      <article class="card metric"><span class="metric-label">Pending recommendation</span><strong>1</strong><div class="metric-foot">Engineering Design Level 1</div></article>
+      <article class="card metric"><span class="metric-label">Evidence quality</span><strong>Strong</strong><div class="metric-foot">Ready for teacher review</div></article>
+      <article class="card metric"><span class="metric-label">Credential status</span><strong>${approved ? "Approved" : "Pending"}</strong><div class="metric-foot">Mock Sui record</div></article>
+    </section>
+    <section class="card card-pad">
+      <div class="card-action-head"><div><h3>Achievement Recommendation</h3><p class="subtle">Maya Rodriguez · Engineering Design Level 1</p></div><button class="btn secondary" onclick="edumemoryReviewEvidence()">Review Evidence</button></div>
+      <p class="recommendation">${esc(edumemoryDemo.analysis)}</p>
+    </section>
+    ${reviewed ? `<section class="card card-pad"><h3>Evidence Review</h3><div class="timeline"><div class="timeline-item"><strong>Reflection</strong><p>${esc(edumemoryDemo.student.reflection)}</p></div><div class="timeline-item"><strong>AI analysis</strong><p>Improved use of constraints, iteration, and prototype testing.</p></div><div class="timeline-item"><strong>Artifact</strong><p>Engineering notebook image and tower version notes stored as mock Walrus learning evidence.</p></div></div></section>` : ""}
+    <section class="card card-pad ${approved ? "edumemory-approved" : ""}"><h3>Mock Sui Credential Object</h3>${approved ? edumemoryObjectCard(edumemoryDemo.suiCredential) : `<p>Waiting for teacher approval.</p>`}</section>`;
+}
+function edumemoryPortfolioPage() {
+  const approved = state.edumemoryCredentialApproved;
+  return `${pageHead("Maya's Portfolio", "Verified achievements, STEM artifacts, and evidence history.", `<button class="btn secondary" onclick="edumemoryTab('teacher')">Teacher approval</button><button class="btn" onclick="edumemoryTab('opportunities')">Match opportunities</button>`)}
+    <section class="grid three-col">
+      <article class="card card-pad ${approved ? "edumemory-approved" : ""}"><h3>Engineering Design Level 1</h3><p class="subtle">${approved ? "Verified by Ms. Chen; mock Sui credential created" : "Pending teacher verification"}</p></article>
+      <article class="card card-pad"><h3>Robotics Examples</h3><p>Drive train prototype notes, team debugging reflection, and sensor calibration checklist.</p></article>
+      <article class="card card-pad"><h3>TSA Examples</h3><p>Prepared design brief, competition planning artifact, and presentation practice feedback.</p></article>
+    </section>
+    <section class="card card-pad"><h3>Evidence History</h3><div class="timeline"><div class="timeline-item"><strong>May 2026</strong><p>Wind-resistant tower challenge reflection and prototype evidence.</p></div><div class="timeline-item"><strong>Apr 2026</strong><p>Robotics sensor troubleshooting reflection.</p></div><div class="timeline-item"><strong>Mar 2026</strong><p>TSA engineering design notebook checkpoint.</p></div></div></section>`;
+}
+function edumemoryOpportunitiesPage() {
+  return `${pageHead("Opportunity Matching", "Matches generated from Maya's verified and emerging STEM evidence.", `<button class="btn secondary" onclick="edumemoryTab('portfolio')">Portfolio</button>`)}
+    <section class="edumemory-match-list">${edumemoryDemo.opportunities.map(([title, score, description]) => `<article class="card card-pad edumemory-match"><div><h3>${esc(title)}</h3><p>${esc(description)}</p></div><div class="match-score">${score}%</div></article>`).join("")}</section>`;
+}
+function edumemoryObjectCard(record) {
+  return `<pre class="edumemory-object">${esc(JSON.stringify(record, null, 2))}</pre>`;
+}
+function edumemoryTab(tab) { state.edumemoryView = tab; save(); render(); }
+function edumemoryAnalyze() { state.edumemoryAnalysisVisible = true; save(); render(); }
+function edumemoryMemory() { state.edumemoryAnalysisVisible = true; state.edumemoryMemoryCreated = true; save(); render(); }
+function edumemoryReviewEvidence() { state.edumemoryEvidenceReviewed = true; save(); render(); }
+function edumemoryApproveCredential() { state.edumemoryEvidenceReviewed = true; state.edumemoryCredentialApproved = true; save(); render(); }
+
 function render() {
-  app.innerHTML = !state.activeRole ? rolePage() + activePanelMarkup() : state.activeRole === "teacher" ? teacherShell() : studentShell();
+  app.innerHTML = !state.activeRole ? rolePage() + activePanelMarkup() : state.activeRole === "teacher" ? teacherShell() : state.activeRole === "edumemory" ? edumemoryShell() : studentShell();
 }
 async function hydrateSupabaseReadOnly() {
   if (providerMode !== "supabase") return;
@@ -2762,6 +2891,11 @@ Object.assign(window, {
   deleteProfileNote,
   duplicateInquiryLesson,
   duplicateLessonStep,
+  edumemoryAnalyze,
+  edumemoryApproveCredential,
+  edumemoryMemory,
+  edumemoryReviewEvidence,
+  edumemoryTab,
   improveCurrentQuestion,
   launchInquiryLesson,
   moderate,
