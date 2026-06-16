@@ -144,3 +144,26 @@ Maya completes an engineering design challenge. The AI notices that she improved
 ## Closing Voiceover
 
 "EduMemory turns classroom learning into a lifelong AI-powered learning passport. It helps students preserve evidence of growth, helps teachers verify real achievement, and helps opportunity providers discover students through meaningful proof, not just polished applications."
+
+## Presentation Mode Notes
+
+Use **Presentation Mode** before recording the 3-5 minute judge demo. It hides extra classroom navigation, enlarges the story surface, and keeps the six-step flow visible:
+
+1. Student Learning
+2. AI Agent Analysis
+3. Learning Memory Created
+4. Teacher Verification
+5. Sui Credential Issued
+6. Opportunity Matching
+
+The key message is:
+
+"AI did not replace the student's thinking. AI documented the student's growth and opened new opportunities."
+
+## Polished Agent Story Beats
+
+- EduMemory observes Maya's engineering reflection and design artifacts.
+- The visible agent analysis identifies multiple design iterations, stronger use of constraints, and evidence-based reasoning.
+- The Walrus Learning Memory preserves reflection, notebook, prototype images, teacher feedback, and AI growth analysis as lifelong evidence.
+- The Sui credential appears as a valuable verified learning credential owned by the learner.
+- The matching agent explains why Maya qualifies for each opportunity instead of merely listing programs.

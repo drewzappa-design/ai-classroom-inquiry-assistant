@@ -2683,6 +2683,7 @@ function studentResourceViewerPage() {
 function studentTab(tab) { state.studentTab = tab; save(); render(); }
 
 const edumemoryDemo = {
+  tagline: "A lifelong AI-powered learning passport and opportunity network",
   student: {
     name: "Maya Rodriguez",
     initials: "MR",
@@ -2691,32 +2692,45 @@ const edumemoryDemo = {
     reflection: "My first tower was tall but it bent when the fan turned on. I changed the base to a triangle, shortened the top section, and used cross braces. The second version held more weight because I thought about wind and material limits before rebuilding.",
   },
   analysis: "Maya shows growth in engineering design. She identified constraints, tested a prototype, diagnosed failure, and improved the structure through iteration. Recommended evidence summary: Engineering Design Level 1.",
+  observations: [
+    "Student completed multiple design iterations",
+    "Student improved use of engineering constraints",
+    "Student provided evidence-based reasoning",
+  ],
+  growthTrend: {
+    beginning: "Needed support identifying constraints",
+    current: "Independently applies constraints to improve designs",
+  },
+  recommendation: "Recommend issuing Engineering Design Level 1 credential.",
   walrusMemory: {
-    id: "walrus-memory-maya-tower-v2",
+    id: "WALRUS-2026-ENG-0001",
     uri: "walrus://maya-rodriguez/engineering-tower-v2",
-    type: "learning_evidence_bundle",
+    type: "Walrus Learning Memory",
     owner: "Maya Rodriguez",
-    evidence: ["engineering reflection", "tower prototype notes", "iteration photo", "teacher rubric"],
-    skillTags: ["constraints", "iteration", "prototype testing", "reflection"],
+    evidence: ["Student reflection", "Design notebook", "Prototype images", "Teacher feedback", "AI growth analysis"],
+    status: "Verified and preserved for lifelong student ownership",
+    why: "Maya's strongest evidence is no longer trapped inside one assignment, one teacher's notes, or one school year. EduMemory preserves it as a durable learning memory she can build on over time.",
   },
   suiCredential: {
-    id: "sui-credential-engineering-design-level-1",
+    title: "VERIFIED LEARNING CREDENTIAL",
     uri: "sui://credential/engineering-design-level-1/maya-rodriguez",
     achievement: "Engineering Design Level 1",
     owner: "Maya Rodriguez",
-    issuer: "Ms. Chen",
-    status: "teacher_verified",
-    evidenceHash: "0xEDU-MAYA-TOWER-V2",
+    issuedBy: "Belfry STEM Program",
+    verifiedBy: "Engineering Instructor",
+    skills: ["Design Constraints", "Iteration", "Evidence-Based Decision Making", "Problem Solving"],
+    blockchainRecord: "Sui Testnet Credential",
+    ownership: "Student Controlled",
   },
   opportunities: [
-    ["NASA STEM Fellowship", 92, "Strong fit for engineering reflection, prototype testing, and sustained STEM interest."],
-    ["Engineering Summer Academy", 87, "Good fit for design challenge experience and readiness for structured engineering coursework."],
-    ["Robotics Leadership Scholarship", 95, "Excellent fit for robotics evidence, reflection quality, and team-based problem solving."],
+    ["NASA STEM Fellowship", 92, "Matched based on engineering design achievements, evidence of iterative problem solving, and demonstrated STEM engagement."],
+    ["Engineering Summer Academy", 87, "Matched based on project portfolio, teacher verified skills, and growth trajectory."],
+    ["Robotics Leadership Scholarship", 95, "Matched based on technical achievements, leadership evidence, and long-term STEM participation."],
   ],
 };
 
 function edumemoryShell() {
-  return `<div class="app edumemory-app">${topbar("Sui Overflow 2026 · EduMemory")}
+  return `<div class="app edumemory-app ${state.edumemoryPresentationMode ? "presentation-mode" : ""}">${topbar("Sui Overflow 2026 · EduMemory")}
     <div class="edumemory-layout">${edumemoryNav()}<main class="content">${edumemoryPage()}</main></div>
   </div>`;
 }
@@ -2741,17 +2755,47 @@ function edumemoryPage() {
   return (pages[state.edumemoryView || "student"] || edumemoryStudentPage)();
 }
 function edumemoryHeroActions() {
-  return `<button class="btn sun" onclick="edumemoryTab('student')">Start demo</button><button class="btn secondary" onclick="setRole('teacher')">Back to classroom app</button>`;
+  return `<button type="button" class="btn sun" data-edumemory-action="tab" data-view="student">Start demo</button><button type="button" class="btn secondary" data-edumemory-action="presentation">${state.edumemoryPresentationMode ? "Exit Presentation Mode" : "Presentation Mode"}</button><button type="button" class="btn secondary" onclick="setRole('teacher')">Back to classroom app</button>`;
+}
+function edumemoryProgress() {
+  const active = state.edumemoryView || "student";
+  const currentStep = active === "opportunities" ? 5
+    : active === "portfolio" ? 4
+    : active === "teacher" && state.edumemoryCredentialApproved ? 4
+    : active === "teacher" ? 3
+    : state.edumemoryMemoryCreated ? 2
+    : state.edumemoryAnalysisVisible ? 1
+    : 0;
+  const steps = [
+    ["student", "Step 1", "Student Learning"],
+    ["student", "Step 2", "AI Agent Analysis"],
+    ["student", "Step 3", "Learning Memory Created"],
+    ["teacher", "Step 4", "Teacher Verification"],
+    ["teacher", "Step 5", "Sui Credential Issued"],
+    ["opportunities", "Step 6", "Opportunity Matching"],
+  ];
+  return `<section class="edumemory-progress" aria-label="EduMemory demo progress">${steps.map(([view, step, label], index) => {
+    const complete = index === 0 || (index === 1 && state.edumemoryAnalysisVisible) || (index === 2 && state.edumemoryMemoryCreated) || (index === 3 && state.edumemoryEvidenceReviewed) || (index === 4 && state.edumemoryCredentialApproved) || (index === 5 && active === "opportunities");
+    const isActive = index === currentStep;
+    return `<button type="button" class="edumemory-step ${complete ? "complete" : ""} ${isActive ? "active" : ""}" data-edumemory-action="tab" data-view="${esc(view)}"><span>${esc(step)}</span><strong>${esc(label)}</strong></button>`;
+  }).join("")}</section>`;
 }
 function edumemoryStudentPage() {
   const memoryReady = state.edumemoryMemoryCreated;
   const analysisReady = state.edumemoryAnalysisVisible || memoryReady;
   return `${pageHead("EduMemory Demo Mode", "A lifelong AI-powered learning passport and opportunity network.", edumemoryHeroActions())}
+    ${edumemoryProgress()}
     <section class="edumemory-hero card">
       <div class="edumemory-hero-copy">
-        <span class="pill"><span class="dot"></span> Maya Rodriguez · 7th Grade Engineering</span>
-        <h2>Preserve verified learning before students forget what they built.</h2>
-        <p>EduMemory observes classroom evidence, recommends achievements, routes them to teachers, creates mock Sui credentials, and updates a student-owned opportunity portfolio.</p>
+        <div class="edumemory-logo"><span>EM</span><strong>EduMemory</strong></div>
+        <span class="pill"><span class="dot"></span>${esc(edumemoryDemo.tagline)}</span>
+        <h2>Student-owned learning memory for the agentic web.</h2>
+        <p>EduMemory is an AI agent layer for classroom evidence. It does not replace Maya's thinking. It observes her real work, documents growth, asks a teacher to verify achievement, and turns that verified learning into portable opportunity signals.</p>
+        <div class="edumemory-why">
+          <div><strong>What it is</strong><span>A learning passport that preserves verified skills, reflections, artifacts, and STEM achievements.</span></div>
+          <div><strong>Why it matters</strong><span>Students forget years of meaningful work when applying for programs, scholarships, and internships.</span></div>
+          <div><strong>Ownership</strong><span>The learner controls a record that can travel beyond a single classroom, school, or district.</span></div>
+        </div>
       </div>
       <div class="tower-sketch" role="img" aria-label="Wind-resistant engineering tower prototype"></div>
     </section>
@@ -2759,55 +2803,107 @@ function edumemoryStudentPage() {
       <article class="card card-pad">
         <div class="student-line"><span class="avatar">${edumemoryDemo.student.initials}</span><span><h3>${esc(edumemoryDemo.student.name)}</h3><span class="subtle">${esc(edumemoryDemo.student.grade)}</span></span></div>
         <div class="tags-block"><span class="tag">Engineering Design</span><span class="tag">Robotics</span><span class="tag hot">TSA Prep</span></div>
+        <h3 class="section-title">Engineering Reflection</h3>
         <p class="recommendation">${esc(edumemoryDemo.student.reflection)}</p>
-        <div class="role-actions"><button class="btn" onclick="edumemoryAnalyze()">Analyze Growth</button><button class="btn secondary" onclick="edumemoryMemory()">Create Learning Memory</button></div>
+        <div class="role-actions"><button type="button" class="btn" data-edumemory-action="analyze">Analyze Growth</button><button type="button" class="btn secondary" data-edumemory-action="memory" ${analysisReady ? "" : "disabled"}>Create Learning Memory</button></div>
       </article>
-      <article class="card card-pad">
-        <h3 class="section-title">EduMemory Agent Role</h3>
-        <div class="mini-grid"><div><span class="subtle">Observe</span><strong>Conversations, reflections, artifacts</strong></div><div><span class="subtle">Analyze</span><strong>Skills, misconceptions, mastery</strong></div><div><span class="subtle">Act</span><strong>Recommend next steps</strong></div><div><span class="subtle">Preserve</span><strong>Verified learning evidence</strong></div></div>
-      </article>
+      ${edumemoryAgentPanel(analysisReady)}
     </section>
-    ${analysisReady ? `<section class="card card-pad edumemory-signal"><h3>AI Growth Analysis</h3><p>${esc(edumemoryDemo.analysis)}</p><div class="grid three-col panel-stats"><div class="metric"><span class="metric-label">Evidence signals</span><strong>4</strong><div class="metric-foot">Constraints, iteration, testing, reflection</div></div><div class="metric"><span class="metric-label">Recommendation</span><strong>Strong</strong><div class="metric-foot">Teacher review needed</div></div><div class="metric"><span class="metric-label">Credential target</span><strong>Level 1</strong><div class="metric-foot">Engineering Design</div></div></div></section>` : ""}
-    ${memoryReady ? `<section class="card card-pad edumemory-signal"><h3>Mock Walrus Memory Object</h3>${edumemoryObjectCard(edumemoryDemo.walrusMemory)}<div class="tags-block">${edumemoryDemo.walrusMemory.skillTags.map((item) => `<span class="tag">${esc(item)}</span>`).join("")}</div></section>` : ""}`;
+    ${analysisReady ? `<section class="card card-pad edumemory-signal"><h3>AI Growth Analysis</h3><p>${esc(edumemoryDemo.analysis)}</p><div class="grid three-col panel-stats"><div class="metric"><span class="metric-label">Evidence signals</span><strong>4</strong><div class="metric-foot">Constraints, iteration, testing, reflection</div></div><div class="metric"><span class="metric-label">Confidence Score</span><strong>96%</strong><div class="metric-foot">Proactive agent recommendation</div></div><div class="metric"><span class="metric-label">Credential target</span><strong>Level 1</strong><div class="metric-foot">Engineering Design</div></div></div></section>` : ""}
+    ${memoryReady ? edumemoryMemoryCard() : ""}`;
+}
+function edumemoryAgentPanel(active = true) {
+  return `<article class="card card-pad edumemory-agent ${active ? "active" : ""}">
+    <div class="card-action-head"><div><h3>EduMemory Agent Analysis</h3><p class="subtle">${active ? "Proactive recommendation ready" : "Waiting for analysis"}</p></div><span class="agent-pulse">AI Agent</span></div>
+    <h4>AI Observations</h4>
+    <ul class="edumemory-checklist">${edumemoryDemo.observations.map((item) => `<li>${esc(item)}</li>`).join("")}</ul>
+    <div class="growth-trend"><div><span>Beginning</span><strong>${esc(edumemoryDemo.growthTrend.beginning)}</strong></div><div><span>Current</span><strong>${esc(edumemoryDemo.growthTrend.current)}</strong></div></div>
+    <div class="confidence-ring"><strong>96%</strong><span>Confidence Score</span></div>
+    <p class="recommendation"><strong>Agent Recommendation:</strong> ${esc(edumemoryDemo.recommendation)}</p>
+  </article>`;
+}
+function edumemoryMemoryCard() {
+  const memory = edumemoryDemo.walrusMemory;
+  return `<section class="card card-pad edumemory-memory-card">
+    <div class="card-action-head"><div><span class="eyebrow">Walrus Learning Memory</span><h3>${esc(memory.id)}</h3></div><span class="memory-status">Preserved</span></div>
+    <div class="grid two-col">
+      <div>
+        <h4>Evidence Stored</h4>
+        <ul class="edumemory-checklist">${memory.evidence.map((item) => `<li>${esc(item)}</li>`).join("")}</ul>
+      </div>
+      <div class="memory-explain">
+        <strong>Status</strong>
+        <p>${esc(memory.status)}</p>
+        <strong>Why this matters</strong>
+        <p>${esc(memory.why)}</p>
+      </div>
+    </div>
+  </section>`;
 }
 function edumemoryTeacherPage() {
   const reviewed = state.edumemoryEvidenceReviewed;
   const approved = state.edumemoryCredentialApproved;
-  return `${pageHead("Teacher Verification", "The teacher verifies AI-recommended achievements before credentials are created.", `<button class="btn secondary" onclick="edumemoryTab('student')">Student evidence</button><button class="btn" onclick="edumemoryApproveCredential()">Approve Engineering Design Level 1</button>`)}
+  return `${pageHead("Teacher Verification", "The teacher verifies AI-recommended achievements before credentials are created.", `<button type="button" class="btn secondary" data-edumemory-action="tab" data-view="student">Student evidence</button><button type="button" class="btn" data-edumemory-action="approve">Approve Engineering Design Level 1</button>`)}
+    ${edumemoryProgress()}
     <section class="grid three-col">
       <article class="card metric"><span class="metric-label">Pending recommendation</span><strong>1</strong><div class="metric-foot">Engineering Design Level 1</div></article>
       <article class="card metric"><span class="metric-label">Evidence quality</span><strong>Strong</strong><div class="metric-foot">Ready for teacher review</div></article>
       <article class="card metric"><span class="metric-label">Credential status</span><strong>${approved ? "Approved" : "Pending"}</strong><div class="metric-foot">Mock Sui record</div></article>
     </section>
     <section class="card card-pad">
-      <div class="card-action-head"><div><h3>Achievement Recommendation</h3><p class="subtle">Maya Rodriguez · Engineering Design Level 1</p></div><button class="btn secondary" onclick="edumemoryReviewEvidence()">Review Evidence</button></div>
+      <div class="card-action-head"><div><h3>Achievement Recommendation</h3><p class="subtle">Maya Rodriguez · Engineering Design Level 1</p></div><button type="button" class="btn secondary" data-edumemory-action="review">Review Evidence</button></div>
       <p class="recommendation">${esc(edumemoryDemo.analysis)}</p>
     </section>
     ${reviewed ? `<section class="card card-pad"><h3>Evidence Review</h3><div class="timeline"><div class="timeline-item"><strong>Reflection</strong><p>${esc(edumemoryDemo.student.reflection)}</p></div><div class="timeline-item"><strong>AI analysis</strong><p>Improved use of constraints, iteration, and prototype testing.</p></div><div class="timeline-item"><strong>Artifact</strong><p>Engineering notebook image and tower version notes stored as mock Walrus learning evidence.</p></div></div></section>` : ""}
-    <section class="card card-pad ${approved ? "edumemory-approved" : ""}"><h3>Mock Sui Credential Object</h3>${approved ? edumemoryObjectCard(edumemoryDemo.suiCredential) : `<p>Waiting for teacher approval.</p>`}</section>`;
+    ${approved ? edumemoryCredentialCard() : `<section class="card card-pad"><h3>Sui Credential</h3><p>Waiting for teacher approval.</p></section>`}`;
 }
 function edumemoryPortfolioPage() {
   const approved = state.edumemoryCredentialApproved;
-  return `${pageHead("Maya's Portfolio", "Verified achievements, STEM artifacts, and evidence history.", `<button class="btn secondary" onclick="edumemoryTab('teacher')">Teacher approval</button><button class="btn" onclick="edumemoryTab('opportunities')">Match opportunities</button>`)}
+  return `${pageHead("Maya's Portfolio", "Verified achievements, STEM artifacts, and evidence history.", `<button type="button" class="btn secondary" data-edumemory-action="tab" data-view="teacher">Teacher approval</button><button type="button" class="btn" data-edumemory-action="tab" data-view="opportunities">Match opportunities</button>`)}
+    ${edumemoryProgress()}
     <section class="grid three-col">
       <article class="card card-pad ${approved ? "edumemory-approved" : ""}"><h3>Engineering Design Level 1</h3><p class="subtle">${approved ? "Verified by Ms. Chen; mock Sui credential created" : "Pending teacher verification"}</p></article>
       <article class="card card-pad"><h3>Robotics Examples</h3><p>Drive train prototype notes, team debugging reflection, and sensor calibration checklist.</p></article>
       <article class="card card-pad"><h3>TSA Examples</h3><p>Prepared design brief, competition planning artifact, and presentation practice feedback.</p></article>
     </section>
+    ${approved ? edumemoryCredentialCard() : ""}
     <section class="card card-pad"><h3>Evidence History</h3><div class="timeline"><div class="timeline-item"><strong>May 2026</strong><p>Wind-resistant tower challenge reflection and prototype evidence.</p></div><div class="timeline-item"><strong>Apr 2026</strong><p>Robotics sensor troubleshooting reflection.</p></div><div class="timeline-item"><strong>Mar 2026</strong><p>TSA engineering design notebook checkpoint.</p></div></div></section>`;
 }
 function edumemoryOpportunitiesPage() {
-  return `${pageHead("Opportunity Matching", "Matches generated from Maya's verified and emerging STEM evidence.", `<button class="btn secondary" onclick="edumemoryTab('portfolio')">Portfolio</button>`)}
-    <section class="edumemory-match-list">${edumemoryDemo.opportunities.map(([title, score, description]) => `<article class="card card-pad edumemory-match"><div><h3>${esc(title)}</h3><p>${esc(description)}</p></div><div class="match-score">${score}%</div></article>`).join("")}</section>`;
+  return `${pageHead("Opportunity Matching", "Matches generated from Maya's verified and emerging STEM evidence.", `<button type="button" class="btn secondary" data-edumemory-action="tab" data-view="portfolio">Portfolio</button>`)}
+    ${edumemoryProgress()}
+    <section class="card card-pad edumemory-agent active"><div class="card-action-head"><div><h3>Opportunity Matching Agent</h3><p class="subtle">Scans verified credentials, learning memory, portfolio signals, and growth trajectory.</p></div><span class="agent-pulse">Matching</span></div><p>EduMemory uses the teacher-verified credential and preserved evidence to explain why Maya is ready for specific STEM pathways.</p></section>
+    <section class="edumemory-match-list">${edumemoryDemo.opportunities.map(([title, score, description]) => `<article class="card card-pad edumemory-match"><div><h3>${esc(title)}</h3><span class="quality">Match Score: ${score}%</span><p><strong>Reason:</strong> ${esc(description)}</p></div><div class="match-score">${score}%</div></article>`).join("")}</section>`;
 }
-function edumemoryObjectCard(record) {
-  return `<pre class="edumemory-object">${esc(JSON.stringify(record, null, 2))}</pre>`;
+function edumemoryCredentialCard() {
+  const credential = edumemoryDemo.suiCredential;
+  return `<section class="credential-card">
+    <div class="credential-top"><span>${esc(credential.title)}</span><strong>Sui Testnet</strong></div>
+    <h2>${esc(credential.achievement)}</h2>
+    <div class="credential-grid"><span>Issued by</span><strong>${esc(credential.issuedBy)}</strong><span>Verified by</span><strong>${esc(credential.verifiedBy)}</strong><span>Blockchain Record</span><strong>${esc(credential.blockchainRecord)}</strong><span>Ownership</span><strong>${esc(credential.ownership)}</strong></div>
+    <h3>Skills Verified</h3>
+    <ul class="edumemory-checklist">${credential.skills.map((skill) => `<li>${esc(skill)}</li>`).join("")}</ul>
+    <p class="credential-note">This credential belongs to the learner and can travel beyond a single school or district.</p>
+  </section>`;
 }
 function edumemoryTab(tab) { state.edumemoryView = tab; save(); render(); }
 function edumemoryAnalyze() { state.edumemoryAnalysisVisible = true; save(); render(); }
 function edumemoryMemory() { state.edumemoryAnalysisVisible = true; state.edumemoryMemoryCreated = true; save(); render(); }
 function edumemoryReviewEvidence() { state.edumemoryEvidenceReviewed = true; save(); render(); }
 function edumemoryApproveCredential() { state.edumemoryEvidenceReviewed = true; state.edumemoryCredentialApproved = true; save(); render(); }
+function toggleEdumemoryPresentationMode() { state.edumemoryPresentationMode = !state.edumemoryPresentationMode; save(); render(); }
+function handleEduMemoryAction(event) {
+  const trigger = event.target.closest("[data-edumemory-action]");
+  if (!trigger) return;
+  event.preventDefault();
+  const action = trigger.dataset.edumemoryAction;
+  if (action === "tab") edumemoryTab(trigger.dataset.view || "student");
+  if (action === "presentation") toggleEdumemoryPresentationMode();
+  if (action === "analyze") edumemoryAnalyze();
+  if (action === "memory") edumemoryMemory();
+  if (action === "review") edumemoryReviewEvidence();
+  if (action === "approve") edumemoryApproveCredential();
+}
 
 function render() {
   app.innerHTML = !state.activeRole ? rolePage() + activePanelMarkup() : state.activeRole === "teacher" ? teacherShell() : state.activeRole === "edumemory" ? edumemoryShell() : studentShell();
@@ -2896,6 +2992,7 @@ Object.assign(window, {
   edumemoryMemory,
   edumemoryReviewEvidence,
   edumemoryTab,
+  handleEduMemoryAction,
   improveCurrentQuestion,
   launchInquiryLesson,
   moderate,
@@ -2938,6 +3035,7 @@ Object.assign(window, {
   syncLessonBuilderToSetup,
   teacherTab,
   toggleHotList,
+  toggleEdumemoryPresentationMode,
   unassignResourceFromAll,
   updateAISupportLevel,
   updateAllocation,
@@ -2947,5 +3045,6 @@ Object.assign(window, {
   updateSetup,
   updateStudent,
 });
+app.addEventListener("click", handleEduMemoryAction);
 render();
 hydrateSupabaseReadOnly().then(render);
