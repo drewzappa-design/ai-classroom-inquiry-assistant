@@ -1,57 +1,121 @@
-# Inquiry Classroom MVP
+# EduMemory
 
-A build-free, interactive prototype for OpenSciEd 7.5 Ecosystem Dynamics & Biodiversity, Lesson 6.
+**A lifelong AI-powered learning passport and opportunity network**
 
-## Run locally
+EduMemory is a Sui Overflow hackathon branch of the AI Classroom Inquiry Assistant. It extends the existing classroom inquiry prototype with an agentic learning passport demo: an AI agent documents student growth, a teacher verifies the achievement, Sui represents student-owned credentials, and Walrus represents preserved learning evidence.
 
-From this folder:
+**Track:** Agentic Web, Walrus-aligned concept
+
+## Hackathon Demo
+
+Run a local server, then open:
+
+`http://localhost:4173/?role=edumemory`
 
 ```bash
 python3 -m http.server 4173
 ```
 
-Open `http://localhost:4173`.
+On Windows, this also works:
 
-## Included
+```powershell
+python -m http.server 4173
+```
 
-- Teacher dashboard with live lesson overview, setup wizard, student support signals, DQB moderation, analytics, resource inventory, and adjustable Inquiry Credit allocation.
-- Student Lesson 6 workflow based on Slides A-G, with persistent responses, a guided Inquiry Coach, question improvement, and anonymous DQB submission.
-- Seeded English and Spanish-aware demo data, richer student profiles, Hot List indicators, mastery goal configuration, and misconception tracking.
-- Shared browser persistence using `localStorage`.
-- Modular simulated AI layer in `ai-service.js` plus guarded scaffolding middleware in `aiScaffoldingEngine.js`.
+The original teacher dashboard and student lesson remain available at:
+
+`http://localhost:4173`
+
+## Problem
+
+Students spend years building skills, earning awards, completing projects, joining competitions, and developing STEM readiness. When they apply for colleges, scholarships, internships, fellowships, career programs, and nonprofit opportunities, they often forget the evidence that proves they are qualified.
+
+Teachers also struggle to track growth across time because evidence is scattered across reflections, project submissions, rubrics, notebooks, photos, and classroom conversations.
+
+## Solution
+
+EduMemory turns classroom learning into a student-owned record of verified growth.
+
+The demo shows:
+
+- Maya Rodriguez, a 7th grade engineering student
+- An engineering reflection from a design challenge
+- EduMemory Agent growth analysis
+- A Walrus Learning Memory that preserves evidence
+- Teacher verification of Engineering Design Level 1
+- A mock Sui credential owned by the learner
+- Opportunity matching for STEM programs and scholarships
+
+The key message:
+
+**AI did not replace the student's thinking. AI documented the student's growth and opened new opportunities.**
+
+## Why Sui
+
+Sui represents student ownership, verifiable credentials, and portable achievement records. In the hackathon demo, the Sui credential is mocked as a testnet-style learning credential so judges can understand the product workflow without requiring production blockchain infrastructure.
+
+## Why Walrus
+
+Walrus represents long-term learning memory: reflections, design notebooks, prototype images, teacher feedback, and AI growth analysis. In the demo, Walrus is mocked as a durable evidence layer aligned with lifelong student ownership.
+
+## Demo Flow
+
+1. Student Learning: Maya completes an engineering design reflection.
+2. AI Agent Analysis: EduMemory identifies growth in constraints, iteration, and evidence-based reasoning.
+3. Learning Memory Created: Walrus preserves the evidence bundle.
+4. Teacher Verification: An instructor reviews the recommendation.
+5. Sui Credential Issued: Engineering Design Level 1 becomes a student-controlled credential.
+6. Opportunity Matching: The agent recommends STEM opportunities with match reasons.
+
+## Existing App
+
+This repository began as **Inquiry Classroom MVP**, a build-free interactive prototype for OpenSciEd 7.5 Ecosystem Dynamics & Biodiversity, Lesson 6.
+
+Existing functionality remains intact:
+
+- Teacher dashboard with lesson overview, setup wizard, student support signals, DQB moderation, analytics, resource inventory, and Inquiry Credit allocation
+- Student Lesson 6 workflow with persistent responses, guided Inquiry Coach, question improvement, and anonymous DQB submission
+- Seeded demo data, richer student profiles, Hot List indicators, misconception tracking, and localStorage persistence
+- Modular simulated AI layer in `ai-service.js` plus guarded scaffolding middleware in `aiScaffoldingEngine.js`
 
 ## Files
 
-- `index.html`: app entry point.
-- `styles.css`: responsive classroom UI.
-- `data.js`: typed-style data shape, Lesson 6 activities, resources, and seeded demo state.
-- `ai-service.js`: replaceable inquiry-scaffolding provider.
-- `aiScaffoldingEngine.js`: middleware-style rule checker that combines lesson context, teacher mastery goal, student profile, support level, and AI response guardrails.
-- `app.js`: UI rendering and interactive workflows.
+- `index.html`: app entry point
+- `styles.css`: responsive classroom and EduMemory demo UI
+- `data.js`: lesson activities, resources, and seeded demo state
+- `ai-service.js`: replaceable inquiry-scaffolding provider
+- `aiScaffoldingEngine.js`: guarded scaffolding middleware
+- `app.js`: UI rendering and interactive workflows
+- `docs/hackathon/`: Sui Overflow submission package, pitch materials, and demo source notes
 
-## New architecture notes
+## Submission Checklist
 
-The app now models the product as a teacher-controlled scaffolding platform, not a lesson chatbot.
+- Project name: EduMemory
+- Tagline: A lifelong AI-powered learning passport and opportunity network
+- Track: Agentic Web, Walrus-aligned concept
+- Local demo URL: `http://localhost:4173/?role=edumemory`
+- Demo script: `docs/hackathon/PITCH_SCRIPT_5_MIN.md`
+- Submission answers: `docs/hackathon/SUBMISSION_ANSWERS.md`
+- Video shot list: `docs/hackathon/VIDEO_SHOT_LIST.md`
+- Judge Q&A: `docs/hackathon/JUDGE_QA.md`
+- Existing classroom app preserved
 
-- Teacher Setup Wizard stores lesson identity, standard placeholder, mastery definition, prerequisite skills, expected misconceptions, support level, session limit, prompt limit, Spanish support, and resource visibility.
-- Student Profile Engine stores proficiency, support tags, Hot List status, language preference, reading/math placeholders, interests, notes, and Inquiry Credit allocation.
-- Inquiry Credits are demo-only usage controls shown as student allocation, used credits, remaining credits, and class pool usage.
-- The scaffolding engine prevents direct answers, completing student work, off-topic replies, loose responses not tied to lesson materials, and overly long responses.
-- Misconception detection logs common patterns for the teacher analytics view.
-- Dashboard cards are now actionable. The app tracks `activePanel`, `selectedStudent`, `selectedResource`, `resourceList`, and `hotListStudents` in the same demo state object so Board-demo users can click into Hot List, support needs, extension, misconceptions, question quality, Inquiry Credits, language usage, and teacher resources.
-- Resource rows open a detail panel with title, type, URL/file placeholder, connected lesson, visibility, shareability, license/copyright status, notes, and an Open Resource action when a URL exists.
+## Future Roadmap
 
-## Next backend phase
+- Connect EduMemory Agent to real student reflection and project data
+- Add teacher approval states: approve, request revision, reject, archive
+- Add configurable achievement rubrics by grade level, subject, and program
+- Add family/student export views
+- Integrate real Sui credential creation behind a feature flag
+- Integrate real Walrus storage for artifacts behind a feature flag
+- Build a student opportunity network for scholarships, internships, academies, competitions, and fellowships
 
-Replace browser persistence with a backend such as Supabase, Firebase, or Atoms Cloud. Preserve the existing data shapes for students, responses, DQB questions, usage allocation, and lesson resources.
-
-Replace `AIScaffoldingEngine.run()` with a secure server-side provider adapter. Keep API keys outside the browser. The future adapter should send the active activity, teacher mastery goal, lesson context, student profile, allowed support level, and language preference to the configured model provider, then run the rule checker before returning anything to students.
-
-## Not included yet
+## Not Included Yet
 
 - Production authentication or student-data security hardening
 - Live LLM calls
+- Production Sui transactions
+- Production Walrus uploads
 - File uploads
-- Voice input
 - Google Classroom or Canvas integration
 - District/admin dashboard
