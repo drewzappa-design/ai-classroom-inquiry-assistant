@@ -2838,7 +2838,47 @@ function edumemoryMemoryCard() {
         <p>${esc(memory.why)}</p>
       </div>
     </div>
+    ${edumemoryWalrusUploadSection()}
   </section>`;
+}
+function edumemoryWalrusUploadSection() {
+  const result = state.edumemoryWalrusUploadResult;
+  const status = state.edumemoryWalrusUploadStatus || "idle";
+  const isUploading = status === "uploading";
+  const isReal = result?.mode === "real";
+  return `<div class="walrus-upload-panel">
+    <div class="card-action-head">
+      <div>
+        <h3>Walrus Testnet Upload</h3>
+        <p class="subtle">Optional pathway for storing this learning memory package. The prototype memory above remains available if upload is not configured or fails.</p>
+      </div>
+      <button type="button" class="btn secondary" data-edumemory-action="walrus-upload" ${isUploading ? "disabled" : ""}>${isUploading ? "Uploading..." : "Upload Learning Memory to Walrus Testnet"}</button>
+    </div>
+    ${result ? `<div class="walrus-upload-result ${isReal ? "real" : "mock"}">
+      <span class="pill">${isReal ? "Stored on Walrus Testnet" : "Prototype Walrus Memory Record"}</span>
+      <div class="detail-grid">
+        <span>Upload status</span><strong>${esc(result.status || "Ready")}</strong>
+        <span>Blob ID</span><strong>${esc(result.blobId || "Not returned")}</strong>
+        <span>Object ID</span><strong>${esc(result.objectId || "Not returned")}</strong>
+        <span>Transaction digest</span><strong>${esc(result.transactionDigest || "Not returned")}</strong>
+        ${result.reason ? `<span>Fallback reason</span><strong>${esc(result.reason)}</strong>` : ""}
+      </div>
+    </div>` : `<p class="subtle">Status: ${isUploading ? "Preparing JSON evidence package..." : "Not uploaded yet."}</p>`}
+  </div>`;
+}
+function edumemoryLearningMemoryPayload() {
+  return {
+    student: edumemoryDemo.student.name,
+    grade: 7,
+    project: "Engineering Design Challenge",
+    reflectionText: edumemoryDemo.student.reflection,
+    aiObservations: edumemoryDemo.observations,
+    growthTrend: edumemoryDemo.growthTrend,
+    confidenceScore: 96,
+    recommendedCredential: edumemoryDemo.suiCredential.achievement,
+    teacherVerificationStatus: state.edumemoryCredentialApproved ? "approved" : state.edumemoryEvidenceReviewed ? "reviewed_pending_approval" : "pending_review",
+    timestamp: new Date().toISOString(),
+  };
 }
 function edumemoryTeacherPage() {
   const reviewed = state.edumemoryEvidenceReviewed;
@@ -2892,6 +2932,29 @@ function edumemoryMemory() { state.edumemoryAnalysisVisible = true; state.edumem
 function edumemoryReviewEvidence() { state.edumemoryEvidenceReviewed = true; save(); render(); }
 function edumemoryApproveCredential() { state.edumemoryEvidenceReviewed = true; state.edumemoryCredentialApproved = true; save(); render(); }
 function toggleEdumemoryPresentationMode() { state.edumemoryPresentationMode = !state.edumemoryPresentationMode; save(); render(); }
+async function uploadEduMemoryWalrusMemory() {
+  state.edumemoryWalrusUploadStatus = "uploading";
+  state.edumemoryWalrusUploadResult = null;
+  save();
+  render();
+  const payload = edumemoryLearningMemoryPayload();
+  const service = window.EduMemoryWalrusService;
+  const result = service?.uploadLearningMemory
+    ? await service.uploadLearningMemory(payload)
+    : {
+      mode: "mock",
+      status: "Prototype Walrus Memory Record",
+      blobId: "WALRUS-PROTOTYPE-2026-ENG-0001",
+      objectId: "",
+      transactionDigest: "",
+      reason: "Walrus service module is not available.",
+      storedAt: new Date().toISOString(),
+    };
+  state.edumemoryWalrusUploadStatus = result.mode === "real" ? "stored" : "fallback";
+  state.edumemoryWalrusUploadResult = result;
+  save();
+  render();
+}
 function handleEduMemoryAction(event) {
   const trigger = event.target.closest("[data-edumemory-action]");
   if (!trigger) return;
@@ -2903,6 +2966,7 @@ function handleEduMemoryAction(event) {
   if (action === "memory") edumemoryMemory();
   if (action === "review") edumemoryReviewEvidence();
   if (action === "approve") edumemoryApproveCredential();
+  if (action === "walrus-upload") uploadEduMemoryWalrusMemory();
 }
 
 function render() {
@@ -3037,6 +3101,7 @@ Object.assign(window, {
   toggleHotList,
   toggleEdumemoryPresentationMode,
   unassignResourceFromAll,
+  uploadEduMemoryWalrusMemory,
   updateAISupportLevel,
   updateAllocation,
   updateInquiryLesson,

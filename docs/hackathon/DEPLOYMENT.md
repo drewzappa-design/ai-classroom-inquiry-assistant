@@ -89,7 +89,59 @@ The app is static-site ready because:
 - Styles are local files loaded with relative paths.
 - No server API is required for the EduMemory demo.
 - Demo state uses browser `localStorage`.
-- Sui and Walrus are mock records in the proof-of-concept.
+- Sui is a mock credential record in the proof-of-concept.
+- Walrus has an optional Testnet upload abstraction and falls back to a mock prototype record when no browser-safe relay is configured.
+
+## Walrus Integration Status
+
+EduMemory includes `walrusService.js`, which keeps the static demo safe:
+
+- Builds a JSON learning memory package in the browser.
+- Attempts upload through a configured browser-safe Walrus Testnet relay.
+- Displays **Stored on Walrus Testnet** when a relay returns a blob result.
+- Displays **Prototype Walrus Memory Record** when no relay is configured, network is unavailable, signing is cancelled, or upload fails.
+
+No production keys or backend services are required for the public demo fallback.
+
+### Optional Relay Configuration
+
+For a hosted demo, configure one of these before `app.js` runs:
+
+```html
+<script>
+  window.EduMemoryWalrusRelayUrl = "https://your-walrus-upload-relay.example/upload";
+</script>
+```
+
+Or set this in `app-config.js`:
+
+```js
+window.ClassroomAIConfig = {
+  WALRUS_UPLOAD_RELAY_URL: "https://your-walrus-upload-relay.example/upload"
+};
+```
+
+The relay should accept:
+
+```json
+{
+  "type": "edumemory.learning-memory",
+  "network": "walrus-testnet",
+  "payload": {}
+}
+```
+
+And may return:
+
+```json
+{
+  "blobId": "walrus blob id",
+  "objectId": "optional object id",
+  "transactionDigest": "optional transaction digest"
+}
+```
+
+If the relay is absent or fails, the demo remains usable and clearly labels the fallback as a prototype record.
 
 ## Deployment Checklist
 
@@ -98,6 +150,8 @@ The app is static-site ready because:
 - Open `?role=edumemory` directly.
 - Click **Analyze Growth**.
 - Click **Create Learning Memory**.
+- Click **Upload Learning Memory to Walrus Testnet**.
+- Confirm either **Stored on Walrus Testnet** or **Prototype Walrus Memory Record** is displayed.
 - Open Teacher view and approve the credential.
 - Open Portfolio and Opportunities.
 - Test in an incognito/private window before submitting.

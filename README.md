@@ -6,7 +6,7 @@ EduMemory is a Sui Overflow hackathon branch of the AI Classroom Inquiry Assista
 
 **Track:** Agentic Web, Walrus-aligned concept
 
-**Hackathon proof-of-concept:** This demo uses mock Sui and Walrus records. It is designed to demonstrate the product workflow, user experience, and real-world impact before production blockchain transactions or Walrus uploads are added.
+**Hackathon proof-of-concept:** This demo uses mock Sui records and includes an optional Walrus Testnet upload pathway. If no browser-safe Walrus relay is configured, the app falls back to a clearly labeled prototype Walrus memory record so the demo never breaks.
 
 ## Hackathon Demo
 
@@ -58,7 +58,26 @@ Sui represents student ownership, verifiable credentials, and portable achieveme
 
 ## Why Walrus
 
-Walrus represents long-term learning memory: reflections, design notebooks, prototype images, teacher feedback, and AI growth analysis. In this hackathon proof-of-concept, Walrus is represented by a mock durable evidence record aligned with lifelong student ownership.
+Walrus represents long-term learning memory: reflections, design notebooks, prototype images, teacher feedback, and AI growth analysis. In this hackathon proof-of-concept, the app can attempt an optional Walrus Testnet upload through a browser-safe relay. Without a configured relay, Walrus is represented by a mock durable evidence record aligned with lifelong student ownership.
+
+## Walrus Testnet Upload Status
+
+EduMemory includes `walrusService.js`, a small static-site-safe service abstraction:
+
+- `uploadLearningMemory(memoryPayload)`
+- Attempts a POST to a configured Walrus upload relay
+- Returns **Stored on Walrus Testnet** when a relay returns a real blob result
+- Returns **Prototype Walrus Memory Record** when no relay is configured, the network fails, signing is cancelled, or upload errors
+
+No production keys, backend service, npm install, or build step are required for the fallback demo.
+
+Optional relay configuration:
+
+```js
+window.EduMemoryWalrusRelayUrl = "https://your-walrus-upload-relay.example/upload";
+```
+
+Or set `WALRUS_UPLOAD_RELAY_URL` in `app-config.js` on `window.ClassroomAIConfig`.
 
 ## Demo Flow
 
@@ -109,7 +128,7 @@ Existing functionality remains intact:
 - Add configurable achievement rubrics by grade level, subject, and program
 - Add family/student export views
 - Integrate real Sui credential creation behind a feature flag
-- Integrate real Walrus storage for artifacts behind a feature flag
+- Replace the browser relay abstraction with production Walrus storage for artifact bundles
 - Build a student opportunity network for scholarships, internships, academies, competitions, and fellowships
 
 ## Not Included Yet
@@ -117,7 +136,7 @@ Existing functionality remains intact:
 - Production authentication or student-data security hardening
 - Live LLM calls
 - Production Sui transactions
-- Production Walrus uploads
+- Production Walrus uploads without an external relay
 - File uploads
 - Google Classroom or Canvas integration
 - District/admin dashboard
