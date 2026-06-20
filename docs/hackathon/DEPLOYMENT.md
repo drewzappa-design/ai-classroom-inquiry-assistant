@@ -90,18 +90,21 @@ The app is static-site ready because:
 - No server API is required for the EduMemory demo.
 - Demo state uses browser `localStorage`.
 - Sui is a mock credential record in the proof-of-concept.
-- Walrus has an optional Testnet upload abstraction and falls back to a mock prototype record when no browser-safe relay is configured.
+- Walrus attempts direct public Testnet publisher upload first, tries an optional relay second, and falls back to a mock prototype record if both paths fail.
 
 ## Walrus Integration Status
 
 EduMemory includes `walrusService.js`, which keeps the static demo safe:
 
 - Builds a JSON learning memory package in the browser.
-- Attempts upload through a configured browser-safe Walrus Testnet relay.
-- Displays **Stored on Walrus Testnet** when a relay returns a blob result.
-- Displays **Prototype Walrus Memory Record** when no relay is configured, network is unavailable, signing is cancelled, or upload fails.
+- Creates a Blob from `JSON.stringify(memoryPayload)`.
+- Attempts direct upload to `https://publisher.walrus-testnet.walrus.space/v1/blobs?epochs=5`.
+- Parses `blobId` from `newlyCreated.blobObject.blobId` or `alreadyCertified.blobId`.
+- Falls back to a configured browser-safe Walrus Testnet relay if direct publisher upload fails.
+- Displays **Stored on Walrus Testnet** when the publisher or relay returns a blob result.
+- Displays **Prototype Walrus Memory Record** when publisher upload fails, no relay succeeds, network is unavailable, signing is cancelled, or upload fails.
 
-No production keys or backend services are required for the public demo fallback.
+No production keys or backend services are required for direct public publisher upload or the demo fallback.
 
 ### Optional Relay Configuration
 
@@ -121,7 +124,7 @@ window.ClassroomAIConfig = {
 };
 ```
 
-The relay should accept:
+The direct publisher path requires no configuration. The optional relay should accept:
 
 ```json
 {

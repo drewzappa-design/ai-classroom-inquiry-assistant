@@ -1,5 +1,6 @@
 (function () {
   const fallbackBlobId = "WALRUS-PROTOTYPE-2026-ENG-0001";
+  const publicPublisherUrl = "https://publisher.walrus-testnet.walrus.space/v1/blobs?epochs=5";
 
   function configuredRelayUrl() {
     return (
@@ -27,12 +28,42 @@
     };
   }
 
-  async function uploadLearningMemory(memoryPayload) {
-    const relayUrl = configuredRelayUrl();
-    if (!relayUrl) {
-      return fallbackResult("No Walrus Testnet upload relay is configured for this static demo.", memoryPayload);
+  function blobIdFromPublisherResponse(result) {
+    return result?.newlyCreated?.blobObject?.blobId || result?.alreadyCertified?.blobId || "";
+  }
+
+  async function uploadToPublicPublisher(memoryPayload) {
+    const json = JSON.stringify(memoryPayload, null, 2);
+    const body = new Blob([json], { type: "application/json" });
+    const response = await fetch(publicPublisherUrl, {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body,
+    });
+
+    if (!response.ok) {
+      throw new Error(`Walrus public publisher returned HTTP ${response.status}`);
     }
 
+    const result = await response.json();
+    const blobId = blobIdFromPublisherResponse(result);
+    if (!blobId) {
+      throw new Error("Walrus public publisher response did not include a blobId.");
+    }
+
+    return {
+      mode: "real",
+      status: "Stored on Walrus Testnet",
+      blobId,
+      objectId: result?.newlyCreated?.blobObject?.id || result?.alreadyCertified?.event?.blobObject || "",
+      transactionDigest: result?.newlyCreated?.event?.txDigest || result?.alreadyCertified?.event?.txDigest || "",
+      publisherUrl: publicPublisherUrl,
+      storedAt: new Date().toISOString(),
+      raw: result,
+    };
+  }
+
+  async function uploadToConfiguredRelay(memoryPayload, relayUrl) {
     try {
       const response = await fetch(relayUrl, {
         method: "POST",
@@ -60,12 +91,36 @@
         raw: data,
       };
     } catch (error) {
-      return fallbackResult(error.message || "Walrus Testnet upload failed or was cancelled.", memoryPayload);
+      throw error;
     }
+  }
+
+  async function uploadLearningMemory(memoryPayload) {
+    const relayUrl = configuredRelayUrl();
+    const errors = [];
+
+    try {
+      return await uploadToPublicPublisher(memoryPayload);
+    } catch (error) {
+      errors.push(`Direct publisher: ${error.message || error}`);
+    }
+
+    if (relayUrl) {
+      try {
+        return await uploadToConfiguredRelay(memoryPayload, relayUrl);
+      } catch (error) {
+        errors.push(`Configured relay: ${error.message || error}`);
+      }
+    } else {
+      errors.push("Configured relay: no relay URL configured");
+    }
+
+    return fallbackResult(errors.join(" | "), memoryPayload);
   }
 
   window.EduMemoryWalrusService = {
     uploadLearningMemory,
     configuredRelayUrl,
+    publicPublisherUrl,
   };
 })();

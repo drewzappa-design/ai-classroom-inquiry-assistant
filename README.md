@@ -6,7 +6,7 @@ EduMemory is a Sui Overflow hackathon branch of the AI Classroom Inquiry Assista
 
 **Track:** Agentic Web, Walrus-aligned concept
 
-**Hackathon proof-of-concept:** This demo uses mock Sui records and includes an optional Walrus Testnet upload pathway. If no browser-safe Walrus relay is configured, the app falls back to a clearly labeled prototype Walrus memory record so the demo never breaks.
+**Hackathon proof-of-concept:** This demo uses mock Sui records and includes a Walrus Testnet upload pathway. The app first attempts a direct public Walrus Testnet publisher upload, then tries an optional relay if configured, then falls back to a clearly labeled prototype Walrus memory record so the demo never breaks.
 
 ## Hackathon Demo
 
@@ -58,16 +58,18 @@ Sui represents student ownership, verifiable credentials, and portable achieveme
 
 ## Why Walrus
 
-Walrus represents long-term learning memory: reflections, design notebooks, prototype images, teacher feedback, and AI growth analysis. In this hackathon proof-of-concept, the app can attempt an optional Walrus Testnet upload through a browser-safe relay. Without a configured relay, Walrus is represented by a mock durable evidence record aligned with lifelong student ownership.
+Walrus represents long-term learning memory: reflections, design notebooks, prototype images, teacher feedback, and AI growth analysis. In this hackathon proof-of-concept, the app attempts to upload a JSON evidence package directly to the public Walrus Testnet publisher. If that fails, it tries an optional browser-safe relay. If both paths fail, Walrus is represented by a mock durable evidence record aligned with lifelong student ownership.
 
 ## Walrus Testnet Upload Status
 
 EduMemory includes `walrusService.js`, a small static-site-safe service abstraction:
 
 - `uploadLearningMemory(memoryPayload)`
-- Attempts a POST to a configured Walrus upload relay
-- Returns **Stored on Walrus Testnet** when a relay returns a real blob result
-- Returns **Prototype Walrus Memory Record** when no relay is configured, the network fails, signing is cancelled, or upload errors
+- Creates a JSON Blob from the learning memory payload
+- Attempts `PUT https://publisher.walrus-testnet.walrus.space/v1/blobs?epochs=5`
+- Falls back to a configured relay if direct publisher upload fails
+- Returns **Stored on Walrus Testnet** when the publisher or relay returns a real blob result
+- Returns **Prototype Walrus Memory Record** when publisher upload fails, no relay succeeds, the network fails, signing is cancelled, or upload errors
 
 No production keys, backend service, npm install, or build step are required for the fallback demo.
 
