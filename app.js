@@ -2711,6 +2711,21 @@ const edumemoryDemo = {
     status: "Verified and preserved for lifelong student ownership",
     why: "Maya's strongest evidence is no longer trapped inside one assignment, one teacher's notes, or one school year. EduMemory preserves it as a durable learning memory she can build on over time.",
   },
+  blockchainProof: {
+    walrus: {
+      status: "Stored on Walrus Testnet",
+      blobId: "0G1_9oZoizZayorL8_0G7uWNJvpoltyKvj-ud4hnPsE",
+      objectId: "0xe83e0009ced1fe531b28d7003f16396702ff5261dd42e5827ea5861801eb235f",
+      explanation: "Maya's learning evidence is packaged as a structured JSON memory and stored on Walrus Testnet.",
+    },
+    sui: {
+      status: "Published on Sui Testnet",
+      packageId: "0x421376637844f477eac71c9be3d0d27244cb6c1d16f4ec12ca33210533015ec6",
+      publishTransactionDigest: "8DXeQtEuccvNtgMJZ3XtXevdgcUYn9qWTx6G4ForK5nr",
+      module: "edumemorycredential",
+      explanation: "EduMemory includes a deployed Sui Move package defining a LearningCredential object that can reference a Walrus Blob ID.",
+    },
+  },
   suiCredential: {
     title: "VERIFIED LEARNING CREDENTIAL",
     uri: "sui://credential/engineering-design-level-1/maya-rodriguez",
@@ -2741,6 +2756,7 @@ function edumemoryNav() {
     ["teacher", icons.users, "Teacher"],
     ["portfolio", icons.folder, "Portfolio"],
     ["opportunities", icons.chart, "Opportunities"],
+    ["verification", icons.check, "Blockchain Verification"],
   ];
   return `<aside class="sidebar edumemory-sidebar"><p class="sidebar-label">EduMemory Demo</p>${items.map(([id, icon, label]) => `<button class="nav-btn ${selected === id ? "active" : ""}" onclick="edumemoryTab('${id}')">${icon}<span>${label}</span></button>`).join("")}
     <div class="sidebar-note"><strong>Mock-first Sui + Walrus</strong><br/>Credential ownership and long-term learning memory are represented with realistic demo records.</div></aside>`;
@@ -2751,6 +2767,7 @@ function edumemoryPage() {
     teacher: edumemoryTeacherPage,
     portfolio: edumemoryPortfolioPage,
     opportunities: edumemoryOpportunitiesPage,
+    verification: edumemoryVerificationPage,
   };
   return (pages[state.edumemoryView || "student"] || edumemoryStudentPage)();
 }
@@ -2799,6 +2816,7 @@ function edumemoryStudentPage() {
       </div>
       <div class="tower-sketch" role="img" aria-label="Wind-resistant engineering tower prototype"></div>
     </section>
+    ${edumemoryTechnicalProofCard()}
     <section class="grid two-col">
       <article class="card card-pad">
         <div class="student-line"><span class="avatar">${edumemoryDemo.student.initials}</span><span><h3>${esc(edumemoryDemo.student.name)}</h3><span class="subtle">${esc(edumemoryDemo.student.grade)}</span></span></div>
@@ -2839,6 +2857,17 @@ function edumemoryMemoryCard() {
       </div>
     </div>
     ${edumemoryWalrusUploadSection()}
+  </section>`;
+}
+function edumemoryTechnicalProofCard() {
+  return `<section class="card card-pad edumemory-signal">
+    <div class="card-action-head"><div><h3>Technical Proof</h3><p class="subtle">How the demo connects AI, teacher verification, Walrus, Sui, and opportunity matching.</p></div><button type="button" class="btn secondary" data-edumemory-action="tab" data-view="verification">View blockchain proof</button></div>
+    <div class="grid three-col panel-stats">
+      <div class="metric"><span class="metric-label">Agentic AI</span><strong>Analyzes growth</strong><div class="metric-foot">Documents learning evidence</div></div>
+      <div class="metric"><span class="metric-label">Walrus</span><strong>Stores memory</strong><div class="metric-foot">Real Testnet Blob ID available</div></div>
+      <div class="metric"><span class="metric-label">Sui</span><strong>Defines ownership</strong><div class="metric-foot">Move package published</div></div>
+    </div>
+    <p class="recommendation"><strong>Human-in-the-loop:</strong> Teacher verification keeps credentials credible. <strong>Opportunity layer:</strong> verified learning becomes future pathways.</p>
   </section>`;
 }
 function edumemoryWalrusUploadSection() {
@@ -2915,15 +2944,34 @@ function edumemoryOpportunitiesPage() {
     <section class="card card-pad edumemory-agent active"><div class="card-action-head"><div><h3>Opportunity Matching Agent</h3><p class="subtle">Scans verified credentials, learning memory, portfolio signals, and growth trajectory.</p></div><span class="agent-pulse">Matching</span></div><p>EduMemory uses the teacher-verified credential and preserved evidence to explain why Maya is ready for specific STEM pathways.</p></section>
     <section class="edumemory-match-list">${edumemoryDemo.opportunities.map(([title, score, description]) => `<article class="card card-pad edumemory-match"><div><h3>${esc(title)}</h3><span class="quality">Match Score: ${score}%</span><p><strong>Reason:</strong> ${esc(description)}</p></div><div class="match-score">${score}%</div></article>`).join("")}</section>`;
 }
+function edumemoryVerificationPage() {
+  const proof = edumemoryDemo.blockchainProof;
+  return `${pageHead("Blockchain Verification", "Real Testnet proof for the EduMemory hackathon demo.", `<button type="button" class="btn secondary" data-edumemory-action="tab" data-view="portfolio">Portfolio</button>`)}
+    ${edumemoryProgress()}
+    <section class="grid two-col">
+      <article class="card card-pad edumemory-memory-card">
+        <div class="card-action-head"><div><span class="eyebrow">Walrus Testnet Learning Memory</span><h3>${esc(proof.walrus.status)}</h3></div><span class="memory-status">Live proof</span></div>
+        <div class="detail-grid"><span>Blob ID</span><strong>${esc(proof.walrus.blobId)}</strong><span>Object ID</span><strong>${esc(proof.walrus.objectId)}</strong></div>
+        <p class="recommendation">${esc(proof.walrus.explanation)}</p>
+      </article>
+      <article class="card card-pad edumemory-approved">
+        <div class="card-action-head"><div><span class="eyebrow">Sui Testnet Credential Package</span><h3>${esc(proof.sui.status)}</h3></div><span class="memory-status">Live proof</span></div>
+        <div class="detail-grid"><span>Package ID</span><strong>${esc(proof.sui.packageId)}</strong><span>Publish Transaction Digest</span><strong>${esc(proof.sui.publishTransactionDigest)}</strong><span>Module</span><strong>${esc(proof.sui.module)}</strong></div>
+        <p class="recommendation">${esc(proof.sui.explanation)}</p>
+      </article>
+    </section>
+    ${edumemoryTechnicalProofCard()}`;
+}
 function edumemoryCredentialCard() {
   const credential = edumemoryDemo.suiCredential;
+  const proof = edumemoryDemo.blockchainProof;
   return `<section class="credential-card">
     <div class="credential-top"><span>${esc(credential.title)}</span><strong>Sui Testnet</strong></div>
     <h2>${esc(credential.achievement)}</h2>
-    <div class="credential-grid"><span>Issued by</span><strong>${esc(credential.issuedBy)}</strong><span>Verified by</span><strong>${esc(credential.verifiedBy)}</strong><span>Blockchain Record</span><strong>${esc(credential.blockchainRecord)}</strong><span>Ownership</span><strong>${esc(credential.ownership)}</strong></div>
+    <div class="credential-grid"><span>Issued by</span><strong>${esc(credential.issuedBy)}</strong><span>Verified by</span><strong>${esc(credential.verifiedBy)}</strong><span>Credential Demo Status</span><strong>Teacher Verified</strong><span>Sui Package</span><strong>Published on Testnet</strong><span>Package ID</span><strong>${esc(proof.sui.packageId)}</strong><span>Next Milestone</span><strong>Live minting through issue_credential()</strong><span>Walrus Evidence Link</span><strong>${esc(proof.walrus.blobId)}</strong></div>
     <h3>Skills Verified</h3>
     <ul class="edumemory-checklist">${credential.skills.map((skill) => `<li>${esc(skill)}</li>`).join("")}</ul>
-    <p class="credential-note">This credential belongs to the learner and can travel beyond a single school or district.</p>
+    <p class="credential-note">This credential belongs to the learner and can travel beyond a single school or district. The Sui package is deployed; live in-app minting through issue_credential() is the next milestone.</p>
   </section>`;
 }
 function edumemoryTab(tab) { state.edumemoryView = tab; save(); render(); }

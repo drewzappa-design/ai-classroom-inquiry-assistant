@@ -39,13 +39,29 @@ The AI is not just a chatbot. It takes action across a workflow:
 
 Sui is a strong fit for student-owned credentials. A verified learning credential should belong to the learner and travel beyond one classroom, school, or district.
 
-In this hackathon demo, Sui is mocked as a testnet-style credential object. The next technical step would be creating real Sui credential records behind a feature flag.
+Yes. EduMemory has a deployed Sui Testnet Move package defining a `LearningCredential` object. The current demo visualizes teacher approval and credential creation; live minting through `issue_credential()` is the next milestone.
+
+Package ID:
+
+`0x421376637844f477eac71c9be3d0d27244cb6c1d16f4ec12ca33210533015ec6`
+
+Publish transaction:
+
+`8DXeQtEuccvNtgMJZ3XtXevdgcUYn9qWTx6G4ForK5nr`
 
 ## Why use Walrus?
 
 Walrus is a strong fit for long-term evidence preservation. Learning evidence can include reflections, design notebooks, prototype images, videos, teacher feedback, and AI growth analysis.
 
-In this demo, Walrus is represented by a Learning Memory record with ID `WALRUS-2026-ENG-0001`.
+Yes. EduMemory uploads a structured learning memory to Walrus Testnet and receives a real Blob ID and Object ID.
+
+Blob ID:
+
+`0G1_9oZoizZayorL8_0G7uWNJvpoltyKvj-ud4hnPsE`
+
+Object ID:
+
+`0xe83e0009ced1fe531b28d7003f16396702ff5261dd42e5827ea5861801eb235f`
 
 ## What is the current technical implementation?
 
@@ -54,8 +70,9 @@ The current implementation is an additive mode inside the existing AI Classroom 
 - Vanilla JavaScript
 - Local static server
 - `localStorage` demo state
-- Mock Sui credential
-- Mock Walrus memory
+- Real Walrus Testnet learning memory proof
+- Real Sui Testnet package deployment
+- Prototype Sui credential visualization in the app
 - Existing teacher and student workflows preserved
 
 ## What is real versus mocked?
@@ -70,8 +87,8 @@ Real in the demo:
 
 Mocked in the demo:
 
-- Sui credential transaction
-- Walrus evidence storage
+- Live in-app call to `issue_credential()`
+- Wallet-based credential minting
 - Live LLM calls
 - Production authentication
 
@@ -79,7 +96,15 @@ Mocked in the demo:
 
 The hackathon goal is to demonstrate real-world impact and product quality. The current demo focuses on the workflow judges need to understand: AI documents growth, teachers verify, Sui proves ownership, and Walrus preserves evidence.
 
-Production Sui and Walrus integration are clear next steps.
+The Sui package and Walrus memory proof are live on Testnet. The remaining next step is connecting the teacher approval button directly to `issue_credential()` so the app mints a live credential object.
+
+## Why not just use a database?
+
+Students need portable, verifiable, student-owned evidence that can survive beyond one classroom, school, or platform. A database can store records for one institution, but Sui and Walrus support a learner-owned proof layer that can travel with the student.
+
+## Does AI automatically award credentials?
+
+No. The AI recommends based on evidence. A teacher verifies before a credential is approved.
 
 ## Who are the target users?
 

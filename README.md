@@ -8,6 +8,31 @@ EduMemory is a Sui Overflow hackathon branch of the AI Classroom Inquiry Assista
 
 **Hackathon proof-of-concept:** This demo uses mock Sui records and includes a Walrus Testnet upload pathway. The app first attempts a direct public Walrus Testnet publisher upload, then tries an optional relay if configured, then falls back to a clearly labeled prototype Walrus memory record so the demo never breaks.
 
+## Blockchain Verification
+
+EduMemory now includes real Testnet proof alongside the in-app prototype credential flow.
+
+### Live
+
+- Walrus Testnet learning memory upload
+- Walrus Blob ID: `0G1_9oZoizZayorL8_0G7uWNJvpoltyKvj-ud4hnPsE`
+- Walrus Object ID: `0xe83e0009ced1fe531b28d7003f16396702ff5261dd42e5827ea5861801eb235f`
+- Sui Testnet package deployment
+- Sui Package ID: `0x421376637844f477eac71c9be3d0d27244cb6c1d16f4ec12ca33210533015ec6`
+- Sui Publish Transaction Digest: `8DXeQtEuccvNtgMJZ3XtXevdgcUYn9qWTx6G4ForK5nr`
+- Module name: `edumemorycredential`
+
+### Prototype
+
+- In-app teacher approval and credential visualization
+- In-app credential minting is not live yet
+
+### Next
+
+- Connect teacher approval directly to `issue_credential()`
+- Mint a live `LearningCredential` object from the app using the deployed Sui package
+- Reference the Walrus Blob ID inside the minted credential object
+
 ## Hackathon Demo
 
 Run a local server, then open:
@@ -54,7 +79,7 @@ The key message:
 
 ## Why Sui
 
-Sui represents student ownership, verifiable credentials, and portable achievement records. In this hackathon proof-of-concept, the Sui credential is a mock testnet-style learning credential so judges can understand the workflow without requiring production blockchain infrastructure.
+Sui represents student ownership, verifiable credentials, and portable achievement records. EduMemory has a deployed Sui Testnet Move package defining a `LearningCredential` object that can reference a Walrus Blob ID. The current app visualizes teacher approval and credential creation; live in-app minting through `issue_credential()` is the next milestone.
 
 ## Why Walrus
 
@@ -110,6 +135,7 @@ Existing functionality remains intact:
 - `aiScaffoldingEngine.js`: guarded scaffolding middleware
 - `app.js`: UI rendering and interactive workflows
 - `docs/hackathon/`: Sui Overflow submission package, pitch materials, and demo source notes
+- `sui-contracts/EduMemoryCredential/`: Sui Move package source for the published credential module
 
 ## Submission Checklist
 

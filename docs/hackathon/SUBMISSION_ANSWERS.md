@@ -26,7 +26,7 @@ Teachers also struggle to track long-term student growth because evidence is sca
 
 EduMemory turns classroom learning into a student-owned learning passport.
 
-The AI agent observes student work, identifies growth, generates evidence summaries, recommends credentials, and notifies a teacher for verification. Once the teacher approves, EduMemory creates a mock Sui credential and preserves the learning evidence in a mock Walrus memory record. The student portfolio then powers opportunity matching.
+The AI agent observes student work, identifies growth, generates evidence summaries, recommends credentials, and notifies a teacher for verification. Once the teacher approves, EduMemory visualizes a Sui credential pathway and preserves the learning evidence in a Walrus Testnet learning memory. The student portfolio then powers opportunity matching.
 
 ## Demo Flow
 
@@ -35,7 +35,7 @@ The AI agent observes student work, identifies growth, generates evidence summar
 3. A Walrus Learning Memory preserves the evidence bundle.
 4. The teacher reviews the pending recommendation.
 5. The teacher approves Engineering Design Level 1.
-6. A mock Sui credential is issued to Maya.
+6. A teacher-verified credential visualization references the deployed Sui Testnet package.
 7. Maya's portfolio updates.
 8. EduMemory recommends STEM opportunities with match reasons.
 
@@ -43,13 +43,35 @@ The AI agent observes student work, identifies growth, generates evidence summar
 
 Sui represents verifiable, student-owned credentials. EduMemory uses Sui conceptually for portable learning achievements that can travel beyond one school, district, or platform.
 
-In the current hackathon demo, Sui is mocked as a testnet-style credential object so the workflow is clear and demo-ready. Production Sui transaction integration is a future step.
+EduMemory has a deployed Sui Testnet Move package defining a `LearningCredential` object that can reference a Walrus Blob ID.
+
+Sui Package ID:
+
+`0x421376637844f477eac71c9be3d0d27244cb6c1d16f4ec12ca33210533015ec6`
+
+Publish Transaction Digest:
+
+`8DXeQtEuccvNtgMJZ3XtXevdgcUYn9qWTx6G4ForK5nr`
+
+Module:
+
+`edumemorycredential`
+
+The current app visualizes teacher approval and credential creation. Live minting through `issue_credential()` is the next milestone.
 
 ## Why Walrus
 
 Walrus represents durable learning memory. EduMemory needs a place to preserve reflections, project artifacts, prototype images, design notebooks, teacher feedback, and AI growth analysis.
 
-In the current demo, Walrus is mocked as a Learning Memory record: `WALRUS-2026-ENG-0001`. Future work would connect this evidence bundle to real Walrus storage.
+EduMemory uploads a structured learning memory to Walrus Testnet and receives real proof identifiers.
+
+Walrus Blob ID:
+
+`0G1_9oZoizZayorL8_0G7uWNJvpoltyKvj-ud4hnPsE`
+
+Walrus Object ID:
+
+`0xe83e0009ced1fe531b28d7003f16396702ff5261dd42e5827ea5861801eb235f`
 
 ## Agentic Web Relevance
 
@@ -76,9 +98,39 @@ The demo is implemented as an additive mode inside the existing AI Classroom Inq
 - No build step
 - Local demo state through `localStorage`
 - Existing teacher and student workflows preserved
-- Mock Sui credential object
-- Mock Walrus memory object
+- Real Walrus Testnet learning memory proof
+- Real Sui Testnet package deployment
+- Prototype in-app credential minting visualization
 - Agent analysis and opportunity matching UI
+
+## What Is Real On Testnet
+
+- Walrus Testnet learning memory upload
+- Sui Testnet package deployment
+
+## What Remains Prototype
+
+- In-app credential minting
+- Wallet-based teacher signing
+- Live call to `issue_credential()`
+
+## Package ID Field Answer
+
+Use:
+
+`0x421376637844f477eac71c9be3d0d27244cb6c1d16f4ec12ca33210533015ec6`
+
+If there is a notes field, add:
+
+"The Sui Testnet package is deployed and defines the LearningCredential object. The current app demo visualizes teacher approval; live minting through issue_credential() is the next milestone."
+
+## Demo Video Talking Points
+
+- AI documents Maya's growth; it does not replace her thinking.
+- Walrus stores the structured learning memory on Testnet.
+- Sui defines the credential ownership layer with a deployed Move package.
+- Teacher verification keeps humans in the loop.
+- Opportunity matching turns verified learning into future pathways.
 
 ## Local Run Instructions
 
