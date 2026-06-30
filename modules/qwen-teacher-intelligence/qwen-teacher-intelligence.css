@@ -3,6 +3,56 @@
   gap: 14px;
 }
 
+.qwen-teacher-decision-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px 14px;
+  border: 1px solid rgba(204, 159, 76, 0.34);
+  border-radius: 8px;
+  background: #fff8e7;
+  color: #5a4218;
+  line-height: 1.45;
+}
+
+.qwen-teacher-decision-banner strong {
+  color: #3f2c08;
+}
+
+.qwen-teacher-tabs {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+
+.qwen-teacher-tab {
+  flex: 0 0 auto;
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.qwen-teacher-tab.active,
+.qwen-teacher-tab:hover,
+.qwen-teacher-tab:focus {
+  border-color: var(--forest);
+  background: #eaf3ee;
+  color: var(--forest);
+  outline: none;
+}
+
+.qwen-teacher-screen {
+  display: grid;
+  gap: 14px;
+}
+
 .qwen-teacher-metrics .metric {
   min-height: 132px;
 }
@@ -28,8 +78,9 @@
 }
 
 .qwen-teacher-class-summary,
-.qwen-teacher-brief-card,
-.qwen-teacher-provider-card {
+.qwen-teacher-profile-card,
+.qwen-teacher-provider-card,
+.qwen-teacher-draft-card {
   overflow: hidden;
 }
 
@@ -65,14 +116,11 @@
   line-height: 1.6;
 }
 
-.qwen-teacher-signal-list {
-  display: grid;
-  gap: 8px;
-}
-
+.qwen-teacher-signal-list,
 .qwen-teacher-priority-list,
 .qwen-teacher-cluster-list,
-.qwen-teacher-intervention-list {
+.qwen-teacher-intervention-list,
+.qwen-teacher-approval-list {
   display: grid;
   gap: 10px;
 }
@@ -90,6 +138,10 @@
   color: inherit;
   text-align: left;
   cursor: pointer;
+}
+
+div.qwen-teacher-priority-row {
+  cursor: default;
 }
 
 .qwen-teacher-priority-row:hover,
@@ -125,21 +177,36 @@
   font-size: 0.82rem;
 }
 
-.qwen-teacher-cluster {
+.qwen-teacher-agent-grid {
   display: grid;
-  grid-template-columns: 1fr 40px;
-  gap: 12px;
-  align-items: center;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+}
+
+.qwen-teacher-agent-card,
+.qwen-teacher-cluster,
+.qwen-teacher-approval-item {
+  display: grid;
+  gap: 8px;
   padding: 12px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: #fbfaf5;
 }
 
-.qwen-teacher-cluster p {
-  margin: 4px 0 0;
+.qwen-teacher-agent-card p,
+.qwen-teacher-agent-card small,
+.qwen-teacher-cluster p,
+.qwen-teacher-approval-item p,
+.qwen-teacher-draft-card p {
+  margin: 0;
   color: var(--muted);
   line-height: 1.45;
+}
+
+.qwen-teacher-cluster {
+  grid-template-columns: 1fr 40px;
+  align-items: center;
 }
 
 .qwen-teacher-cluster > span {
@@ -153,15 +220,66 @@
   font-weight: 800;
 }
 
-.qwen-teacher-brief-card .eyebrow {
-  margin-left: 0;
+.qwen-teacher-tag-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
 }
 
-.qwen-teacher-brief-card p {
-  line-height: 1.55;
+.qwen-teacher-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding-left: 18px;
+  line-height: 1.5;
+}
+
+.qwen-teacher-workflow {
+  display: grid;
+  gap: 12px;
+}
+
+.qwen-teacher-workflow-step {
+  display: grid;
+  grid-template-columns: 42px 1fr;
+  gap: 12px;
+  align-items: start;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.qwen-teacher-workflow-step > span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--forest);
+  color: #fff;
+  font-weight: 900;
+}
+
+.qwen-teacher-workflow-step p {
+  margin: 4px 0 0;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.qwen-teacher-approval-item {
+  grid-template-columns: 1fr auto;
+  align-items: center;
 }
 
 @media (max-width: 760px) {
+  .qwen-teacher-decision-banner,
+  .qwen-teacher-approval-item {
+    display: grid;
+  }
+
   .qwen-teacher-priority-row {
     grid-template-columns: 42px 1fr;
   }
