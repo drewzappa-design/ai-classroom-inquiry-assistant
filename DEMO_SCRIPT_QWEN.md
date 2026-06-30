@@ -22,7 +22,7 @@ Click `Qwen Intelligence`.
 
 ## Screen Order And Talk Track
 
-### 1. Qwen Teacher Dashboard - 30 seconds
+### 1. Qwen Teacher Dashboard - 45 seconds
 
 What to show:
 
@@ -30,16 +30,43 @@ What to show:
 - Current recommendation status
 - Agent cards
 - Safety banner
+- `Analyze Entire Classroom` button
 
 What to say:
 
 > This is Qwen Teacher Intelligence, a teacher-facing Autopilot Agent workflow for classroom decision support. The key design principle is visible at the top: teacher decision support only - no automated student decisions. The agents can draft insights and interventions, but the teacher remains the final decision-maker.
 
+Click:
+
+- `Analyze Entire Classroom`
+
+Then say:
+
+> Now Qwen generates a mock class-level STEM report. It gives us a class health score, students who may need intervention, students ready for enrichment, misconception clusters, and recommended whole-class and small-group moves.
+
 Judging point:
 
-- Clear track fit: Autopilot Agent workflow with human approval.
+- Clear track fit: Autopilot Agent workflow with class-level analysis and human approval.
 
-### 2. Agent Workflow Page - 35 seconds
+### 2. Class Insight Signals - 25 seconds
+
+What to show:
+
+- CER writing support
+- Thermal energy misconception
+- Data analysis gap
+- Engineering design strength
+- Student opportunity matches
+
+What to say:
+
+> These are realistic middle school STEM signals. The class may need CER writing support, a small group may need data analysis help, and engineering design is emerging as a strength we can build on.
+
+Judging point:
+
+- The analysis feels instructionally specific, not generic.
+
+### 3. Agent Workflow Page - 40 seconds
 
 What to show:
 
@@ -47,17 +74,17 @@ What to show:
 - Waiting for Teacher Review
 - Teacher Decision
 - Approved Action History
-- Six agent cards
+- Six agent cards with evidence, reasoning, confidence, recommendation, and approval status
 
 What to say:
 
-> The workflow starts with student evidence, then routes through specialized agents. The Learning Analyst Agent identifies patterns. The Intervention Designer Agent drafts an instructional move. The Standards Coach checks alignment. The Communication and Opportunity agents prepare optional next steps. Finally, the Teacher Approval Agent stops the workflow until a teacher reviews it.
+> The workflow starts with student evidence, then routes through specialized agents. Notice each agent now explains the input evidence it used, its reasoning, confidence, recommended action, and approval status. This makes the agent team more auditable and less like a black box.
 
 Judging point:
 
 - Multi-agent design is visible and purposeful.
 
-### 3. Student Insight Page For Maya Rodriguez - 35 seconds
+### 4. Student Insight Page For Maya Rodriguez - 30 seconds
 
 What to show:
 
@@ -74,7 +101,7 @@ Judging point:
 
 - The demo avoids real student data and frames insight as reviewable evidence.
 
-### 4. Intervention Plan Page - 35 seconds
+### 5. Intervention Plan Page - 35 seconds
 
 What to show:
 
@@ -91,7 +118,7 @@ Judging point:
 
 - Practical classroom utility.
 
-### 5. Communication Drafts Page - 25 seconds
+### 6. Communication Drafts Page - 30 seconds
 
 What to show:
 
@@ -99,16 +126,17 @@ What to show:
 - teacher team note
 - student conference prompt
 - communication boundary
+- opportunity advisor recommendations
 
 What to say:
 
-> The Communication Agent can draft messages, but nothing is sent automatically. The teacher edits, approves, and decides whether any message is used.
+> The Communication Agent can draft messages, but nothing is sent automatically. The Opportunity Advisor can also suggest pathways like TSA Engineering Design, Samsung Solve for Tomorrow, Toshiba ExploraVision, FIRST LEGO League, Kentucky STEM camps, or a local ATC pathway. These are teacher-review suggestions, not automatic placements.
 
 Judging point:
 
 - Safety-aware communication workflow.
 
-### 6. Teacher Approval Page - 75 seconds
+### 7. Teacher Approval Page - 70 seconds
 
 What to show and click:
 
@@ -132,7 +160,7 @@ Judging point:
 
 - Human-in-the-loop approval is functional, not just text on a page.
 
-### 7. Approved Action History - 35 seconds
+### 8. Approved Action History - 30 seconds
 
 What to show:
 
@@ -161,7 +189,10 @@ Say:
 
 - Strong Qwen Autopilot Agent track fit
 - Multi-agent workflow is clear
+- Analyze Entire Classroom produces a memorable class-level report
+- Agent reasoning is evidence-based and reviewable
 - Human approval checkpoint is interactive
 - Demo has visible safety boundaries
+- Opportunity recommendations are teacher-review suggestions, not automatic placement
 - Practical teacher value is easy to understand
 - Future live Qwen integration path is realistic

@@ -22,9 +22,10 @@ Qwen Teacher Intelligence demonstrates a safer teacher-centered agent workflow:
 
 1. Student learning evidence is summarized.
 2. An agent team drafts insights, interventions, communications, and next steps.
-3. The teacher reviews the recommendation.
-4. The teacher can approve, edit, reject, or request more evidence.
-5. Only approved recommendations appear in Approved Action History.
+3. The teacher can run `Analyze Entire Classroom` to generate a mock class-level report.
+4. The teacher reviews the recommendation.
+5. The teacher can approve, edit, reject, or request more evidence.
+6. Only approved recommendations appear in Approved Action History.
 
 This makes the demo feel like an Autopilot Agent workflow without removing the teacher from the decision.
 
@@ -36,6 +37,47 @@ This makes the demo feel like an Autopilot Agent workflow without removing the t
 - **Communication Agent:** drafts teacher-reviewable messages.
 - **Opportunity Advisor Agent:** suggests enrichment or extension pathways.
 - **Teacher Approval Agent:** keeps every recommendation behind human review.
+
+Each agent card now shows:
+
+- input evidence used
+- reasoning summary
+- confidence level
+- recommended action
+- teacher approval status
+
+## Analyze Entire Classroom
+
+The `Analyze Entire Classroom` button generates a mock middle school STEM/science report with:
+
+- overall class health score
+- number of students needing intervention
+- number of students ready for enrichment
+- major misconception clusters
+- recommended whole-class action
+- small group recommendation
+- opportunity recommendations
+
+The class insight section highlights:
+
+- CER writing support
+- thermal energy misconception
+- data analysis gap
+- engineering design strength
+- student opportunity matches
+
+## Opportunity Advisor
+
+The Opportunity Advisor Agent suggests teacher-review enrichment options such as:
+
+- TSA Engineering Design
+- Samsung Solve for Tomorrow
+- Toshiba ExploraVision
+- FIRST LEGO League / robotics
+- Kentucky STEM camps or fellowships
+- local ATC / tech school pathway
+
+These are suggestions for teacher review, not automatic placement, nomination, or enrollment.
 
 ## Human-In-The-Loop Workflow
 
@@ -79,12 +121,13 @@ Click `Qwen Intelligence` in the teacher sidebar.
 Recommended judge/demo recording path:
 
 1. Qwen Teacher Dashboard
-2. Agent Workflow Page
-3. Student Insight Page for Maya Rodriguez
-4. Intervention Plan Page
-5. Communication Drafts Page
-6. Teacher Approval Page
-7. Approved Action History
+2. Click `Analyze Entire Classroom`
+3. Agent Workflow Page
+4. Student Insight Page for Maya Rodriguez
+5. Intervention Plan Page
+6. Communication Drafts Page
+7. Teacher Approval Page
+8. Approved Action History
 
 ## Demo Boundaries
 

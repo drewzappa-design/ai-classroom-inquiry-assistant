@@ -25,6 +25,10 @@ Teachers have rich evidence about student learning, but it is scattered across w
 - Communication Drafts Page
 - Teacher Approval Page
 - Approved Action History
+- Analyze Entire Classroom class-level report
+- Evidence-based agent reasoning cards
+- Class insight section: CER writing support, thermal energy misconception, data analysis gap, engineering design strength, student opportunity matches
+- Opportunity Advisor suggestions for TSA Engineering Design, Samsung Solve for Tomorrow, Toshiba ExploraVision, FIRST LEGO League / robotics, Kentucky STEM camps or fellowships, and local ATC / tech school pathways
 - Interactive actions: Approve, Edit, Reject, Request More Evidence
 - Status labels: Draft Recommendation, Waiting for Teacher Review, Approved by Teacher, Rejected, More Evidence Needed
 - Safety label: Teacher decision support only - no automated student decisions
@@ -34,13 +38,14 @@ Teachers have rich evidence about student learning, but it is scattered across w
 1. Run the local server with `py -m http.server 8000`.
 2. Open `http://localhost:8000/?role=teacher`.
 3. Click `Qwen Intelligence`.
-4. Review the dashboard and agent cards.
-5. Open Agent Workflow to show the Autopilot Agent pipeline.
-6. Open Maya Rodriguez's Student Insight Page.
-7. Open Intervention Plan and Communication Drafts.
-8. Open Teacher Approval Page.
-9. Click Request More Evidence, Reject, Edit, then Approve.
-10. Open Approved Action History to show the final teacher-approved action.
+4. Click `Analyze Entire Classroom`.
+5. Review the class health panel, class insight section, and agent reasoning cards.
+6. Open Agent Workflow to show the Autopilot Agent pipeline.
+7. Open Maya Rodriguez's Student Insight Page.
+8. Open Intervention Plan and Communication Drafts.
+9. Open Teacher Approval Page.
+10. Click Request More Evidence, Reject, Edit, then Approve.
+11. Open Approved Action History to show the final teacher-approved action.
 
 ## Tech Stack
 
@@ -49,6 +54,7 @@ Teachers have rich evidence about student learning, but it is scattered across w
 - Local browser state through `localStorage`
 - Namespaced state: `state.qwenTeacherIntelligence`
 - Mock Qwen Autopilot Agent workflow
+- Mock class-level STEM/science analysis report
 - No backend or live API calls in this milestone
 
 ## Future Roadmap
@@ -73,8 +79,10 @@ Teachers have rich evidence about student learning, but it is scattered across w
 
 - [ ] Demo runs locally with `py -m http.server 8000`
 - [ ] Qwen route opens from teacher sidebar
+- [ ] Analyze Entire Classroom generates a class health report
 - [ ] Safety label is visible
-- [ ] All agent cards are visible
+- [ ] Agent cards show evidence, reasoning, confidence, recommended action, and teacher approval status
+- [ ] Opportunity Advisor suggestions are framed as teacher-review only
 - [ ] Approval buttons work
 - [ ] Rejected recommendations do not update action history
 - [ ] Approved recommendations appear in Approved Action History

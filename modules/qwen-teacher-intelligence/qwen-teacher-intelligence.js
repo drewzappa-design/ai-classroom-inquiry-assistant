@@ -33,13 +33,78 @@
   };
 
   const agents = [
-    ["Learning Analyst Agent", "Synthesizing", "Reads inquiry evidence, AI follow-up logs, and revision patterns.", "Maya is improving at connecting constraints to design choices."],
-    ["Intervention Designer Agent", "Drafting", "Turns insight patterns into short teacher-led moves.", "Use a 5-minute claim-evidence-reasoning revision conference."],
-    ["Standards Coach Agent", "Aligned", "Checks recommendations against the teacher's lesson goal and standard.", "Keep focus on MS-LS2-4 design criteria, constraints, and ecosystem stability."],
-    ["Communication Agent", "Ready", "Drafts teacher-reviewable messages for families or support teams.", "Prepare a concise growth note with evidence and next step."],
-    ["Opportunity Advisor Agent", "Watching", "Looks for enrichment, extension, or portfolio opportunities.", "Maya may be ready for an engineering design extension task."],
-    ["Teacher Approval Agent", "Required", "Keeps every recommendation behind teacher review.", "No student decisions are applied automatically."],
-  ].map(([name, status, purpose, output]) => ({ name, status, purpose, output }));
+    {
+      name: "Learning Analyst Agent",
+      status: "Synthesizing",
+      inputEvidence: "Student CER drafts, AI scaffold logs, DQB questions, Maya's prototype reflection, and class misconception patterns.",
+      reasoningSummary: "Several students can name observations but struggle to connect evidence to reasoning. Maya's reflection is stronger because she names a failed prototype, a constraint, and a design change.",
+      confidence: "88%",
+      recommendedAction: "Prioritize CER sentence-level revision and use Maya's prototype evidence as a model of reasoning from failure.",
+      teacherApprovalStatus: "Waiting for Teacher Review",
+    },
+    {
+      name: "Intervention Designer Agent",
+      status: "Drafting",
+      inputEvidence: "Evidence-use score, repeated weak-reasoning flags, intervention students, and current engineering design lesson goal.",
+      reasoningSummary: "A short teacher-led move is better than a long reteach because the class needs a focused bridge from claim to evidence to reasoning.",
+      confidence: "84%",
+      recommendedAction: "Run a 5-minute CER repair: underline evidence, add a because link, then revise one design decision.",
+      teacherApprovalStatus: "Waiting for Teacher Review",
+    },
+    {
+      name: "Standards Coach Agent",
+      status: "Aligned",
+      inputEvidence: "MS-LS2-4 lesson target, criteria/constraints prompts, student resource set, and engineering design reflection.",
+      reasoningSummary: "The strongest alignment is not generic writing support; it is evidence-based explanation of design criteria, constraints, and ecosystem trade-offs.",
+      confidence: "91%",
+      recommendedAction: "Keep the next teacher move anchored to criteria, constraints, and evidence from the palm farm design problem.",
+      teacherApprovalStatus: "Waiting for Teacher Review",
+    },
+    {
+      name: "Communication Agent",
+      status: "Ready",
+      inputEvidence: "Teacher-facing recommendation, Maya's strengths, needed evidence list, and family-safe non-evaluative language.",
+      reasoningSummary: "Communication should celebrate observable growth without implying placement, grading, or automatic intervention decisions.",
+      confidence: "80%",
+      recommendedAction: "Draft a short family/team note that says Maya is using prototype evidence to improve design reasoning.",
+      teacherApprovalStatus: "Draft only",
+    },
+    {
+      name: "Opportunity Advisor Agent",
+      status: "Watching",
+      inputEvidence: "Engineering design strength, robotics interest signals, evidence of iteration, and middle school STEM pathway options.",
+      reasoningSummary: "Maya and several peers show enough engineering persistence for teacher-reviewed enrichment suggestions, not automatic placement.",
+      confidence: "76%",
+      recommendedAction: "Review TSA Engineering Design, Samsung Solve for Tomorrow, Toshiba ExploraVision, FIRST LEGO League/robotics, Kentucky STEM camps or fellowships, and local ATC/tech school pathways.",
+      teacherApprovalStatus: "Teacher review required",
+    },
+    {
+      name: "Teacher Approval Agent",
+      status: "Required",
+      inputEvidence: "Current recommendation status, approval history, rejection reason, evidence request list, and teacher action controls.",
+      reasoningSummary: "The workflow should create an action history only after explicit teacher approval; rejection and evidence requests must not become student actions.",
+      confidence: "97%",
+      recommendedAction: "Hold all actions until the teacher approves, edits, rejects, or requests more evidence.",
+      teacherApprovalStatus: "Required before action",
+    },
+  ];
+
+  const classInsightItems = [
+    ["CER writing support", "Class need", "Students can state claims about palm oil trade-offs, but many need a stronger evidence sentence and a clearer because link."],
+    ["Thermal energy misconception", "Cross-unit warning", "A small group is using everyday heat language imprecisely; plan a quick temperature vs. thermal energy check before the next physical science bridge."],
+    ["Data analysis gap", "Small group", "Several students describe patterns verbally but do not reference table values or graph trends when defending a design decision."],
+    ["Engineering design strength", "Class asset", "Students are improving at naming constraints, testing prototypes, and explaining why an iteration performed better."],
+    ["Student opportunity matches", "Teacher review", "Engineering and robotics signals suggest enrichment pathways, but all matches should be reviewed by the teacher before sharing."],
+  ].map(([title, status, detail]) => ({ title, status, detail }));
+
+  const opportunityMatches = [
+    ["TSA Engineering Design", "Best for students showing design constraints, prototype iteration, and presentation readiness."],
+    ["Samsung Solve for Tomorrow", "Good fit for teams connecting STEM design to a local community problem."],
+    ["Toshiba ExploraVision", "Strong extension for students ready to imagine and explain future-facing science innovation."],
+    ["FIRST LEGO League / robotics", "Good match for students showing persistence, debugging habits, and collaborative engineering interest."],
+    ["Kentucky STEM camps or fellowships", "Teacher-reviewed enrichment option for students ready for summer or regional STEM experiences."],
+    ["Local ATC / tech school pathway", "Pathway suggestion for students interested in applied engineering, automation, robotics, or technical careers."],
+  ].map(([name, reason]) => ({ name, reason }));
 
   const mayaInsight = {
     name: "Maya Rodriguez",
@@ -68,7 +133,7 @@
       ${h.pageHead(
         screenLabels[view],
         "Mock Autopilot Agent workflow for planning, review, and teacher-approved support.",
-        `<span class="pill"><span class="dot"></span>Demo mode</span><button class="btn secondary" onclick="teacherTab('analytics')">Class analytics</button>`
+        `<span class="pill"><span class="dot"></span>Demo mode</span><button class="btn secondary" onclick="QwenTeacherIntelligence.analyzeClassroom()">Analyze Entire Classroom</button><button class="btn secondary" onclick="teacherTab('analytics')">Class analytics</button>`
       )}
       ${decisionSupportBanner()}
       ${moduleNav(view, h)}
@@ -87,6 +152,7 @@
     qwen.neededEvidence ||= [];
     qwen.editedNote ||= "";
     qwen.lastDecisionAt ||= "";
+    qwen.classAnalysis ||= null;
   }
 
   function buildContext(state, h) {
@@ -151,6 +217,8 @@
       <section class="grid two-col qwen-teacher-main-grid">
         <div class="grid">
           ${classSummaryCard(context, h)}
+          ${classHealthPanel(context, h)}
+          ${classInsightSection(h)}
           ${recommendationCard(context, h, true)}
           ${agentGridCard(h)}
         </div>
@@ -201,6 +269,7 @@
         <div class="card-action-head"><div><h3 class="section-title">Autopilot Agent Workflow</h3><p class="subtle">Mock local workflow with teacher-controlled approvals.</p></div>${statusChip(context.qwen.recommendationStatus)}</div>
         <div class="qwen-teacher-workflow">${steps.map(([number, title, body]) => `<div class="qwen-teacher-workflow-step"><span>${h.esc(number)}</span><div><strong>${h.esc(title)}</strong><p>${h.esc(body)}</p></div></div>`).join("")}</div>
       </section>
+      ${classInsightSection(h)}
       ${agentGridCard(h)}
     </section>`;
   }
@@ -235,6 +304,7 @@
         <h3 class="section-title">Communication Boundary</h3>
         <p class="qwen-teacher-safety-label">Drafts are never sent automatically. A teacher must review, edit, and choose where any message goes.</p>
       </article>
+      ${opportunityPanel(h)}
       ${agentGridCard(h, ["Communication Agent", "Teacher Approval Agent"])}
     </section>`;
   }
@@ -358,6 +428,52 @@
     </article>`;
   }
 
+  function classHealthPanel(context, h) {
+    const report = context.qwen.classAnalysis;
+    if (!report) {
+      return `<article class="card card-pad qwen-teacher-class-health">
+        <div class="card-action-head"><div><h3 class="section-title">Class Health Panel</h3><p class="subtle">Run the classroom analysis to generate a mock STEM insight report.</p></div><button class="btn" onclick="QwenTeacherIntelligence.analyzeClassroom()">Analyze Entire Classroom</button></div>
+        <p class="qwen-teacher-safety-label">The report will be mock/demo only and will not update student records.</p>
+      </article>`;
+    }
+    return `<article class="card card-pad qwen-teacher-class-health">
+      <div class="card-action-head"><div><h3 class="section-title">Class Health Report</h3><p class="subtle">Generated ${h.esc(report.generatedAt)} · Teacher review required</p></div><span class="qwen-teacher-health-score">${h.esc(report.overallClassHealthScore)}</span></div>
+      <section class="grid three-col qwen-teacher-health-grid">
+        ${metricCard("Need intervention", report.studentsNeedingIntervention, "students", "qwen-teacher-risk")}
+        ${metricCard("Ready for enrichment", report.studentsReadyForEnrichment, "students", "qwen-teacher-evidence")}
+        ${metricCard("Class health", report.overallClassHealthScore, "middle school STEM", "qwen-teacher-clusters")}
+      </section>
+      <div class="detail-grid qwen-teacher-report-grid">
+        <span>Major misconception clusters</span><strong>${report.majorMisconceptionClusters.map(h.esc).join("; ")}</strong>
+        <span>Recommended whole-class action</span><strong>${h.esc(report.recommendedWholeClassAction)}</strong>
+        <span>Small group recommendation</span><strong>${h.esc(report.smallGroupRecommendation)}</strong>
+        <span>Opportunity recommendations</span><strong>${report.opportunityRecommendations.map(h.esc).join("; ")}</strong>
+      </div>
+    </article>`;
+  }
+
+  function classInsightSection(h) {
+    return `<section class="card card-pad">
+      <h3 class="section-title">Class Insight Signals</h3>
+      <div class="qwen-teacher-insight-grid">
+        ${classInsightItems.map((item) => `<article class="qwen-teacher-insight-card">
+          <div class="card-action-head"><strong>${h.esc(item.title)}</strong><span class="quality">${h.esc(item.status)}</span></div>
+          <p>${h.esc(item.detail)}</p>
+        </article>`).join("")}
+      </div>
+    </section>`;
+  }
+
+  function opportunityPanel(h) {
+    return `<section class="card card-pad qwen-teacher-opportunity-panel">
+      <h3 class="section-title">Opportunity Advisor Recommendations</h3>
+      <p class="qwen-teacher-safety-label">These are teacher-review suggestions, not automatic placement, nomination, or enrollment decisions.</p>
+      <div class="qwen-teacher-opportunity-list">
+        ${opportunityMatches.map((item) => `<article class="qwen-teacher-opportunity-item"><strong>${h.esc(item.name)}</strong><p>${h.esc(item.reason)}</p></article>`).join("")}
+      </div>
+    </section>`;
+  }
+
   function studentSnapshotCard(h) {
     return `<article class="card card-pad">
       <div class="card-action-head"><div><h3 class="section-title">Maya Rodriguez</h3><p class="subtle">Mock student insight profile</p></div><button class="btn secondary" onclick="QwenTeacherIntelligence.setView('maya')">Open</button></div>
@@ -374,8 +490,13 @@
   function agentCard(agent, h) {
     return `<article class="qwen-teacher-agent-card">
       <div class="card-action-head"><strong>${h.esc(agent.name)}</strong><span class="quality">${h.esc(agent.status)}</span></div>
-      <p>${h.esc(agent.purpose)}</p>
-      <small>${h.esc(agent.output)}</small>
+      <div class="qwen-teacher-agent-detail"><span>Input evidence used</span><p>${h.esc(agent.inputEvidence)}</p></div>
+      <div class="qwen-teacher-agent-detail"><span>Reasoning summary</span><p>${h.esc(agent.reasoningSummary)}</p></div>
+      <div class="qwen-teacher-agent-meta">
+        <span>Confidence: <strong>${h.esc(agent.confidence)}</strong></span>
+        <span>Teacher approval: <strong>${h.esc(agent.teacherApprovalStatus)}</strong></span>
+      </div>
+      <div class="qwen-teacher-agent-detail"><span>Recommended action</span><p>${h.esc(agent.recommendedAction)}</p></div>
     </article>`;
   }
 
@@ -537,10 +658,35 @@
     persist();
   }
 
+  function analyzeClassroom() {
+    ensureQwenState(currentState);
+    currentState.qwenTeacherIntelligence.classAnalysis = {
+      generatedAt: nowLabel(),
+      overallClassHealthScore: "78%",
+      studentsNeedingIntervention: 5,
+      studentsReadyForEnrichment: 7,
+      majorMisconceptionClusters: [
+        "CER claims without evidence",
+        "Thermal energy described as a substance instead of particle motion",
+        "Graph trends described without numerical support",
+      ],
+      recommendedWholeClassAction: "Run a 7-minute CER repair using a palm farm design claim, one data point, and a because statement that links evidence to ecosystem stability.",
+      smallGroupRecommendation: "Pull five students for a data-analysis table talk: identify one pattern, cite one value, and explain how it changes a design constraint.",
+      opportunityRecommendations: [
+        "Teacher-review enrichment list for TSA Engineering Design",
+        "Robotics/FIRST LEGO League interest group",
+        "Samsung Solve for Tomorrow community problem brainstorm",
+        "Kentucky STEM camp or local ATC pathway conversation",
+      ],
+    };
+    activeView = "dashboard";
+    persist();
+  }
+
   function setView(view) {
     activeView = screenLabels[view] ? view : "dashboard";
     if (typeof window.teacherTab === "function") window.teacherTab("qwenTeacher");
   }
 
-  window.QwenTeacherIntelligence = { render, setView, approve, edit, reject, requestMoreEvidence };
+  window.QwenTeacherIntelligence = { render, setView, approve, edit, reject, requestMoreEvidence, analyzeClassroom };
 })();

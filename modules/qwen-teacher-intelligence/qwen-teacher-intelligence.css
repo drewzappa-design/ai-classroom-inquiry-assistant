@@ -81,7 +81,9 @@
 .qwen-teacher-profile-card,
 .qwen-teacher-provider-card,
 .qwen-teacher-draft-card,
-.qwen-teacher-recommendation-card {
+.qwen-teacher-recommendation-card,
+.qwen-teacher-class-health,
+.qwen-teacher-opportunity-panel {
   overflow: hidden;
 }
 
@@ -189,7 +191,9 @@ div.qwen-teacher-priority-row {
 .qwen-teacher-cluster,
 .qwen-teacher-approval-item,
 .qwen-teacher-history-item,
-.qwen-teacher-decision-detail {
+.qwen-teacher-decision-detail,
+.qwen-teacher-insight-card,
+.qwen-teacher-opportunity-item {
   display: grid;
   gap: 8px;
   padding: 12px;
@@ -204,10 +208,44 @@ div.qwen-teacher-priority-row {
 .qwen-teacher-approval-item p,
 .qwen-teacher-draft-card p,
 .qwen-teacher-decision-detail p,
-.qwen-teacher-history-item p {
+.qwen-teacher-history-item p,
+.qwen-teacher-insight-card p,
+.qwen-teacher-opportunity-item p,
+.qwen-teacher-agent-detail p {
   margin: 0;
   color: var(--muted);
   line-height: 1.45;
+}
+
+.qwen-teacher-agent-card {
+  align-content: start;
+  background: linear-gradient(180deg, #ffffff 0%, #fbfaf5 100%);
+}
+
+.qwen-teacher-agent-detail {
+  display: grid;
+  gap: 3px;
+}
+
+.qwen-teacher-agent-detail span,
+.qwen-teacher-agent-meta span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.qwen-teacher-agent-meta {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 5px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #eef6f1;
+}
+
+.qwen-teacher-agent-meta strong {
+  color: var(--forest);
 }
 
 .qwen-teacher-cluster {
@@ -363,6 +401,43 @@ div.qwen-teacher-priority-row {
 
 .qwen-teacher-history-item {
   background: #fff;
+}
+
+.qwen-teacher-health-score {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: var(--forest);
+  color: #fff;
+  font-size: 1.25rem;
+  font-weight: 900;
+}
+
+.qwen-teacher-health-grid {
+  margin: 12px 0;
+}
+
+.qwen-teacher-report-grid {
+  margin-top: 8px;
+}
+
+.qwen-teacher-insight-grid,
+.qwen-teacher-opportunity-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+}
+
+.qwen-teacher-insight-card {
+  background: #fff;
+}
+
+.qwen-teacher-opportunity-item {
+  background: #fff;
+  border-color: rgba(63, 119, 142, 0.24);
 }
 
 @media (max-width: 760px) {
