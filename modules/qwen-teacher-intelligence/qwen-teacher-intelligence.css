@@ -50,7 +50,76 @@
 
 .qwen-teacher-screen {
   display: grid;
-  gap: 14px;
+  gap: 18px;
+}
+
+.qwen-teacher-os-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: center;
+  padding: 24px;
+  border: 1px solid rgba(24, 77, 67, 0.16);
+  border-radius: 14px;
+  background:
+    linear-gradient(135deg, rgba(24, 77, 67, 0.94), rgba(35, 86, 106, 0.9)),
+    #184d43;
+  color: #fff;
+  box-shadow: 0 18px 44px rgba(23, 37, 34, 0.16);
+}
+
+.qwen-teacher-os-hero h2 {
+  margin: 6px 0;
+  color: #fff;
+  font-size: clamp(1.8rem, 3vw, 3rem);
+  letter-spacing: 0;
+}
+
+.qwen-teacher-os-hero p {
+  max-width: 720px;
+  margin: 0;
+  color: rgba(255, 255, 255, 0.86);
+  font-size: 1.08rem;
+  line-height: 1.55;
+}
+
+.qwen-teacher-kicker {
+  color: inherit;
+  font-size: 0.76rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.75;
+}
+
+.qwen-teacher-os-status {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  min-width: 190px;
+  padding: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.qwen-teacher-os-status small {
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.qwen-teacher-live-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #85e0a3;
+  box-shadow: 0 0 0 0 rgba(133, 224, 163, 0.55);
+  animation: qwen-teacher-pulse 1.8s ease-out infinite;
+}
+
+@keyframes qwen-teacher-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(133, 224, 163, 0.55); }
+  70% { box-shadow: 0 0 0 12px rgba(133, 224, 163, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(133, 224, 163, 0); }
 }
 
 .qwen-teacher-metrics .metric {
@@ -183,8 +252,8 @@ div.qwen-teacher-priority-row {
 
 .qwen-teacher-agent-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 12px;
 }
 
 .qwen-teacher-agent-card,
@@ -220,6 +289,7 @@ div.qwen-teacher-priority-row {
 .qwen-teacher-agent-card {
   align-content: start;
   background: linear-gradient(180deg, #ffffff 0%, #fbfaf5 100%);
+  box-shadow: 0 10px 30px rgba(23, 37, 34, 0.06);
 }
 
 .qwen-teacher-agent-detail {
@@ -237,7 +307,7 @@ div.qwen-teacher-priority-row {
 
 .qwen-teacher-agent-meta {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: 1fr 1fr;
   gap: 5px;
   padding: 8px 10px;
   border-radius: 8px;
@@ -246,6 +316,42 @@ div.qwen-teacher-priority-row {
 
 .qwen-teacher-agent-meta strong {
   color: var(--forest);
+}
+
+.qwen-teacher-agent-status {
+  display: inline-flex;
+  min-height: 26px;
+  align-items: center;
+  padding: 0 9px;
+  border-radius: 999px;
+  background: #eaf4f7;
+  color: #23566a;
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.qwen-teacher-completion,
+.qwen-teacher-os-meter {
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #e9ece7;
+}
+
+.qwen-teacher-completion span,
+.qwen-teacher-os-meter span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--forest), #7bb47e);
+}
+
+.qwen-teacher-approval-line {
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #fff8e7;
+  color: #5a4218;
+  font-size: 0.86rem;
 }
 
 .qwen-teacher-cluster {
@@ -403,6 +509,15 @@ div.qwen-teacher-priority-row {
   background: #fff;
 }
 
+.qwen-teacher-os-health,
+.qwen-teacher-os-priorities,
+.qwen-teacher-os-team,
+.qwen-teacher-os-insights,
+.qwen-teacher-os-actions {
+  border-radius: 12px;
+  box-shadow: 0 12px 34px rgba(23, 37, 34, 0.06);
+}
+
 .qwen-teacher-health-score {
   display: inline-flex;
   align-items: center;
@@ -420,6 +535,64 @@ div.qwen-teacher-priority-row {
   margin: 12px 0;
 }
 
+.qwen-teacher-os-metric-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.qwen-teacher-os-metric {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) minmax(120px, 260px) 56px;
+  gap: 14px;
+  align-items: center;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+}
+
+.qwen-teacher-os-metric strong,
+.qwen-teacher-os-insight strong {
+  display: block;
+  margin-bottom: 3px;
+}
+
+.qwen-teacher-os-metric span,
+.qwen-teacher-os-insight p {
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.qwen-teacher-os-metric b {
+  justify-self: end;
+  font-size: 1.1rem;
+}
+
+.qwen-teacher-tone-strong {
+  border-color: rgba(75, 125, 86, 0.26);
+}
+
+.qwen-teacher-tone-strong .qwen-teacher-os-meter span {
+  background: linear-gradient(90deg, #2f7b45, #89c67c);
+}
+
+.qwen-teacher-tone-watch {
+  border-color: rgba(204, 159, 76, 0.34);
+}
+
+.qwen-teacher-tone-watch .qwen-teacher-os-meter span {
+  background: linear-gradient(90deg, #c98f28, #f0c76d);
+}
+
+.qwen-teacher-tone-risk {
+  border-color: rgba(183, 82, 54, 0.32);
+}
+
+.qwen-teacher-tone-risk .qwen-teacher-os-meter span {
+  background: linear-gradient(90deg, #b75236, #e39982);
+}
+
 .qwen-teacher-report-grid {
   margin-top: 8px;
 }
@@ -429,6 +602,109 @@ div.qwen-teacher-priority-row {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 10px;
+}
+
+.qwen-teacher-priority-stack {
+  display: grid;
+  gap: 10px;
+}
+
+.qwen-teacher-os-priority {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+}
+
+.qwen-teacher-priority-rank {
+  display: inline-flex;
+  width: 34px;
+  height: 34px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #eef2ed;
+  font-weight: 900;
+}
+
+.qwen-teacher-priority-title {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.qwen-teacher-priority-title > span {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.qwen-teacher-priority-title em {
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.qwen-teacher-os-priority p,
+.qwen-teacher-os-priority small {
+  margin: 4px 0 0;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.qwen-teacher-os-priority > b {
+  text-align: right;
+  color: var(--ink);
+}
+
+.qwen-teacher-priority-red {
+  border-color: rgba(183, 82, 54, 0.34);
+}
+
+.qwen-teacher-priority-red .qwen-teacher-priority-title > span {
+  background: #c74228;
+}
+
+.qwen-teacher-priority-amber {
+  border-color: rgba(204, 159, 76, 0.38);
+}
+
+.qwen-teacher-priority-amber .qwen-teacher-priority-title > span {
+  background: #c98f28;
+}
+
+.qwen-teacher-priority-green {
+  border-color: rgba(75, 125, 86, 0.3);
+}
+
+.qwen-teacher-priority-green .qwen-teacher-priority-title > span {
+  background: #2f7b45;
+}
+
+.qwen-teacher-os-insight-grid,
+.qwen-teacher-action-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.qwen-teacher-os-insight {
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+}
+
+.qwen-teacher-action-grid .btn {
+  justify-content: center;
+  min-height: 44px;
 }
 
 .qwen-teacher-insight-card {
@@ -448,6 +724,18 @@ div.qwen-teacher-priority-row {
 
   .qwen-teacher-priority-row {
     grid-template-columns: 42px 1fr;
+  }
+
+  .qwen-teacher-os-hero,
+  .qwen-teacher-os-metric,
+  .qwen-teacher-os-priority {
+    grid-template-columns: 1fr;
+  }
+
+  .qwen-teacher-os-priority > b,
+  .qwen-teacher-os-metric b {
+    justify-self: start;
+    text-align: left;
   }
 
   .qwen-teacher-priority-row .quality {

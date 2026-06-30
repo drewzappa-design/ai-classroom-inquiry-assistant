@@ -36,6 +36,8 @@
     {
       name: "Learning Analyst Agent",
       status: "Synthesizing",
+      completion: 92,
+      lastCompletedAction: "Scored CER drafts and flagged three students for missing evidence links.",
       inputEvidence: "Student CER drafts, AI scaffold logs, DQB questions, Maya's prototype reflection, and class misconception patterns.",
       reasoningSummary: "Several students can name observations but struggle to connect evidence to reasoning. Maya's reflection is stronger because she names a failed prototype, a constraint, and a design change.",
       confidence: "88%",
@@ -45,6 +47,8 @@
     {
       name: "Intervention Designer Agent",
       status: "Drafting",
+      completion: 84,
+      lastCompletedAction: "Generated a 10-minute CER conference plan for Maya and a small-group data talk.",
       inputEvidence: "Evidence-use score, repeated weak-reasoning flags, intervention students, and current engineering design lesson goal.",
       reasoningSummary: "A short teacher-led move is better than a long reteach because the class needs a focused bridge from claim to evidence to reasoning.",
       confidence: "84%",
@@ -54,6 +58,8 @@
     {
       name: "Standards Coach Agent",
       status: "Aligned",
+      completion: 96,
+      lastCompletedAction: "Checked recommendations against criteria, constraints, and MS-LS2-4 design expectations.",
       inputEvidence: "MS-LS2-4 lesson target, criteria/constraints prompts, student resource set, and engineering design reflection.",
       reasoningSummary: "The strongest alignment is not generic writing support; it is evidence-based explanation of design criteria, constraints, and ecosystem trade-offs.",
       confidence: "91%",
@@ -63,6 +69,8 @@
     {
       name: "Communication Agent",
       status: "Ready",
+      completion: 78,
+      lastCompletedAction: "Prepared teacher-review language for family updates and student conference prompts.",
       inputEvidence: "Teacher-facing recommendation, Maya's strengths, needed evidence list, and family-safe non-evaluative language.",
       reasoningSummary: "Communication should celebrate observable growth without implying placement, grading, or automatic intervention decisions.",
       confidence: "80%",
@@ -72,6 +80,8 @@
     {
       name: "Opportunity Advisor Agent",
       status: "Watching",
+      completion: 73,
+      lastCompletedAction: "Matched engineering persistence signals to teacher-review STEM opportunity pathways.",
       inputEvidence: "Engineering design strength, robotics interest signals, evidence of iteration, and middle school STEM pathway options.",
       reasoningSummary: "Maya and several peers show enough engineering persistence for teacher-reviewed enrichment suggestions, not automatic placement.",
       confidence: "76%",
@@ -81,6 +91,8 @@
     {
       name: "Teacher Approval Agent",
       status: "Required",
+      completion: 100,
+      lastCompletedAction: "Blocked automatic action history updates until teacher approval is recorded.",
       inputEvidence: "Current recommendation status, approval history, rejection reason, evidence request list, and teacher action controls.",
       reasoningSummary: "The workflow should create an action history only after explicit teacher approval; rejection and evidence requests must not become student actions.",
       confidence: "97%",
@@ -206,28 +218,140 @@
   }
 
   function dashboardView(context, h) {
-    const evidenceUse = context.classMetrics["Evidence Use"] || 0;
     return `<section class="qwen-teacher-screen">
-      <section class="grid stats qwen-teacher-metrics">
-        ${metricCard("Priority students", context.priorityStudents.length, "Need teacher attention", "qwen-teacher-risk")}
-        ${metricCard("Current status", statusLabels[context.qwen.recommendationStatus], "Approval workflow", "qwen-teacher-events")}
-        ${metricCard("Approved actions", context.qwen.actionHistory.length, "Teacher-approved only", "qwen-teacher-clusters")}
-        ${metricCard("Evidence use", `${evidenceUse}%`, "Class signal strength", "qwen-teacher-evidence")}
-      </section>
-      <section class="grid two-col qwen-teacher-main-grid">
-        <div class="grid">
-          ${classSummaryCard(context, h)}
-          ${classHealthPanel(context, h)}
-          ${classInsightSection(h)}
-          ${recommendationCard(context, h, true)}
-          ${agentGridCard(h)}
-        </div>
-        <aside class="grid">
-          ${studentSnapshotCard(h)}
-          ${clusterCard(context.clusters, h)}
-          ${providerCard(context.providerStatus, h)}
-        </aside>
-      </section>
+      ${teacherWelcomePanel(h)}
+      ${operatingSystemHealthCard(context, h)}
+      ${todaysPrioritiesPanel(context, h)}
+      ${agentGridCard(h)}
+      ${classInsightsOperatingPanel(context, h)}
+      ${quickActionsPanel()}
+    </section>`;
+  }
+
+  function teacherWelcomePanel(h) {
+    return `<section class="qwen-teacher-os-hero">
+      <div>
+        <span class="qwen-teacher-kicker">AI Teaching Team Status</span>
+        <h2>Good Evening, Andrew</h2>
+        <p>Today your classroom is performing well. Three students require attention. Two students are ready for enrichment.</p>
+      </div>
+      <div class="qwen-teacher-os-status">
+        <span class="qwen-teacher-live-dot"></span>
+        <strong>Teaching team online</strong>
+        <small>6 agents monitoring classroom evidence</small>
+      </div>
+    </section>`;
+  }
+
+  function operatingSystemHealthCard(context, h) {
+    const metrics = [
+      ["Health Score", "82%", "strong", "Class is stable with a few targeted support needs."],
+      ["Student Engagement", "88%", "strong", "Most students are active in discussion and revision."],
+      ["Assignment Completion", "76%", "watch", "A small group needs a completion check before the next task."],
+      ["Reflection Quality", "69%", "risk", "CER writing needs clearer evidence-to-reasoning links."],
+      ["Engineering Design Progress", "91%", "strong", "Prototype iteration and constraint language are class strengths."],
+    ];
+    return `<section class="card card-pad qwen-teacher-os-health">
+      <div class="card-action-head">
+        <div><span class="qwen-teacher-kicker">Class Health Card</span><h3 class="section-title">Overall Class Health</h3></div>
+        <span class="qwen-teacher-health-score">82%</span>
+      </div>
+      <div class="qwen-teacher-os-metric-list">
+        ${metrics.map(([label, value, tone, note]) => healthMetric(label, value, tone, note, h)).join("")}
+      </div>
+    </section>`;
+  }
+
+  function healthMetric(label, value, tone, note, h) {
+    const numeric = Number(String(value).replace("%", ""));
+    return `<article class="qwen-teacher-os-metric qwen-teacher-tone-${tone}">
+      <div><strong>${h.esc(label)}</strong><span>${h.esc(note)}</span></div>
+      <div class="qwen-teacher-os-meter"><span style="width:${numeric}%"></span></div>
+      <b>${h.esc(value)}</b>
+    </article>`;
+  }
+
+  function todaysPrioritiesPanel(context, h) {
+    const priorities = [
+      {
+        name: "Maya Rodriguez",
+        tone: "red",
+        reason: "Needs CER writing support.",
+        confidence: "92%",
+        action: "Run a 10-minute evidence-to-reasoning conference.",
+        time: "10 minutes",
+      },
+      {
+        name: "Eli M.",
+        tone: "amber",
+        reason: "Data analysis gap: describes trends without citing values.",
+        confidence: "87%",
+        action: "Use one graph and ask for one number-backed claim.",
+        time: "7 minutes",
+      },
+      {
+        name: "Camila R.",
+        tone: "amber",
+        reason: "Needs bilingual vocabulary bridge for criteria and constraints.",
+        confidence: "81%",
+        action: "Preview three design words before independent revision.",
+        time: "5 minutes",
+      },
+      {
+        name: "Jordan T.",
+        tone: "green",
+        reason: "Ready for engineering enrichment.",
+        confidence: "89%",
+        action: "Offer TSA Engineering Design or robotics extension prompt.",
+        time: "4 minutes",
+      },
+    ];
+    return `<section class="card card-pad qwen-teacher-os-priorities">
+      <div class="card-action-head"><div><span class="qwen-teacher-kicker">Today's Priorities</span><h3 class="section-title">Students who need you first</h3></div><span class="qwen-teacher-status qwen-teacher-status-waiting">Ranked highest to lowest</span></div>
+      <div class="qwen-teacher-priority-stack">
+        ${priorities.map((item, index) => priorityCard(item, index + 1, h)).join("")}
+      </div>
+    </section>`;
+  }
+
+  function priorityCard(item, rank, h) {
+    return `<article class="qwen-teacher-os-priority qwen-teacher-priority-${item.tone}">
+      <div class="qwen-teacher-priority-rank">${rank}</div>
+      <div>
+        <div class="qwen-teacher-priority-title"><span></span><strong>${h.esc(item.name)}</strong><em>Confidence ${h.esc(item.confidence)}</em></div>
+        <p>${h.esc(item.reason)}</p>
+        <small>Recommended action: ${h.esc(item.action)}</small>
+      </div>
+      <b>Estimated intervention:<br/>${h.esc(item.time)}</b>
+    </article>`;
+  }
+
+  function classInsightsOperatingPanel(context, h) {
+    const insights = [
+      ["Largest misconception", "Thermal energy is being described as a substance instead of particle motion.", "risk"],
+      ["Biggest improvement", "Engineering design explanations now include more constraints and prototype evidence.", "strong"],
+      ["Students ready for enrichment", "Jordan T. and Micah P. are ready for robotics or engineering extension pathways.", "strong"],
+      ["Students at risk", "Three students need CER support before the next written reflection.", "watch"],
+      ["Opportunity recommendations", "TSA Engineering Design, FIRST LEGO League, Samsung Solve for Tomorrow, Kentucky STEM camps, and local ATC pathways.", "strong"],
+    ];
+    return `<section class="card card-pad qwen-teacher-os-insights">
+      <div class="card-action-head"><div><span class="qwen-teacher-kicker">Class Insights</span><h3 class="section-title">What the AI teaching team sees</h3></div><button class="btn secondary" onclick="QwenTeacherIntelligence.analyzeClassroom()">Refresh analysis</button></div>
+      <div class="qwen-teacher-os-insight-grid">
+        ${insights.map(([title, body, tone]) => `<article class="qwen-teacher-os-insight qwen-teacher-tone-${tone}"><strong>${h.esc(title)}</strong><p>${h.esc(body)}</p></article>`).join("")}
+      </div>
+    </section>`;
+  }
+
+  function quickActionsPanel() {
+    return `<section class="card card-pad qwen-teacher-os-actions">
+      <div><span class="qwen-teacher-kicker">Quick Actions</span><h3 class="section-title">What should I do next?</h3></div>
+      <div class="qwen-teacher-action-grid">
+        <button class="btn" onclick="QwenTeacherIntelligence.analyzeClassroom()">Analyze Entire Classroom</button>
+        <button class="btn secondary" onclick="QwenTeacherIntelligence.setView('approval')">Review Pending Approvals</button>
+        <button class="btn secondary" onclick="QwenTeacherIntelligence.setView('communications')">Generate Parent Updates</button>
+        <button class="btn secondary" onclick="QwenTeacherIntelligence.setView('intervention')">View Intervention Plans</button>
+        <button class="btn secondary" onclick="QwenTeacherIntelligence.setView('communications')">Review Opportunity Matches</button>
+      </div>
     </section>`;
   }
 
@@ -484,19 +608,22 @@
 
   function agentGridCard(h, names) {
     const visibleAgents = names?.length ? agents.filter((agent) => names.includes(agent.name)) : agents;
-    return `<section class="card card-pad"><h3 class="section-title">Agent Cards</h3><div class="qwen-teacher-agent-grid">${visibleAgents.map((agent) => agentCard(agent, h)).join("")}</div></section>`;
+    return `<section class="card card-pad qwen-teacher-os-team"><div class="card-action-head"><div><span class="qwen-teacher-kicker">AI Teaching Team</span><h3 class="section-title">Six AI coworkers monitoring the classroom</h3></div><span class="qwen-teacher-status qwen-teacher-status-approved">All agents active</span></div><div class="qwen-teacher-agent-grid">${visibleAgents.map((agent) => agentCard(agent, h)).join("")}</div></section>`;
   }
 
   function agentCard(agent, h) {
     return `<article class="qwen-teacher-agent-card">
-      <div class="card-action-head"><strong>${h.esc(agent.name)}</strong><span class="quality">${h.esc(agent.status)}</span></div>
-      <div class="qwen-teacher-agent-detail"><span>Input evidence used</span><p>${h.esc(agent.inputEvidence)}</p></div>
-      <div class="qwen-teacher-agent-detail"><span>Reasoning summary</span><p>${h.esc(agent.reasoningSummary)}</p></div>
+      <div class="card-action-head"><strong>${h.esc(agent.name)}</strong><span class="qwen-teacher-agent-status">${h.esc(agent.status)}</span></div>
+      <div class="qwen-teacher-completion"><span style="width:${Number(agent.completion || 0)}%"></span></div>
       <div class="qwen-teacher-agent-meta">
         <span>Confidence: <strong>${h.esc(agent.confidence)}</strong></span>
-        <span>Teacher approval: <strong>${h.esc(agent.teacherApprovalStatus)}</strong></span>
+        <span>Completion: <strong>${Number(agent.completion || 0)}%</strong></span>
       </div>
-      <div class="qwen-teacher-agent-detail"><span>Recommended action</span><p>${h.esc(agent.recommendedAction)}</p></div>
+      <div class="qwen-teacher-agent-detail"><span>Last completed action</span><p>${h.esc(agent.lastCompletedAction)}</p></div>
+      <div class="qwen-teacher-agent-detail"><span>Input evidence used</span><p>${h.esc(agent.inputEvidence)}</p></div>
+      <div class="qwen-teacher-agent-detail"><span>Reasoning summary</span><p>${h.esc(agent.reasoningSummary)}</p></div>
+      <div class="qwen-teacher-agent-detail"><span>Next recommendation</span><p>${h.esc(agent.recommendedAction)}</p></div>
+      <div class="qwen-teacher-approval-line">Teacher approval: <strong>${h.esc(agent.teacherApprovalStatus)}</strong></div>
     </article>`;
   }
 
