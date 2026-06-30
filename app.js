@@ -2697,6 +2697,8 @@ function qwenTeacherPage() {
       esc,
       pageHead,
       progress,
+      render,
+      save,
       studentInsightFlags,
       studentInsightProfile,
       teacherAlertStudents,
