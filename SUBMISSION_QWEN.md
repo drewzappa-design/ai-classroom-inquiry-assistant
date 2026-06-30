@@ -26,6 +26,9 @@ Teachers have rich evidence about student learning, but it is scattered across w
 - Teacher Approval Page
 - Approved Action History
 - Analyze Entire Classroom class-level report
+- Demo Mode for clean judging and recording
+- Guided 9-step presentation flow with Next/Previous controls
+- Keyboard shortcuts: Right Arrow, Left Arrow, Esc
 - Evidence-based agent reasoning cards
 - Class insight section: CER writing support, thermal energy misconception, data analysis gap, engineering design strength, student opportunity matches
 - Opportunity Advisor suggestions for TSA Engineering Design, Samsung Solve for Tomorrow, Toshiba ExploraVision, FIRST LEGO League / robotics, Kentucky STEM camps or fellowships, and local ATC / tech school pathways
@@ -38,14 +41,11 @@ Teachers have rich evidence about student learning, but it is scattered across w
 1. Run the local server with `py -m http.server 8000`.
 2. Open `http://localhost:8000/?role=teacher`.
 3. Click `Qwen Intelligence`.
-4. Click `Analyze Entire Classroom`.
-5. Review the class health panel, class insight section, and agent reasoning cards.
-6. Open Agent Workflow to show the Autopilot Agent pipeline.
-7. Open Maya Rodriguez's Student Insight Page.
-8. Open Intervention Plan and Communication Drafts.
-9. Open Teacher Approval Page.
-10. Click Request More Evidence, Reject, Edit, then Approve.
-11. Open Approved Action History to show the final teacher-approved action.
+4. Click `Demo Mode`.
+5. Use `Next` or Right Arrow to move through the 9-step presentation.
+6. On Analyze Entire Classroom, show the agents completing their mock analysis.
+7. On Teacher Approval, click Approve and show the status change.
+8. Open Approved Action History to show the final teacher-approved action.
 
 ## Tech Stack
 
@@ -80,6 +80,11 @@ Teachers have rich evidence about student learning, but it is scattered across w
 - [ ] Demo runs locally with `py -m http.server 8000`
 - [ ] Qwen route opens from teacher sidebar
 - [ ] Analyze Entire Classroom generates a class health report
+- [ ] Demo Mode launches from the Qwen dashboard
+- [ ] Demo Mode shows Step 1 of 9 through Step 9 of 9
+- [ ] Right Arrow, Left Arrow, and Esc shortcuts work
+- [ ] Analyze Entire Classroom stage animates agent completion
+- [ ] Teacher Approval stage animates approval status change
 - [ ] Safety label is visible
 - [ ] Agent cards show evidence, reasoning, confidence, recommended action, and teacher approval status
 - [ ] Opportunity Advisor suggestions are framed as teacher-review only

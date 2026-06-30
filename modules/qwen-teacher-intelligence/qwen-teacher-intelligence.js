@@ -21,6 +21,30 @@
     evidence: "More Evidence Needed",
   };
 
+  const demoStages = [
+    "Welcome",
+    "Teacher Dashboard",
+    "Analyze Entire Classroom",
+    "Class Summary",
+    "Student Insight (Maya)",
+    "Agent Workflow",
+    "Teacher Approval",
+    "Approved Action History",
+    "Closing Vision",
+  ];
+
+  const demoAgentStages = [
+    "Learning Analyst",
+    "Intervention Designer",
+    "Standards Coach",
+    "Communication Agent",
+    "Opportunity Advisor",
+    "Teacher Approval Ready",
+  ];
+
+  let keyboardInstalled = false;
+  let demoAnimationTimer = null;
+
   const recommendationTemplate = {
     id: "qwen-rec-maya-001",
     studentName: "Maya Rodriguez",
@@ -138,7 +162,10 @@
     currentHelpers = helpers || {};
     const h = currentHelpers;
     ensureQwenState(state);
+    installKeyboardShortcuts();
+    syncDemoBodyClass(state.qwenTeacherIntelligence.demoMode);
     const context = buildContext(state, h);
+    if (context.qwen.demoMode) return renderDemoMode(context, h);
     const view = screenLabels[activeView] ? activeView : "dashboard";
 
     return `<section class="qwen-teacher-intelligence">
@@ -165,6 +192,10 @@
     qwen.editedNote ||= "";
     qwen.lastDecisionAt ||= "";
     qwen.classAnalysis ||= null;
+    qwen.demoMode ||= false;
+    qwen.demoStep ||= 0;
+    qwen.demoAgentProgress ||= 0;
+    qwen.demoApprovalState ||= "waiting";
   }
 
   function buildContext(state, h) {
@@ -215,6 +246,146 @@
       history: historyView,
     };
     return (views[view] || dashboardView)(context, h);
+  }
+
+  function renderDemoMode(context, h) {
+    const step = Math.max(0, Math.min(demoStages.length - 1, Number(context.qwen.demoStep || 0)));
+    const title = demoStages[step];
+    return `<section class="qwen-teacher-intelligence qwen-teacher-demo-shell">
+      <header class="qwen-teacher-demo-topbar">
+        <div>
+          <span class="qwen-teacher-kicker">Qwen Teacher Intelligence Demo Mode</span>
+          <h1>${h.esc(title)}</h1>
+        </div>
+        <div class="qwen-teacher-demo-progress">
+          <strong>Step ${step + 1} of ${demoStages.length}</strong>
+          <div class="qwen-teacher-demo-progress-bar"><span style="width:${((step + 1) / demoStages.length) * 100}%"></span></div>
+        </div>
+      </header>
+      <main class="qwen-teacher-demo-stage">${demoStageContent(step, context, h)}</main>
+      <footer class="qwen-teacher-demo-controls">
+        <button class="btn secondary" onclick="QwenTeacherIntelligence.previousDemoStep()" ${step === 0 ? "disabled" : ""}>Previous</button>
+        <span>Right Arrow = Next · Left Arrow = Previous · Esc = Exit Demo Mode</span>
+        <button class="btn secondary" onclick="QwenTeacherIntelligence.exitDemoMode()">Exit Demo Mode</button>
+        <button class="btn" onclick="QwenTeacherIntelligence.nextDemoStep()" ${step === demoStages.length - 1 ? "disabled" : ""}>Next</button>
+      </footer>
+    </section>`;
+  }
+
+  function demoStageContent(step, context, h) {
+    const stages = [
+      () => demoWelcomeStage(h),
+      () => demoDashboardStage(context, h),
+      () => demoAnalyzeStage(context, h),
+      () => demoClassSummaryStage(context, h),
+      () => demoMayaStage(context, h),
+      () => demoWorkflowStage(context, h),
+      () => demoApprovalStage(context, h),
+      () => demoHistoryStage(context, h),
+      () => demoClosingStage(h),
+    ];
+    return (stages[step] || stages[0])();
+  }
+
+  function demoWelcomeStage(h) {
+    return `<section class="qwen-teacher-demo-hero">
+      <span class="qwen-teacher-kicker">A modern AI operating system for teachers</span>
+      <h2>Good Evening, Andrew</h2>
+      <p>Qwen Teacher Intelligence helps answer four questions fast: Is my class healthy? Which students need me first? What should I do next? What opportunities am I missing?</p>
+      <div class="qwen-teacher-demo-answer-grid">
+        <article><strong>Class health</strong><span>82% and stable</span></article>
+        <article><strong>Teacher attention</strong><span>3 students first</span></article>
+        <article><strong>Next action</strong><span>10-minute CER support</span></article>
+        <article><strong>Opportunities</strong><span>2 enrichment-ready learners</span></article>
+      </div>
+    </section>`;
+  }
+
+  function demoDashboardStage(context, h) {
+    return `<section class="qwen-teacher-demo-grid">
+      ${teacherWelcomePanel(h)}
+      ${operatingSystemHealthCard(context, h)}
+      ${todaysPrioritiesPanel(context, h)}
+    </section>`;
+  }
+
+  function demoAnalyzeStage(context, h) {
+    const progress = Number(context.qwen.demoAgentProgress || 0);
+    return `<section class="card card-pad qwen-teacher-demo-analysis">
+      <div class="card-action-head">
+        <div><span class="qwen-teacher-kicker">Analyze Entire Classroom</span><h3 class="section-title">AI teaching team is completing the class scan</h3></div>
+        <span class="qwen-teacher-status ${progress >= demoAgentStages.length ? "qwen-teacher-status-approved" : "qwen-teacher-status-waiting"}">${progress >= demoAgentStages.length ? "Analysis Complete" : "Analyzing..."}</span>
+      </div>
+      <div class="qwen-teacher-demo-agent-run">
+        ${demoAgentStages.map((name, index) => {
+          const done = index < progress;
+          const active = index === progress && progress < demoAgentStages.length;
+          return `<article class="qwen-teacher-demo-agent ${done ? "complete" : ""} ${active ? "active" : ""}">
+            <span>${done ? "Complete" : active ? "Working" : "Queued"}</span>
+            <strong>${h.esc(name)}</strong>
+            <div class="qwen-teacher-completion"><span style="width:${done ? 100 : active ? 58 : 12}%"></span></div>
+          </article>`;
+        }).join("")}
+      </div>
+      ${progress >= demoAgentStages.length ? classHealthPanel(context, h) : `<p class="qwen-teacher-safety-label">Mock timing only. No real Qwen API calls are being made.</p>`}
+    </section>`;
+  }
+
+  function demoClassSummaryStage(context, h) {
+    return `<section class="qwen-teacher-demo-grid">
+      ${classHealthPanel(context, h)}
+      ${classInsightsOperatingPanel(context, h)}
+    </section>`;
+  }
+
+  function demoMayaStage(context, h) {
+    return `<section class="qwen-teacher-demo-grid">
+      ${mayaInsightView(context, h)}
+    </section>`;
+  }
+
+  function demoWorkflowStage(context, h) {
+    return `<section class="qwen-teacher-demo-grid">
+      ${workflowView(context, h)}
+    </section>`;
+  }
+
+  function demoApprovalStage(context, h) {
+    return `<section class="qwen-teacher-demo-grid">
+      <section class="grid two-col qwen-teacher-main-grid">
+        ${recommendationCard(context, h, false)}
+        <article class="card card-pad">
+          <div class="card-action-head"><div><h3 class="section-title">Teacher Approval</h3><p class="subtle">Watch the recommendation become teacher-approved.</p></div>${statusChip(context.qwen.recommendationStatus)}</div>
+          <div class="qwen-teacher-action-buttons">
+            <button class="btn" onclick="QwenTeacherIntelligence.demoApprove()">Approve</button>
+          </div>
+          ${context.qwen.demoApprovalState === "approving" ? `<div class="qwen-teacher-decision-detail evidence"><strong>Approving...</strong><p>Teacher decision is being recorded in local demo history.</p></div>` : decisionDetail(context, h)}
+        </article>
+      </section>
+    </section>`;
+  }
+
+  function demoHistoryStage(context, h) {
+    return `<section class="qwen-teacher-demo-grid">
+      <article class="card card-pad">
+        <div class="card-action-head"><div><span class="qwen-teacher-kicker">Approved Action History</span><h3 class="section-title">Teacher-approved actions only</h3></div>${statusChip(context.qwen.recommendationStatus)}</div>
+        ${historyList(context, h)}
+      </article>
+    </section>`;
+  }
+
+  function demoClosingStage(h) {
+    return `<section class="qwen-teacher-demo-hero closing">
+      <span class="qwen-teacher-kicker">Closing Vision</span>
+      <h2>AI that helps teachers decide, not AI that decides for them.</h2>
+      <p>Qwen Teacher Intelligence turns scattered classroom evidence into a clean operating system for teacher judgment: class health, student priorities, agent recommendations, approval checkpoints, and opportunity pathways.</p>
+      <div class="qwen-teacher-demo-answer-grid">
+        <article><strong>Safer</strong><span>human approval required</span></article>
+        <article><strong>Faster</strong><span>next action is clear</span></article>
+        <article><strong>Fairer</strong><span>evidence stays visible</span></article>
+        <article><strong>Future-ready</strong><span>Qwen backend path is clear</span></article>
+      </div>
+    </section>`;
   }
 
   function dashboardView(context, h) {
@@ -346,6 +517,7 @@
     return `<section class="card card-pad qwen-teacher-os-actions">
       <div><span class="qwen-teacher-kicker">Quick Actions</span><h3 class="section-title">What should I do next?</h3></div>
       <div class="qwen-teacher-action-grid">
+        <button class="btn" onclick="QwenTeacherIntelligence.enterDemoMode()">Demo Mode</button>
         <button class="btn" onclick="QwenTeacherIntelligence.analyzeClassroom()">Analyze Entire Classroom</button>
         <button class="btn secondary" onclick="QwenTeacherIntelligence.setView('approval')">Review Pending Approvals</button>
         <button class="btn secondary" onclick="QwenTeacherIntelligence.setView('communications')">Generate Parent Updates</button>
@@ -810,10 +982,126 @@
     persist();
   }
 
+  function enterDemoMode() {
+    ensureQwenState(currentState);
+    const qwen = currentState.qwenTeacherIntelligence;
+    qwen.demoMode = true;
+    qwen.demoStep = 0;
+    qwen.demoAgentProgress = 0;
+    qwen.demoApprovalState = "waiting";
+    activeView = "dashboard";
+    syncDemoBodyClass(true);
+    persist();
+  }
+
+  function exitDemoMode() {
+    if (!currentState) return;
+    ensureQwenState(currentState);
+    currentState.qwenTeacherIntelligence.demoMode = false;
+    stopDemoAnimation();
+    syncDemoBodyClass(false);
+    persist();
+  }
+
+  function nextDemoStep() {
+    ensureQwenState(currentState);
+    const qwen = currentState.qwenTeacherIntelligence;
+    qwen.demoStep = Math.min(demoStages.length - 1, Number(qwen.demoStep || 0) + 1);
+    handleDemoStepSideEffects(qwen.demoStep);
+    persist();
+  }
+
+  function previousDemoStep() {
+    ensureQwenState(currentState);
+    const qwen = currentState.qwenTeacherIntelligence;
+    qwen.demoStep = Math.max(0, Number(qwen.demoStep || 0) - 1);
+    handleDemoStepSideEffects(qwen.demoStep);
+    persist();
+  }
+
+  function handleDemoStepSideEffects(step) {
+    if (step === 2) startDemoAgentAnimation();
+    else stopDemoAnimation();
+    if (step !== 6 && currentState?.qwenTeacherIntelligence) currentState.qwenTeacherIntelligence.demoApprovalState = "waiting";
+  }
+
+  function startDemoAgentAnimation() {
+    ensureQwenState(currentState);
+    const qwen = currentState.qwenTeacherIntelligence;
+    qwen.demoAgentProgress = 0;
+    analyzeClassroom();
+    stopDemoAnimation();
+    demoAnimationTimer = window.setInterval(() => {
+      qwen.demoAgentProgress = Math.min(demoAgentStages.length, Number(qwen.demoAgentProgress || 0) + 1);
+      currentHelpers.save?.();
+      currentHelpers.render?.();
+      if (qwen.demoAgentProgress >= demoAgentStages.length) stopDemoAnimation();
+    }, 550);
+  }
+
+  function stopDemoAnimation() {
+    if (demoAnimationTimer) window.clearInterval(demoAnimationTimer);
+    demoAnimationTimer = null;
+  }
+
+  function demoApprove() {
+    ensureQwenState(currentState);
+    const qwen = currentState.qwenTeacherIntelligence;
+    qwen.demoApprovalState = "approving";
+    currentHelpers.save?.();
+    currentHelpers.render?.();
+    window.setTimeout(() => {
+      approve();
+      currentState.qwenTeacherIntelligence.demoMode = true;
+      currentState.qwenTeacherIntelligence.demoStep = 6;
+      currentState.qwenTeacherIntelligence.demoApprovalState = "approved";
+      syncDemoBodyClass(true);
+      persist();
+    }, 700);
+  }
+
+  function installKeyboardShortcuts() {
+    if (keyboardInstalled || !window?.addEventListener) return;
+    keyboardInstalled = true;
+    window.addEventListener("keydown", (event) => {
+      if (!currentState?.qwenTeacherIntelligence?.demoMode) return;
+      if (["INPUT", "TEXTAREA", "SELECT"].includes(event.target?.tagName)) return;
+      if (event.key === "ArrowRight") {
+        event.preventDefault();
+        nextDemoStep();
+      }
+      if (event.key === "ArrowLeft") {
+        event.preventDefault();
+        previousDemoStep();
+      }
+      if (event.key === "Escape") {
+        event.preventDefault();
+        exitDemoMode();
+      }
+    });
+  }
+
+  function syncDemoBodyClass(enabled) {
+    document?.body?.classList?.toggle("qwen-teacher-demo-mode", Boolean(enabled));
+  }
+
   function setView(view) {
     activeView = screenLabels[view] ? view : "dashboard";
     if (typeof window.teacherTab === "function") window.teacherTab("qwenTeacher");
   }
 
-  window.QwenTeacherIntelligence = { render, setView, approve, edit, reject, requestMoreEvidence, analyzeClassroom };
+  window.QwenTeacherIntelligence = {
+    render,
+    setView,
+    approve,
+    edit,
+    reject,
+    requestMoreEvidence,
+    analyzeClassroom,
+    enterDemoMode,
+    exitDemoMode,
+    nextDemoStep,
+    previousDemoStep,
+    demoApprove,
+  };
 })();

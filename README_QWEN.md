@@ -116,9 +116,38 @@ http://localhost:8000/?role=teacher
 
 Click `Qwen Intelligence` in the teacher sidebar.
 
+## Demo Mode
+
+For judging or recording, open Qwen Teacher Intelligence and click `Demo Mode` on the dashboard.
+
+Demo Mode:
+
+- hides non-essential navigation and developer controls
+- maximizes the Qwen content area
+- presents a clean guided layout
+- shows `Step 1 of 9` through `Step 9 of 9`
+- supports keyboard controls:
+  - Right Arrow = Next
+  - Left Arrow = Previous
+  - Esc = Exit Demo Mode
+
+Guided stages:
+
+1. Welcome
+2. Teacher Dashboard
+3. Analyze Entire Classroom
+4. Class Summary
+5. Student Insight (Maya)
+6. Agent Workflow
+7. Teacher Approval
+8. Approved Action History
+9. Closing Vision
+
 ## Demo Path
 
 Recommended judge/demo recording path:
+
+Use `Demo Mode` for the cleanest presentation. If navigating manually, use:
 
 1. Qwen Teacher Dashboard
 2. Click `Analyze Entire Classroom`
