@@ -172,7 +172,7 @@
       ${h.pageHead(
         screenLabels[view],
         "Mock Autopilot Agent workflow for planning, review, and teacher-approved support.",
-        `<span class="pill"><span class="dot"></span>Demo mode</span><button class="btn secondary" onclick="QwenTeacherIntelligence.analyzeClassroom()">Analyze Entire Classroom</button><button class="btn secondary" onclick="teacherTab('analytics')">Class analytics</button>`
+        `<button class="btn secondary" onclick="QwenTeacherIntelligence.analyzeClassroom()">Analyze Entire Classroom</button><button class="btn secondary" onclick="teacherTab('analytics')">Class analytics</button>`
       )}
       ${decisionSupportBanner()}
       ${moduleNav(view, h)}
@@ -184,6 +184,8 @@
     state.qwenTeacherIntelligence ||= {};
     const qwen = state.qwenTeacherIntelligence;
     qwen.provider ||= "demo";
+    qwen.providerStatusMessage ||= "Mock Mode uses local demo data only.";
+    qwen.liveLastCheckedAt ||= "";
     qwen.currentRecommendation ||= { ...recommendationTemplate };
     qwen.recommendationStatus ||= "waiting";
     qwen.actionHistory ||= [];
@@ -251,6 +253,8 @@
   function renderDemoMode(context, h) {
     const step = Math.max(0, Math.min(demoStages.length - 1, Number(context.qwen.demoStep || 0)));
     const title = demoStages[step];
+    const isFirstStep = step === 0;
+    const isLastStep = step === demoStages.length - 1;
     return `<section class="qwen-teacher-intelligence qwen-teacher-demo-shell">
       <header class="qwen-teacher-demo-topbar">
         <div>
@@ -264,10 +268,10 @@
       </header>
       <main class="qwen-teacher-demo-stage">${demoStageContent(step, context, h)}</main>
       <footer class="qwen-teacher-demo-controls">
-        <button class="btn secondary" onclick="QwenTeacherIntelligence.previousDemoStep()" ${step === 0 ? "disabled" : ""}>Previous</button>
+        <button class="btn secondary" onclick="QwenTeacherIntelligence.previousDemoStep()" ${isFirstStep ? "disabled" : ""}>${isFirstStep ? "Previous (start)" : "Previous"}</button>
         <span>Right Arrow = Next · Left Arrow = Previous · Esc = Exit Demo Mode</span>
         <button class="btn secondary" onclick="QwenTeacherIntelligence.exitDemoMode()">Exit Demo Mode</button>
-        <button class="btn" onclick="QwenTeacherIntelligence.nextDemoStep()" ${step === demoStages.length - 1 ? "disabled" : ""}>Next</button>
+        <button class="btn" onclick="QwenTeacherIntelligence.nextDemoStep()" ${isLastStep ? "disabled" : ""}>${isLastStep ? "Next (end)" : "Next"}</button>
       </footer>
     </section>`;
   }
@@ -395,6 +399,7 @@
       ${todaysPrioritiesPanel(context, h)}
       ${agentGridCard(h)}
       ${classInsightsOperatingPanel(context, h)}
+      ${providerCard(context.providerStatus, h)}
       ${quickActionsPanel()}
     </section>`;
   }
@@ -517,7 +522,7 @@
     return `<section class="card card-pad qwen-teacher-os-actions">
       <div><span class="qwen-teacher-kicker">Quick Actions</span><h3 class="section-title">What should I do next?</h3></div>
       <div class="qwen-teacher-action-grid">
-        <button class="btn" onclick="QwenTeacherIntelligence.enterDemoMode()">Demo Mode</button>
+        <button type="button" class="btn" onclick="window.QwenTeacherIntelligence.enterDemoMode()">Demo Mode</button>
         <button class="btn" onclick="QwenTeacherIntelligence.analyzeClassroom()">Analyze Entire Classroom</button>
         <button class="btn secondary" onclick="QwenTeacherIntelligence.setView('approval')">Review Pending Approvals</button>
         <button class="btn secondary" onclick="QwenTeacherIntelligence.setView('communications')">Generate Parent Updates</button>
@@ -734,6 +739,7 @@
     }
     return `<article class="card card-pad qwen-teacher-class-health">
       <div class="card-action-head"><div><h3 class="section-title">Class Health Report</h3><p class="subtle">Generated ${h.esc(report.generatedAt)} · Teacher review required</p></div><span class="qwen-teacher-health-score">${h.esc(report.overallClassHealthScore)}</span></div>
+      ${report.fallbackNote ? `<p class="qwen-teacher-safety-label">${h.esc(report.fallbackNote)}</p>` : ""}
       <section class="grid three-col qwen-teacher-health-grid">
         ${metricCard("Need intervention", report.studentsNeedingIntervention, "students", "qwen-teacher-risk")}
         ${metricCard("Ready for enrichment", report.studentsReadyForEnrichment, "students", "qwen-teacher-evidence")}
@@ -815,10 +821,17 @@
 
   function providerCard(providerStatus, h) {
     return `<article class="card card-pad qwen-teacher-provider-card">
-      <h3 class="section-title">Provider Boundary</h3>
+      <div class="card-action-head">
+        <div><h3 class="section-title">Provider Boundary</h3><p class="subtle">Switch between local demo intelligence and the backend Qwen proxy.</p></div>
+        <div class="role-actions">
+          <button type="button" class="btn ${providerStatus.mode === "demo" ? "" : "secondary"}" onclick="QwenTeacherIntelligence.setProvider('demo')">Mock Mode</button>
+          <button type="button" class="btn ${providerStatus.mode === "live" ? "" : "secondary"}" onclick="QwenTeacherIntelligence.setProvider('live')">Live Qwen Mode</button>
+        </div>
+      </div>
       <div class="detail-grid">
         <span>Mode</span><strong>${h.esc(providerStatus.label)}</strong>
         <span>Status</span><strong>${h.esc(providerStatus.status)}</strong>
+        <span>Last check</span><strong>${h.esc(providerStatus.lastCheckedAt || "Not checked")}</strong>
         <span>Safety</span><strong>Teacher decision support only</strong>
       </div>
       <p class="subtle">${h.esc(providerStatus.description)} Qwen does not automatically change student records, grades, hot lists, resources, credentials, or communications.</p>
@@ -827,8 +840,10 @@
 
   function providerMode(state) {
     const mode = state.qwenTeacherIntelligence?.provider || "demo";
-    if (mode === "live") return { label: "Qwen-ready mode", status: "Backend required", description: "Live Qwen calls should run through a server-side proxy so classroom data and API keys stay protected." };
-    return { label: "Demo intelligence", status: "Local analysis only", description: "This view uses existing local demo data to show the teacher workflow before a live Qwen provider is connected." };
+    const statusMessage = state.qwenTeacherIntelligence?.providerStatusMessage || "";
+    const lastCheckedAt = state.qwenTeacherIntelligence?.liveLastCheckedAt || "";
+    if (mode === "live") return { mode, label: "Live Qwen Mode", status: statusMessage || "Backend proxy enabled", lastCheckedAt, description: "Live Qwen calls run through the local Express proxy so classroom prompts and API keys stay out of frontend code." };
+    return { mode, label: "Mock Mode", status: statusMessage || "Local analysis only", lastCheckedAt, description: "This view uses existing local demo data to show the teacher workflow before or after a live Qwen provider is connected." };
   }
 
   function buildPriorityStudents(students, h) {
@@ -957,10 +972,11 @@
     persist();
   }
 
-  function analyzeClassroom() {
-    ensureQwenState(currentState);
-    currentState.qwenTeacherIntelligence.classAnalysis = {
+  function mockClassAnalysis(fallbackNote = "") {
+    return {
       generatedAt: nowLabel(),
+      source: fallbackNote ? "Mock Mode fallback" : "Mock Mode",
+      fallbackNote,
       overallClassHealthScore: "78%",
       studentsNeedingIntervention: 5,
       studentsReadyForEnrichment: 7,
@@ -978,11 +994,130 @@
         "Kentucky STEM camp or local ATC pathway conversation",
       ],
     };
+  }
+
+  async function analyzeClassroom() {
+    ensureQwenState(currentState);
+    const qwen = currentState.qwenTeacherIntelligence;
+    qwen.liveLastCheckedAt = nowLabel();
+    qwen.providerStatusMessage = qwen.provider === "live" ? "Contacting Qwen backend..." : "Mock Mode uses local demo data only.";
+    activeView = "dashboard";
+    persist();
+
+    if (qwen.provider !== "live") {
+      qwen.classAnalysis = mockClassAnalysis();
+      persist();
+      return;
+    }
+
+    try {
+      qwen.classAnalysis = await requestLiveClassAnalysis();
+      qwen.providerStatusMessage = "Live Qwen response received through backend proxy.";
+      persist();
+    } catch (error) {
+      qwen.provider = "demo";
+      qwen.providerStatusMessage = `Backend unavailable; fell back to Mock Mode. ${error instanceof Error ? error.message : String(error)}`;
+      qwen.classAnalysis = mockClassAnalysis(qwen.providerStatusMessage);
+      persist();
+    }
+  }
+
+  function setProvider(provider) {
+    ensureQwenState(currentState);
+    const qwen = currentState.qwenTeacherIntelligence;
+    qwen.provider = provider === "live" ? "live" : "demo";
+    qwen.providerStatusMessage = qwen.provider === "live" ? "Live Qwen Mode selected. Run Analyze Entire Classroom to contact the backend." : "Mock Mode uses local demo data only.";
     activeView = "dashboard";
     persist();
   }
 
+  async function requestLiveClassAnalysis() {
+    const response = await fetch(qwenApiUrl(), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        messages: [
+          {
+            role: "system",
+            content: "You are Qwen Teacher Intelligence. Return only JSON for teacher decision support. Do not make automated student decisions.",
+          },
+          {
+            role: "user",
+            content: liveClassAnalysisPrompt(),
+          },
+        ],
+      }),
+    });
+
+    if (!response.ok) throw new Error(`Backend returned HTTP ${response.status}.`);
+    const result = await response.json();
+    if (!result.ok) throw new Error(result.error || "Backend returned an error.");
+    return normalizeLiveClassAnalysis(result.content || result.data?.choices?.[0]?.message?.content || "");
+  }
+
+  function qwenApiUrl() {
+    return window.QWEN_TEACHER_API_URL || "http://localhost:3001/api/qwen/chat";
+  }
+
+  function liveClassAnalysisPrompt() {
+    return `Analyze this mock middle school STEM classroom evidence and return JSON with keys: overallClassHealthScore, studentsNeedingIntervention, studentsReadyForEnrichment, majorMisconceptionClusters, recommendedWholeClassAction, smallGroupRecommendation, opportunityRecommendations.
+
+Context:
+- Lesson: OpenSciEd 7.5 Lesson 6, palm oil ecosystem engineering design challenge.
+- Class health signals: engagement 88%, assignment completion 76%, reflection quality 69%, engineering design progress 91%.
+- Priority students: Maya Rodriguez needs CER evidence-to-reasoning support; Eli M. needs graph-value support; Camila R. needs vocabulary support; Jordan T. is ready for engineering enrichment.
+- Misconceptions: CER claims without evidence, thermal energy described imprecisely, graph trends without numerical support.
+- Opportunities for teacher review: TSA Engineering Design, Samsung Solve for Tomorrow, Toshiba ExploraVision, FIRST LEGO League, Kentucky STEM camps, local ATC/tech school pathway.
+
+Keep recommendations teacher-facing, evidence-based, and explicit that the teacher remains the final decision-maker.`;
+  }
+
+  function normalizeLiveClassAnalysis(content) {
+    const parsed = parseJsonFromText(content);
+    if (!parsed) throw new Error("Qwen response did not include parseable JSON.");
+    const fallback = mockClassAnalysis();
+    const majorMisconceptions = normalizeList(parsed.majorMisconceptionClusters);
+    const opportunities = normalizeList(parsed.opportunityRecommendations);
+    return {
+      generatedAt: nowLabel(),
+      source: "Live Qwen Mode",
+      fallbackNote: "",
+      overallClassHealthScore: parsed.overallClassHealthScore || fallback.overallClassHealthScore,
+      studentsNeedingIntervention: parsed.studentsNeedingIntervention ?? fallback.studentsNeedingIntervention,
+      studentsReadyForEnrichment: parsed.studentsReadyForEnrichment ?? fallback.studentsReadyForEnrichment,
+      majorMisconceptionClusters: majorMisconceptions.length ? majorMisconceptions : fallback.majorMisconceptionClusters,
+      recommendedWholeClassAction: parsed.recommendedWholeClassAction || fallback.recommendedWholeClassAction,
+      smallGroupRecommendation: parsed.smallGroupRecommendation || fallback.smallGroupRecommendation,
+      opportunityRecommendations: opportunities.length ? opportunities : fallback.opportunityRecommendations,
+    };
+  }
+
+  function parseJsonFromText(text) {
+    if (!text) return null;
+    try {
+      return JSON.parse(text);
+    } catch {
+      const match = String(text).match(/\{[\s\S]*\}/);
+      if (!match) return null;
+      try {
+        return JSON.parse(match[0]);
+      } catch {
+        return null;
+      }
+    }
+  }
+
+  function normalizeList(value) {
+    if (Array.isArray(value)) return value.map(String);
+    if (typeof value === "string") return value.split(/;|\n/).map((item) => item.trim()).filter(Boolean);
+    return [];
+  }
+
   function enterDemoMode() {
+    if (!currentState) {
+      setView("dashboard");
+      if (!currentState) return;
+    }
     ensureQwenState(currentState);
     const qwen = currentState.qwenTeacherIntelligence;
     qwen.demoMode = true;
@@ -1098,6 +1233,7 @@
     reject,
     requestMoreEvidence,
     analyzeClassroom,
+    setProvider,
     enterDemoMode,
     exitDemoMode,
     nextDemoStep,

@@ -1,0 +1,19 @@
+{
+  "name": "qwen-teacher-intelligence-server",
+  "version": "1.0.0",
+  "description": "Express proxy for Qwen Teacher Intelligence live DashScope calls.",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
