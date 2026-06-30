@@ -1,24 +1,104 @@
 # Qwen Teacher Intelligence Architecture
 
-## Placement
+## System Overview
 
-The Qwen module lives in:
+Qwen Teacher Intelligence is an additive teacher-facing module in the existing build-free Inquiry Classroom prototype.
 
 ```text
-modules/qwen-teacher-intelligence/
-  qwen-teacher-intelligence.js
-  qwen-teacher-intelligence.css
+index.html
+  -> loads app scripts
+  -> loads modules/qwen-teacher-intelligence/qwen-teacher-intelligence.css
+  -> loads modules/qwen-teacher-intelligence/qwen-teacher-intelligence.js
+
+app.js
+  -> adds teacher nav item: Qwen Intelligence
+  -> adds route: qwenTeacher
+  -> passes shared state/helpers into window.QwenTeacherIntelligence.render()
+
+Qwen module
+  -> renders screens
+  -> manages local demo approval state
+  -> writes only to state.qwenTeacherIntelligence
 ```
 
-The app integrates it additively:
+The module exposes:
 
-- `index.html` loads the module stylesheet and script.
-- `app.js` adds one teacher navigation item and one route.
-- `qwenTeacherPage()` passes shared rendering helpers and app state into `window.QwenTeacherIntelligence.render()`.
+```js
+window.QwenTeacherIntelligence
+```
 
-## State
+## Student Evidence Input
 
-The module stores only local demo workflow state under:
+The current demo uses mock/local evidence derived from the existing classroom prototype:
+
+- lesson goals and standards from `state.lessonSetup`
+- class insight metrics from existing helper functions
+- student inquiry flags from existing student insight helpers
+- a demo student insight profile for Maya Rodriguez
+- mock agent recommendations and intervention drafts
+
+This milestone intentionally avoids real student data and live model calls.
+
+## Agent Workflow
+
+The workflow is designed to feel like an Autopilot Agent system while staying teacher-controlled:
+
+```text
+Student evidence
+  -> Learning Analyst Agent
+  -> Intervention Designer Agent
+  -> Standards Coach Agent
+  -> Communication Agent
+  -> Opportunity Advisor Agent
+  -> Teacher Approval Agent
+  -> Teacher decision
+```
+
+Agent responsibilities:
+
+- **Learning Analyst Agent:** extracts learning signals and reasoning patterns.
+- **Intervention Designer Agent:** drafts short instructional actions.
+- **Standards Coach Agent:** checks instructional alignment.
+- **Communication Agent:** drafts teacher-reviewable messages.
+- **Opportunity Advisor Agent:** suggests enrichment or extension opportunities.
+- **Teacher Approval Agent:** prevents automatic student decisions.
+
+## Teacher Approval Checkpoint
+
+All recommendations stop at the Teacher Approval Page.
+
+Teacher actions:
+
+- **Approve:** changes status to `Approved by Teacher` and creates a local action history entry.
+- **Edit:** changes status to `Draft Recommendation` and records a sample teacher edit note.
+- **Reject:** changes status to `Rejected`, records a sample reason, and does not update history.
+- **Request More Evidence:** changes status to `More Evidence Needed` and lists required evidence.
+
+Required evidence in the demo:
+
+- additional written sample
+- short student conference note
+- assessment snapshot
+
+## Approved Action History
+
+Approved actions are shown in the `Approved Action History` page and the `Student Action History` preview.
+
+Each approved action includes:
+
+- approved recommendation
+- student name
+- agent source
+- teacher decision
+- date/time
+- next instructional step
+- reminder that the teacher remains final decision-maker
+
+Rejected recommendations are intentionally excluded from approved action history.
+
+## Local State
+
+All Qwen demo workflow data is namespaced:
 
 ```js
 state.qwenTeacherIntelligence
@@ -35,34 +115,45 @@ Primary fields:
 - `editedNote`
 - `lastDecisionAt`
 
-This state is saved through the existing app `save()` helper, so it follows the same localStorage demo persistence model as the rest of the prototype.
+The module uses the existing app `save()` and `render()` helpers to persist local demo state through the same localStorage path as the rest of the prototype.
 
-## Workflow
+## Future Live Qwen Backend/Proxy Integration
+
+A production version should not call Qwen directly from frontend code. The next architecture step should be:
 
 ```text
-Draft Recommendation
-  -> Waiting for Teacher Review
-  -> Teacher chooses Approve, Edit, Reject, or Request More Evidence
-  -> Approved actions are copied into Approved Action History
+Browser UI
+  -> app backend / serverless proxy
+  -> Qwen API
+  -> structured recommendation JSON
+  -> teacher review UI
 ```
 
-Rejected recommendations do not update action history.
+The backend/proxy should:
 
-More Evidence Needed lists:
+- keep API keys out of the browser
+- enforce prompt templates and output schemas
+- redact or minimize student data before model calls
+- log teacher approvals separately from model recommendations
+- require explicit teacher approval before any write action
 
-- additional written sample
-- short student conference note
-- assessment snapshot
+## Safety And Privacy Notes
 
-## Safety Boundaries
+Current safeguards:
 
-The Qwen module does not modify:
+- mock/demo mode only
+- no live Qwen API calls
+- no real student data
+- no automatic student decisions
+- no changes to student lesson runtime
+- no changes to EduMemory, Sui/Walrus, or Supabase files
+- no changes to existing AI scaffolding behavior
 
-- student lesson runtime
-- EduMemory flow
-- Sui/Walrus files
-- Supabase files
-- existing AI scaffolding behavior
-- existing student dashboard behavior
+Production safeguards needed:
 
-Future live Qwen integration should use a backend proxy and explicit teacher approval before any write action.
+- authentication and role-based access
+- student data minimization
+- audit log for teacher decisions
+- district data policy review
+- parent/student privacy review
+- clear separation between AI-generated recommendation and teacher-approved action
