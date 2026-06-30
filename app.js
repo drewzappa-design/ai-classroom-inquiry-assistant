@@ -588,6 +588,7 @@ function teacherNav() {
     ["students", icons.users, "Students"],
     ["moderation", icons.message, "DQB moderation"],
     ["analytics", icons.chart, "Analytics"],
+    ["qwenTeacher", icons.message, "Qwen Intelligence"],
     ["usage", icons.coins, "Inquiry Credits"],
     ["resources", icons.folder, "Resources"],
   ];
@@ -601,7 +602,7 @@ function teacherShell() {
   return `<div class="app">${topbar("Ms. Rivera · 7th Grade Science")}<div class="layout">${teacherNav()}<main class="content">${teacherPage()}</main></div>${activePanelMarkup()}</div>`;
 }
 function teacherPage() {
-  return ({ overview: overviewPage, setup: setupPage, lessonBuilderDashboard: lessonBuilderDashboardPage, students: studentsPage, studentProfile: studentProfilePage, resourceViewer: resourceViewerPage, moderation: moderationPage, analytics: analyticsPage, usage: usagePage, resources: resourcesPage }[state.teacherTab] || overviewPage)();
+  return ({ overview: overviewPage, setup: setupPage, lessonBuilderDashboard: lessonBuilderDashboardPage, students: studentsPage, studentProfile: studentProfilePage, resourceViewer: resourceViewerPage, moderation: moderationPage, analytics: analyticsPage, qwenTeacher: qwenTeacherPage, usage: usagePage, resources: resourcesPage }[state.teacherTab] || overviewPage)();
 }
 function pageHead(title, subtitle, actions = "") {
   return `<header class="page-head"><div><h1>${title}</h1><p>${subtitle}</p></div><div class="role-actions">${actions}</div></header>`;
@@ -2681,6 +2682,27 @@ function studentResourceViewerPage() {
     <section class="grid two-col resource-view-layout"><article class="card card-pad"><div class="student-line"><span class="resource-icon">${esc(r.type.slice(0,2).toUpperCase())}</span><span><h1>${esc(r.title)}</h1><span class="subtle">${esc(r.category)} · Grade ${esc(r.gradeLevel)}</span></span></div><div class="detail-grid"><span>Description</span><strong>${esc(r.description || "No description added.")}</strong><span>Type</span><strong>${esc(r.type)}</strong><span>Tags</span><strong>${resourceTags(r)}</strong></div></article><article class="card card-pad"><h3 class="section-title">Resource Viewer</h3>${resourcePreview(r)}</article></section>`;
 }
 function studentTab(tab) { state.studentTab = tab; save(); render(); }
+
+function qwenTeacherPage() {
+  const module = window.QwenTeacherIntelligence;
+  if (!module?.render) {
+    return `${pageHead("Qwen Teacher Intelligence", "The teacher intelligence module did not load.", `<button class="btn secondary" onclick="teacherTab('analytics')">Back to analytics</button>`)}
+      <article class="card card-pad empty"><h3>Module unavailable.</h3><p>Check that the Qwen module script is loaded before app.js.</p></article>`;
+  }
+  return module.render({
+    state,
+    helpers: {
+      avatar,
+      classInsightMetrics,
+      esc,
+      pageHead,
+      progress,
+      studentInsightFlags,
+      studentInsightProfile,
+      teacherAlertStudents,
+    },
+  });
+}
 
 const edumemoryDemo = {
   tagline: "A lifelong AI-powered learning passport and opportunity network",
