@@ -537,7 +537,8 @@ div.qwen-teacher-priority-row {
 .qwen-teacher-os-priorities,
 .qwen-teacher-os-team,
 .qwen-teacher-os-insights,
-.qwen-teacher-os-actions {
+.qwen-teacher-os-actions,
+.qwen-teacher-orchestration-panel {
   border-radius: 12px;
   box-shadow: 0 12px 34px rgba(23, 37, 34, 0.06);
 }
@@ -712,11 +713,47 @@ div.qwen-teacher-priority-row {
 }
 
 .qwen-teacher-os-insight-grid,
-.qwen-teacher-action-grid {
+.qwen-teacher-action-grid,
+.qwen-teacher-orchestration-list {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 10px;
   margin-top: 12px;
+}
+
+.qwen-teacher-orchestration-step {
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  display: grid;
+  gap: 6px;
+}
+
+.qwen-teacher-orchestration-step strong {
+  color: var(--forest);
+}
+
+.qwen-teacher-orchestration-step span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.qwen-teacher-orchestration-step.active {
+  border-color: #4f8f80;
+  background: #eef8f5;
+  box-shadow: 0 0 0 3px rgba(79, 143, 128, 0.12);
+}
+
+.qwen-teacher-orchestration-step.complete {
+  border-color: #8fc7a6;
+  background: #f1fbf5;
+}
+
+.qwen-teacher-orchestration-complete {
+  margin: 12px 0 0;
+  font-weight: 800;
+  color: #1f7a4d;
 }
 
 .qwen-teacher-os-insight {

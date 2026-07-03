@@ -42,6 +42,14 @@
     "Teacher Approval Ready",
   ];
 
+  const orchestrationSteps = [
+    { name: "Learning Analyst", action: "analyzing evidence..." },
+    { name: "Standards Coach", action: "aligning standards..." },
+    { name: "Intervention Designer", action: "building intervention..." },
+    { name: "Communication Agent", action: "drafting communication..." },
+    { name: "Opportunity Advisor", action: "identifying enrichment..." },
+  ];
+
   let keyboardInstalled = false;
   let demoAnimationTimer = null;
 
@@ -194,6 +202,7 @@
     qwen.editedNote ||= "";
     qwen.lastDecisionAt ||= "";
     qwen.classAnalysis ||= null;
+    qwen.orchestrationRun ||= { status: "idle", currentStep: -1, completedSteps: [], message: "" };
     qwen.demoMode ||= false;
     qwen.demoStep ||= 0;
     qwen.demoAgentProgress ||= 0;
@@ -308,6 +317,7 @@
   function demoDashboardStage(context, h) {
     return `<section class="qwen-teacher-demo-grid">
       ${teacherWelcomePanel(h)}
+      ${orchestrationProgressPanel(context, h)}
       ${operatingSystemHealthCard(context, h)}
       ${todaysPrioritiesPanel(context, h)}
     </section>`;
@@ -395,6 +405,7 @@
   function dashboardView(context, h) {
     return `<section class="qwen-teacher-screen">
       ${teacherWelcomePanel(h)}
+      ${orchestrationProgressPanel(context, h)}
       ${operatingSystemHealthCard(context, h)}
       ${todaysPrioritiesPanel(context, h)}
       ${agentGridCard(h)}
@@ -417,6 +428,32 @@
         <small>6 agents monitoring classroom evidence</small>
       </div>
     </section>`;
+  }
+
+  function orchestrationProgressPanel(context, h) {
+    const run = context.qwen.orchestrationRun || {};
+    if (!["running", "complete"].includes(run.status)) return "";
+    return `<section class="card card-pad qwen-teacher-orchestration-panel">
+      <div class="card-action-head">
+        <div><span class="qwen-teacher-kicker">Analyze Entire Classroom</span><h3 class="section-title">${run.status === "complete" ? "Classroom Analysis Complete" : "Multi-agent orchestration running"}</h3></div>
+        <span class="qwen-teacher-status ${run.status === "complete" ? "qwen-teacher-status-approved" : "qwen-teacher-status-waiting"}">${run.status === "complete" ? "Complete" : "In progress"}</span>
+      </div>
+      <div class="qwen-teacher-orchestration-list">
+        ${orchestrationSteps.map((step, index) => orchestrationStepMarkup(step, index, run, h)).join("")}
+      </div>
+      ${run.status === "complete" ? `<p class="qwen-teacher-orchestration-complete">✓ Classroom Analysis Complete</p>` : `<p class="subtle">${h.esc(run.message || "Agents are passing structured classroom evidence forward.")}</p>`}
+    </section>`;
+  }
+
+  function orchestrationStepMarkup(step, index, run, h) {
+    const completed = (run.completedSteps || []).includes(index);
+    const active = run.currentStep === index && run.status === "running";
+    const stateClass = completed ? "complete" : active ? "active" : "";
+    const label = completed ? "complete" : active ? step.action : "waiting";
+    return `<article class="qwen-teacher-orchestration-step ${stateClass}">
+      <strong>${h.esc(step.name)}</strong>
+      <span>${completed ? "✓" : active ? "→" : "•"} ${h.esc(label)}</span>
+    </article>`;
   }
 
   function operatingSystemHealthCard(context, h) {
@@ -1132,25 +1169,80 @@
     const qwen = currentState.qwenTeacherIntelligence;
     qwen.liveLastCheckedAt = nowLabel();
     qwen.providerStatusMessage = qwen.provider === "live" ? "Contacting Qwen backend..." : "Mock Mode uses local demo data only.";
+    startOrchestrationRun(qwen);
     activeView = "dashboard";
     persist();
 
     if (qwen.provider !== "live") {
+      await runVisibleMockOrchestration(qwen);
       qwen.classAnalysis = mockClassAnalysis();
+      finishOrchestrationRun(qwen);
       persist();
       return;
     }
 
     try {
-      qwen.classAnalysis = await requestLiveClassAnalysis();
+      const liveAnalysisPromise = requestLiveClassAnalysis();
+      await runVisibleLiveOrchestration(qwen, liveAnalysisPromise);
+      qwen.classAnalysis = await liveAnalysisPromise;
       qwen.providerStatusMessage = "Live Qwen response received through backend proxy.";
+      finishOrchestrationRun(qwen);
       persist();
     } catch (error) {
       qwen.provider = "demo";
       qwen.providerStatusMessage = `Backend unavailable; fell back to Mock Mode. ${error instanceof Error ? error.message : String(error)}`;
+      await runVisibleMockOrchestration(qwen);
       qwen.classAnalysis = mockClassAnalysis(qwen.providerStatusMessage);
+      finishOrchestrationRun(qwen);
       persist();
     }
+  }
+
+  function startOrchestrationRun(qwen) {
+    qwen.classAnalysis = null;
+    qwen.orchestrationRun = {
+      status: "running",
+      currentStep: 0,
+      completedSteps: [],
+      message: `${orchestrationSteps[0].name} → ${orchestrationSteps[0].action}`,
+    };
+  }
+
+  function updateOrchestrationStep(qwen, index) {
+    qwen.orchestrationRun.status = "running";
+    qwen.orchestrationRun.currentStep = index;
+    qwen.orchestrationRun.completedSteps = orchestrationSteps.map((_step, stepIndex) => stepIndex).filter((stepIndex) => stepIndex < index);
+    qwen.orchestrationRun.message = `${orchestrationSteps[index].name} → ${orchestrationSteps[index].action}`;
+    persist();
+  }
+
+  function finishOrchestrationRun(qwen) {
+    qwen.orchestrationRun = {
+      status: "complete",
+      currentStep: -1,
+      completedSteps: orchestrationSteps.map((_step, index) => index),
+      message: "Classroom Analysis Complete",
+    };
+  }
+
+  async function runVisibleMockOrchestration(qwen) {
+    for (let index = 0; index < orchestrationSteps.length; index += 1) {
+      updateOrchestrationStep(qwen, index);
+      await delay(520 + index * 90);
+    }
+  }
+
+  async function runVisibleLiveOrchestration(qwen, liveAnalysisPromise) {
+    let liveComplete = false;
+    liveAnalysisPromise.then(() => { liveComplete = true; }).catch(() => { liveComplete = true; });
+    for (let index = 0; index < orchestrationSteps.length; index += 1) {
+      updateOrchestrationStep(qwen, index);
+      await delay(liveComplete ? 260 : 650);
+    }
+  }
+
+  function delay(ms) {
+    return new Promise((resolve) => window.setTimeout(resolve, ms));
   }
 
   function setProvider(provider) {
