@@ -420,17 +420,18 @@
   }
 
   function operatingSystemHealthCard(context, h) {
+    const report = context.qwen.classAnalysis || {};
     const metrics = [
-      ["Health Score", "82%", "strong", "Class is stable with a few targeted support needs."],
-      ["Student Engagement", "88%", "strong", "Most students are active in discussion and revision."],
-      ["Assignment Completion", "76%", "watch", "A small group needs a completion check before the next task."],
-      ["Reflection Quality", "69%", "risk", "CER writing needs clearer evidence-to-reasoning links."],
-      ["Engineering Design Progress", "91%", "strong", "Prototype iteration and constraint language are class strengths."],
+      ["Health Score", report.overallClassHealthScore || "82%", "strong", "Class is stable with a few targeted support needs."],
+      ["Student Engagement", report.studentEngagement || "88%", "strong", "Most students are active in discussion and revision."],
+      ["Assignment Completion", report.assignmentCompletion || "76%", "watch", "A small group needs a completion check before the next task."],
+      ["Reflection Quality", report.reflectionQuality || "69%", "risk", "CER writing needs clearer evidence-to-reasoning links."],
+      ["Engineering Design Progress", report.engineeringDesignProgress || "91%", "strong", "Prototype iteration and constraint language are class strengths."],
     ];
     return `<section class="card card-pad qwen-teacher-os-health">
       <div class="card-action-head">
         <div><span class="qwen-teacher-kicker">Class Health Card</span><h3 class="section-title">Overall Class Health</h3></div>
-        <span class="qwen-teacher-health-score">82%</span>
+        <span class="qwen-teacher-health-score">${h.esc(report.overallClassHealthScore || "82%")}</span>
       </div>
       <div class="qwen-teacher-os-metric-list">
         ${metrics.map(([label, value, tone, note]) => healthMetric(label, value, tone, note, h)).join("")}
@@ -448,7 +449,15 @@
   }
 
   function todaysPrioritiesPanel(context, h) {
-    const priorities = [
+    const livePriorities = context.qwen.classAnalysis?.priorityStudents;
+    const priorities = Array.isArray(livePriorities) && livePriorities.length ? livePriorities.map((item) => ({
+      name: item.name,
+      tone: priorityTone(item.priority),
+      reason: item.reason,
+      confidence: item.confidence,
+      action: item.recommendedAction,
+      time: item.estimatedTeacherTime,
+    })) : [
       {
         name: "Maya Rodriguez",
         tone: "red",
@@ -502,8 +511,22 @@
     </article>`;
   }
 
+  function priorityTone(priority) {
+    const text = String(priority || "").toLowerCase();
+    if (text.includes("high") || text.includes("urgent") || text.includes("red")) return "red";
+    if (text.includes("low") || text.includes("green") || text.includes("enrichment")) return "green";
+    return "amber";
+  }
+
   function classInsightsOperatingPanel(context, h) {
-    const insights = [
+    const report = context.qwen.classAnalysis;
+    const insights = report ? [
+      ["Largest misconception", report.majorMisconceptionClusters?.[0] || "No major misconception cluster returned.", "risk"],
+      ["Biggest improvement", report.engineeringDesignProgress ? `Engineering design progress is ${report.engineeringDesignProgress}.` : "Engineering design explanations now include more constraints and prototype evidence.", "strong"],
+      ["Students ready for enrichment", `${report.studentsReadyForEnrichment ?? 0} students are ready for teacher-reviewed enrichment.`, "strong"],
+      ["Students at risk", `${report.studentsNeedingIntervention ?? 0} students need teacher attention first.`, "watch"],
+      ["Opportunity recommendations", (report.opportunityRecommendations || []).slice(0, 3).join(", ") || "No opportunity recommendations returned.", "strong"],
+    ] : [
       ["Largest misconception", "Thermal energy is being described as a substance instead of particle motion.", "risk"],
       ["Biggest improvement", "Engineering design explanations now include more constraints and prototype evidence.", "strong"],
       ["Students ready for enrichment", "Jordan T. and Micah P. are ready for robotics or engineering extension pathways.", "strong"],
@@ -973,26 +996,134 @@
   }
 
   function mockClassAnalysis(fallbackNote = "") {
+    const orchestration = runMockAgentOrchestration(sanitizedClassroomSnapshot());
     return {
       generatedAt: nowLabel(),
       source: fallbackNote ? "Mock Mode fallback" : "Mock Mode",
       fallbackNote,
+      ...orchestration.analysis,
+      agentOutputs: orchestration.agentOutputs,
+      orchestrationMode: "Mock multi-agent",
+    };
+  }
+
+  function runMockAgentOrchestration(snapshot) {
+    const previousOutputs = {};
+    const agentOutputs = [];
+    [
+      ["learningAnalyst", "Learning Analyst", mockLearningAnalystAgent],
+      ["standardsCoach", "Standards Coach", mockStandardsCoachAgent],
+      ["interventionDesigner", "Intervention Designer", mockInterventionDesignerAgent],
+      ["communicationAgent", "Communication Agent", mockCommunicationAgent],
+      ["opportunityAdvisor", "Opportunity Advisor", mockOpportunityAdvisorAgent],
+    ].forEach(([key, agent, runner]) => {
+      const output = runner(snapshot, previousOutputs);
+      previousOutputs[key] = output;
+      agentOutputs.push({ agent, key, output });
+    });
+    return {
+      analysis: analysisFromAgentOutputs(previousOutputs),
+      agentOutputs,
+    };
+  }
+
+  function mockLearningAnalystAgent(snapshot) {
+    const students = snapshot.students || [];
+    const interventionCount = Math.max(3, students.filter((student) => /intervention|below/i.test(`${student.level} ${(student.support || []).join(" ")}`)).length);
+    const enrichmentCount = Math.max(2, students.filter((student) => /distinguished|advanced/i.test(`${student.proficiency} ${student.level}`)).length);
+    return {
       overallClassHealthScore: "78%",
-      studentsNeedingIntervention: 5,
-      studentsReadyForEnrichment: 7,
+      studentEngagement: "88%",
+      assignmentCompletion: "76%",
+      reflectionQuality: "69%",
+      engineeringDesignProgress: "91%",
+      studentsNeedingIntervention: interventionCount,
+      studentsReadyForEnrichment: enrichmentCount,
+      priorityStudents: [
+        {
+          name: "Maya Rodriguez",
+          priority: "high",
+          reason: "Needs CER writing support.",
+          confidence: "92%",
+          recommendedAction: "Run a 10-minute evidence-to-reasoning conference.",
+          estimatedTeacherTime: "10 minutes",
+        },
+        {
+          name: "Eli M.",
+          priority: "medium",
+          reason: "Data analysis gap: describes trends without citing values.",
+          confidence: "87%",
+          recommendedAction: "Use one graph and ask for one number-backed claim.",
+          estimatedTeacherTime: "7 minutes",
+        },
+      ],
       majorMisconceptionClusters: [
         "CER claims without evidence",
         "Thermal energy described as a substance instead of particle motion",
         "Graph trends described without numerical support",
       ],
+    };
+  }
+
+  function mockStandardsCoachAgent(_snapshot, previousOutputs) {
+    return {
+      standardsAlignment: ["Engineering design criteria and constraints", "Claim-evidence-reasoning writing", "Data-supported explanation"],
       recommendedWholeClassAction: "Run a 7-minute CER repair using a palm farm design claim, one data point, and a because statement that links evidence to ecosystem stability.",
+      standardsRationale: `Targets ${previousOutputs.learningAnalyst?.majorMisconceptionClusters?.[0] || "evidence use"} without changing student records.`,
+    };
+  }
+
+  function mockInterventionDesignerAgent(_snapshot, previousOutputs) {
+    return {
+      priorityStudents: previousOutputs.learningAnalyst?.priorityStudents || [],
+      recommendedWholeClassAction: previousOutputs.standardsCoach?.recommendedWholeClassAction,
       smallGroupRecommendation: "Pull five students for a data-analysis table talk: identify one pattern, cite one value, and explain how it changes a design constraint.",
+    };
+  }
+
+  function mockCommunicationAgent(_snapshot, previousOutputs) {
+    return {
+      communicationGuidance: [
+        `Describe ${previousOutputs.interventionDesigner?.smallGroupRecommendation || "the intervention"} as teacher-reviewed support, not automatic placement.`,
+        "Celebrate evidence-based growth and avoid labels that sound fixed or evaluative.",
+      ],
+      teacherDecisionSupportNote: "Teacher decision support only -- no automated student decisions.",
+    };
+  }
+
+  function mockOpportunityAdvisorAgent(_snapshot, previousOutputs) {
+    return {
       opportunityRecommendations: [
         "Teacher-review enrichment list for TSA Engineering Design",
         "Robotics/FIRST LEGO League interest group",
         "Samsung Solve for Tomorrow community problem brainstorm",
         "Kentucky STEM camp or local ATC pathway conversation",
       ],
+      opportunityRationale: `Use enrichment after reviewing ${previousOutputs.learningAnalyst?.studentsReadyForEnrichment || 0} ready-student signals.`,
+      teacherDecisionSupportNote: previousOutputs.communicationAgent?.teacherDecisionSupportNote || "Teacher decision support only -- no automated student decisions.",
+    };
+  }
+
+  function analysisFromAgentOutputs(outputs) {
+    const learning = outputs.learningAnalyst || {};
+    const standards = outputs.standardsCoach || {};
+    const intervention = outputs.interventionDesigner || {};
+    const communication = outputs.communicationAgent || {};
+    const opportunity = outputs.opportunityAdvisor || {};
+    return {
+      overallClassHealthScore: learning.overallClassHealthScore || "78%",
+      studentEngagement: learning.studentEngagement || "88%",
+      assignmentCompletion: learning.assignmentCompletion || "76%",
+      reflectionQuality: learning.reflectionQuality || "69%",
+      engineeringDesignProgress: learning.engineeringDesignProgress || "91%",
+      studentsNeedingIntervention: learning.studentsNeedingIntervention ?? 5,
+      studentsReadyForEnrichment: learning.studentsReadyForEnrichment ?? 7,
+      priorityStudents: intervention.priorityStudents || learning.priorityStudents || [],
+      majorMisconceptionClusters: learning.majorMisconceptionClusters || [],
+      recommendedWholeClassAction: intervention.recommendedWholeClassAction || standards.recommendedWholeClassAction || "",
+      smallGroupRecommendation: intervention.smallGroupRecommendation || "",
+      opportunityRecommendations: opportunity.opportunityRecommendations || [],
+      teacherDecisionSupportNote: opportunity.teacherDecisionSupportNote || communication.teacherDecisionSupportNote || "Teacher decision support only -- no automated student decisions.",
     };
   }
 
@@ -1032,63 +1163,92 @@
   }
 
   async function requestLiveClassAnalysis() {
-    const response = await fetch(qwenApiUrl(), {
+    const response = await fetch(qwenClassroomAnalysisApiUrl(), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        messages: [
-          {
-            role: "system",
-            content: "You are Qwen Teacher Intelligence. Return only JSON for teacher decision support. Do not make automated student decisions.",
-          },
-          {
-            role: "user",
-            content: liveClassAnalysisPrompt(),
-          },
-        ],
+        snapshot: sanitizedClassroomSnapshot(),
       }),
     });
 
     if (!response.ok) throw new Error(`Backend returned HTTP ${response.status}.`);
     const result = await response.json();
     if (!result.ok) throw new Error(result.error || "Backend returned an error.");
-    return normalizeLiveClassAnalysis(result.content || result.data?.choices?.[0]?.message?.content || "");
+    return normalizeLiveClassAnalysis(result.analysis || result.content || result.data?.choices?.[0]?.message?.content || "");
   }
 
-  function qwenApiUrl() {
-    return window.QWEN_TEACHER_API_URL || "http://localhost:3001/api/qwen/chat";
+  function qwenClassroomAnalysisApiUrl() {
+    return window.QWEN_TEACHER_CLASSROOM_ANALYSIS_API_URL || "http://localhost:3001/api/qwen/classroom-analysis";
   }
 
-  function liveClassAnalysisPrompt() {
-    return `Analyze this mock middle school STEM classroom evidence and return JSON with keys: overallClassHealthScore, studentsNeedingIntervention, studentsReadyForEnrichment, majorMisconceptionClusters, recommendedWholeClassAction, smallGroupRecommendation, opportunityRecommendations.
-
-Context:
-- Lesson: OpenSciEd 7.5 Lesson 6, palm oil ecosystem engineering design challenge.
-- Class health signals: engagement 88%, assignment completion 76%, reflection quality 69%, engineering design progress 91%.
-- Priority students: Maya Rodriguez needs CER evidence-to-reasoning support; Eli M. needs graph-value support; Camila R. needs vocabulary support; Jordan T. is ready for engineering enrichment.
-- Misconceptions: CER claims without evidence, thermal energy described imprecisely, graph trends without numerical support.
-- Opportunities for teacher review: TSA Engineering Design, Samsung Solve for Tomorrow, Toshiba ExploraVision, FIRST LEGO League, Kentucky STEM camps, local ATC/tech school pathway.
-
-Keep recommendations teacher-facing, evidence-based, and explicit that the teacher remains the final decision-maker.`;
+  function sanitizedClassroomSnapshot() {
+    const state = currentState || {};
+    const h = currentHelpers || {};
+    const lesson = state.lessonSetup || {};
+    const classMetrics = h.classInsightMetrics?.() || {};
+    const students = (state.students || []).slice(0, 20).map((student) => ({
+      name: student.name,
+      level: student.level,
+      proficiency: student.proficiency,
+      progress: student.progress,
+      support: student.support || [],
+      flags: (h.studentInsightFlags?.(student) || []).map((flag) => ({
+        label: flag.label,
+        type: flag.type,
+      })),
+    }));
+    return {
+      lesson: {
+        title: lesson.lessonTitle || "OpenSciEd 7.5 Lesson 6",
+        subject: lesson.subject || "Science",
+        gradeLevel: lesson.gradeLevel || "7",
+        focus: "Palm oil ecosystem engineering design challenge",
+      },
+      classMetrics,
+      students,
+      knownMisconceptions: [
+        "CER claims without evidence",
+        "Thermal energy described imprecisely",
+        "Graph trends described without numerical support",
+      ],
+      opportunityOptions: [
+        "TSA Engineering Design",
+        "Samsung Solve for Tomorrow",
+        "Toshiba ExploraVision",
+        "FIRST LEGO League / robotics",
+        "Kentucky STEM camps or fellowships",
+        "Local ATC / tech school pathway",
+      ],
+      safetyBoundary: "Teacher decision support only -- no automated student decisions.",
+    };
   }
 
   function normalizeLiveClassAnalysis(content) {
-    const parsed = parseJsonFromText(content);
+    const parsed = typeof content === "object" && content !== null ? content : parseJsonFromText(content);
     if (!parsed) throw new Error("Qwen response did not include parseable JSON.");
     const fallback = mockClassAnalysis();
     const majorMisconceptions = normalizeList(parsed.majorMisconceptionClusters);
     const opportunities = normalizeList(parsed.opportunityRecommendations);
+    const priorityStudents = normalizePriorityStudents(parsed.priorityStudents);
     return {
       generatedAt: nowLabel(),
-      source: "Live Qwen Mode",
+      source: parsed.source || "Live Qwen Mode",
       fallbackNote: "",
       overallClassHealthScore: parsed.overallClassHealthScore || fallback.overallClassHealthScore,
+      studentEngagement: parsed.studentEngagement || fallback.studentEngagement,
+      assignmentCompletion: parsed.assignmentCompletion || fallback.assignmentCompletion,
+      reflectionQuality: parsed.reflectionQuality || fallback.reflectionQuality,
+      engineeringDesignProgress: parsed.engineeringDesignProgress || fallback.engineeringDesignProgress,
       studentsNeedingIntervention: parsed.studentsNeedingIntervention ?? fallback.studentsNeedingIntervention,
       studentsReadyForEnrichment: parsed.studentsReadyForEnrichment ?? fallback.studentsReadyForEnrichment,
+      priorityStudents: priorityStudents.length ? priorityStudents : fallback.priorityStudents,
       majorMisconceptionClusters: majorMisconceptions.length ? majorMisconceptions : fallback.majorMisconceptionClusters,
       recommendedWholeClassAction: parsed.recommendedWholeClassAction || fallback.recommendedWholeClassAction,
       smallGroupRecommendation: parsed.smallGroupRecommendation || fallback.smallGroupRecommendation,
       opportunityRecommendations: opportunities.length ? opportunities : fallback.opportunityRecommendations,
+      teacherDecisionSupportNote: parsed.teacherDecisionSupportNote || "Teacher decision support only -- no automated student decisions.",
+      agentOutputs: Array.isArray(parsed.agentOutputs) ? parsed.agentOutputs : [],
+      orchestrationMode: parsed.orchestrationMode || "Live Qwen multi-agent",
     };
   }
 
@@ -1111,6 +1271,18 @@ Keep recommendations teacher-facing, evidence-based, and explicit that the teach
     if (Array.isArray(value)) return value.map(String);
     if (typeof value === "string") return value.split(/;|\n/).map((item) => item.trim()).filter(Boolean);
     return [];
+  }
+
+  function normalizePriorityStudents(value) {
+    if (!Array.isArray(value)) return [];
+    return value.map((item) => ({
+      name: String(item?.name || "").trim(),
+      priority: String(item?.priority || "medium").trim(),
+      reason: String(item?.reason || "Teacher review recommended.").trim(),
+      confidence: String(item?.confidence || "80%").trim(),
+      recommendedAction: String(item?.recommendedAction || "Review evidence with the student.").trim(),
+      estimatedTeacherTime: String(item?.estimatedTeacherTime || "5 minutes").trim(),
+    })).filter((item) => item.name).slice(0, 6);
   }
 
   function enterDemoMode() {
