@@ -1,5 +1,48 @@
 # Qwen Teacher Intelligence
 
+## Judge Quickstart
+
+**What this is:** Qwen Teacher Intelligence is a teacher-facing chained multi-agent workflow. It is not a single chatbot. `Analyze Entire Classroom` runs specialized teaching agents that pass structured JSON forward, then keeps recommendations behind teacher approval.
+
+**Run the frontend:**
+
+```powershell
+py -m http.server 8000
+```
+
+Open:
+
+```text
+http://localhost:8000/?role=teacher
+```
+
+Click `Qwen Intelligence`.
+
+**Run the backend for Live Qwen Mode:**
+
+```powershell
+cd server
+npm install
+copy .env.example .env
+npm start
+```
+
+Set `DASHSCOPE_API_KEY`, `QWEN_MODEL`, and `DASHSCOPE_BASE_URL` in `server\.env`.
+
+**Use Mock Mode:** leave the backend off or select `Mock Mode`, then click `Analyze Entire Classroom`. The same orchestration pattern runs locally for offline judging.
+
+**Use Live Qwen Mode:** start the backend, select `Live Qwen Mode`, then click `Analyze Entire Classroom`. The frontend calls the Express proxy; the API key never enters frontend code.
+
+**Open Demo Mode:** on the Qwen dashboard, click `Demo Mode`. Use Right Arrow / Left Arrow to navigate and Esc to exit.
+
+**What judges should look for:**
+
+- visible ordered agent orchestration during `Analyze Entire Classroom`
+- Live Qwen backend proxy path and Mock Mode fallback
+- strict teacher decision support boundary
+- teacher approval before any recommendation becomes an action
+- Approved Action History as the audit trail
+
 **Project name:** Qwen Teacher Intelligence  
 **Track fit:** Qwen Autopilot Agent workflow for education  
 **Modes:** Mock Mode and Live Qwen Mode through an Express backend proxy

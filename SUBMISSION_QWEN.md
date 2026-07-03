@@ -49,6 +49,17 @@ This is not a single chatbot. Analyze Entire Classroom runs agents in this order
 
 Each agent receives the original classroom evidence plus structured output from previous agents. Each agent has a strict role and JSON schema. The backend validates every live Qwen JSON response, retries invalid JSON once, and records a structured error if retry fails.
 
+## Live Qwen Proof
+
+- Live classroom analysis endpoint: `POST /api/qwen/classroom-analysis`
+- Safe configuration check endpoint: `GET /api/qwen/config-check`
+- Model is read from `QWEN_MODEL` in `server/.env`
+- DashScope API key is read from `DASHSCOPE_API_KEY` on the server only
+- The frontend never receives or stores the API key
+- Live Qwen Mode calls the Express backend proxy instead of calling Qwen directly from browser code
+- If the provider fails, the app automatically falls back to Mock Mode and keeps the dashboard usable
+- Mock Mode uses the same orchestration pattern for offline and fallback demos
+
 ## Demo Walkthrough
 
 1. Run the local server with `py -m http.server 8000`.

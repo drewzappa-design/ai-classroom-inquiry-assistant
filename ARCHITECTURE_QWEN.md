@@ -4,6 +4,29 @@
 
 Qwen Teacher Intelligence is an additive teacher-facing module in the existing build-free Inquiry Classroom prototype.
 
+```mermaid
+flowchart LR
+  Browser["Browser frontend<br/>Qwen Teacher Dashboard"]
+  Backend["Express backend proxy<br/>server/"]
+  Qwen["Qwen / DashScope<br/>Chat Completions"]
+  Agents["Chained agents<br/>Learning Analyst -> Standards Coach -> Intervention Designer -> Communication Agent -> Opportunity Advisor"]
+  JSON["Structured JSON<br/>validated + normalized"]
+  Dashboard["Teacher dashboard<br/>class health + priorities"]
+  Approval["Teacher approval<br/>approve / edit / reject / more evidence"]
+  History["Approved Action History"]
+  Mock["Mock Mode fallback<br/>local orchestration pattern"]
+
+  Browser --> Backend
+  Backend --> Qwen
+  Qwen --> Agents
+  Agents --> JSON
+  JSON --> Dashboard
+  Dashboard --> Approval
+  Approval --> History
+  Browser -. backend unavailable .-> Mock
+  Mock -. normalized JSON .-> Dashboard
+```
+
 ```text
 index.html
   -> loads app scripts
