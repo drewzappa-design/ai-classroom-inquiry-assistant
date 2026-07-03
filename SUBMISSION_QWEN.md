@@ -6,7 +6,7 @@ Qwen Teacher Intelligence
 
 ## One-Sentence Pitch
 
-Qwen Teacher Intelligence is a teacher-facing Autopilot Agent workflow that turns classroom evidence into reviewable recommendations while keeping every student-impacting decision under teacher control.
+Qwen Teacher Intelligence is a teacher-facing chained Autopilot Agent workflow that turns classroom evidence into reviewable recommendations while keeping every student-impacting decision under teacher control.
 
 ## Track
 
@@ -19,6 +19,9 @@ Teachers have rich evidence about student learning, but it is scattered across w
 ## Features
 
 - Qwen Teacher Dashboard
+- Chained multi-agent `Analyze Entire Classroom` pipeline
+- Live Qwen Mode through an Express backend proxy
+- Mock Mode with the same orchestration pattern for offline/fallback demos
 - Student Insight Page for Maya Rodriguez
 - Agent Workflow Page
 - Intervention Plan Page
@@ -36,6 +39,16 @@ Teachers have rich evidence about student learning, but it is scattered across w
 - Status labels: Draft Recommendation, Waiting for Teacher Review, Approved by Teacher, Rejected, More Evidence Needed
 - Safety label: Teacher decision support only - no automated student decisions
 
+This is not a single chatbot. Analyze Entire Classroom runs agents in this order:
+
+1. Learning Analyst
+2. Standards Coach
+3. Intervention Designer
+4. Communication Agent
+5. Opportunity Advisor
+
+Each agent receives the original classroom evidence plus structured output from previous agents. Each agent has a strict role and JSON schema. The backend validates every live Qwen JSON response, retries invalid JSON once, and records a structured error if retry fails.
+
 ## Demo Walkthrough
 
 1. Run the local server with `py -m http.server 8000`.
@@ -43,7 +56,7 @@ Teachers have rich evidence about student learning, but it is scattered across w
 3. Click `Qwen Intelligence`.
 4. Click `Demo Mode`.
 5. Use `Next` or Right Arrow to move through the 9-step presentation.
-6. On Analyze Entire Classroom, show the agents completing their mock analysis.
+6. On Analyze Entire Classroom, explain that Qwen is running a sequence of specialized teaching agents, each building on the previous agent's structured output.
 7. On Teacher Approval, click Approve and show the status change.
 8. Open Approved Action History to show the final teacher-approved action.
 
@@ -51,17 +64,19 @@ Teachers have rich evidence about student learning, but it is scattered across w
 
 - Static HTML/CSS/JavaScript
 - Existing Inquiry Classroom app shell
+- Express backend proxy
+- DashScope / Qwen via `QWEN_MODEL`
 - Local browser state through `localStorage`
 - Namespaced state: `state.qwenTeacherIntelligence`
-- Mock Qwen Autopilot Agent workflow
-- Mock class-level STEM/science analysis report
-- No backend or live API calls in this milestone
+- Chained Qwen Autopilot Agent workflow
+- Backend JSON validation and one retry for failed agent JSON
+- Mock Mode fallback using the same orchestration pattern
 
 ## Future Roadmap
 
-- Add backend/serverless proxy for live Qwen calls
-- Define structured JSON schemas for recommendations
+- Persist teacher-approved action history to a secure backend
 - Add authentication and role-based access
+- Expand structured JSON schemas for more subject areas
 - Add audit logs for teacher approvals
 - Add student data minimization/redaction layer
 - Add district-configurable safety policies
@@ -69,8 +84,7 @@ Teachers have rich evidence about student learning, but it is scattered across w
 
 ## Risks / Limitations
 
-- Current module is mock/demo only
-- No live Qwen API integration yet
+- Live Qwen requires local backend configuration and a valid DashScope API key
 - Local state is browser-only demo persistence
 - No production authentication or privacy hardening
 - Uses mock student insight content, not real student data
@@ -80,6 +94,10 @@ Teachers have rich evidence about student learning, but it is scattered across w
 - [ ] Demo runs locally with `py -m http.server 8000`
 - [ ] Qwen route opens from teacher sidebar
 - [ ] Analyze Entire Classroom generates a class health report
+- [ ] Live Qwen Mode connects through the Express backend proxy
+- [ ] Mock Mode fallback still works if backend is unavailable
+- [ ] Demo explains that this is not a single chatbot
+- [ ] Demo explains structured agent JSON handoffs
 - [ ] Demo Mode launches from the Qwen dashboard
 - [ ] Demo Mode shows Step 1 of 9 through Step 9 of 9
 - [ ] Right Arrow, Left Arrow, and Esc shortcuts work

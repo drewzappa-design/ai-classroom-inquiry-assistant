@@ -2,9 +2,9 @@
 
 **Project name:** Qwen Teacher Intelligence  
 **Track fit:** Qwen Autopilot Agent workflow for education  
-**Demo mode:** Local mock prototype, no live Qwen API calls yet
+**Modes:** Mock Mode and Live Qwen Mode through an Express backend proxy
 
-Qwen Teacher Intelligence is a teacher-facing Autopilot Agent workflow inside the Inquiry Classroom prototype. It turns classroom evidence into reviewable recommendations, routes those recommendations through a team of specialized agents, and stops at a teacher approval checkpoint before anything becomes an instructional action.
+Qwen Teacher Intelligence is a teacher-facing Autopilot Agent workflow inside the Inquiry Classroom prototype. It is not a single chatbot. `Analyze Entire Classroom` runs a chained multi-agent pipeline that turns classroom evidence into structured, reviewable teacher decision support.
 
 The core message:
 
@@ -20,23 +20,32 @@ Generic AI dashboards can make this worse if they jump straight from signal to d
 
 Qwen Teacher Intelligence demonstrates a safer teacher-centered agent workflow:
 
-1. Student learning evidence is summarized.
-2. An agent team drafts insights, interventions, communications, and next steps.
-3. The teacher can run `Analyze Entire Classroom` to generate a mock class-level report.
-4. The teacher reviews the recommendation.
-5. The teacher can approve, edit, reject, or request more evidence.
-6. Only approved recommendations appear in Approved Action History.
+1. Student learning evidence is collected into a sanitized classroom snapshot.
+2. `Analyze Entire Classroom` runs a chained sequence of specialized teaching agents.
+3. Each agent receives the original classroom evidence plus structured JSON from previous agents.
+4. Each agent returns only structured JSON according to its role and schema.
+5. The backend validates every live Qwen agent response.
+6. Invalid JSON is retried once; if retry fails, a structured agent error is recorded and the pipeline continues.
+7. The teacher reviews the recommendation.
+8. The teacher can approve, edit, reject, or request more evidence.
+9. Only approved recommendations appear in Approved Action History.
 
 This makes the demo feel like an Autopilot Agent workflow without removing the teacher from the decision.
 
 ## Agent Team
 
-- **Learning Analyst Agent:** identifies learning signals from student evidence.
-- **Intervention Designer Agent:** drafts short instructional moves.
-- **Standards Coach Agent:** checks alignment to lesson goals and standards.
-- **Communication Agent:** drafts teacher-reviewable messages.
-- **Opportunity Advisor Agent:** suggests enrichment or extension pathways.
-- **Teacher Approval Agent:** keeps every recommendation behind human review.
+Agent order:
+
+1. **Learning Analyst:** analyzes learning evidence only.
+2. **Standards Coach:** translates learning findings into standards alignment.
+3. **Intervention Designer:** designs instructional actions.
+4. **Communication Agent:** creates teacher-review communication drafts.
+5. **Opportunity Advisor:** recommends enrichment opportunities.
+
+Each agent has a strict responsibility and JSON schema. It receives:
+
+- original classroom evidence
+- structured output from previous agents
 
 Each agent card now shows:
 
@@ -48,7 +57,13 @@ Each agent card now shows:
 
 ## Analyze Entire Classroom
 
-The `Analyze Entire Classroom` button generates a mock middle school STEM/science report with:
+The `Analyze Entire Classroom` button runs the multi-agent pipeline and writes the normalized result to:
+
+```js
+state.qwenTeacherIntelligence.classAnalysis
+```
+
+The report includes:
 
 - overall class health score
 - number of students needing intervention
@@ -57,6 +72,7 @@ The `Analyze Entire Classroom` button generates a mock middle school STEM/scienc
 - recommended whole-class action
 - small group recommendation
 - opportunity recommendations
+- structured agent outputs
 
 The class insight section highlights:
 
@@ -78,6 +94,21 @@ The Opportunity Advisor Agent suggests teacher-review enrichment options such as
 - local ATC / tech school pathway
 
 These are suggestions for teacher review, not automatic placement, nomination, or enrollment.
+
+## Live Qwen And Mock Mode
+
+Live Qwen Mode runs through the Express backend proxy in `server/`. The frontend never contains the API key.
+
+```text
+Browser UI
+  -> Express backend proxy
+  -> DashScope / Qwen
+  -> chained agent JSON
+  -> normalized class analysis
+  -> existing teacher dashboard
+```
+
+Mock Mode uses the same orchestration pattern locally for offline demos and fallback. It still runs the same ordered agent flow, but the agent outputs are generated locally instead of calling Qwen.
 
 ## Human-In-The-Loop Workflow
 
@@ -102,6 +133,8 @@ The value is not automatic action. The value is a better review workflow.
 
 ## How To Run Locally
 
+Frontend only:
+
 From the repository root:
 
 ```powershell
@@ -115,6 +148,17 @@ http://localhost:8000/?role=teacher
 ```
 
 Click `Qwen Intelligence` in the teacher sidebar.
+
+Live Qwen backend:
+
+```powershell
+cd server
+npm install
+copy .env.example .env
+npm start
+```
+
+Then set `DASHSCOPE_API_KEY` in `server\.env`, open the Qwen dashboard, choose `Live Qwen Mode`, and click `Analyze Entire Classroom`.
 
 ## Demo Mode
 
@@ -160,8 +204,8 @@ Use `Demo Mode` for the cleanest presentation. If navigating manually, use:
 
 ## Demo Boundaries
 
-- Mock/demo mode only
-- No live Qwen API calls
+- Live Qwen calls only go through the Express backend proxy
+- Mock Mode uses the same orchestration pattern for offline/fallback demos
 - No real student data
 - No automatic student decisions
 - No changes to student grades, hot list status, resources, credentials, or communications

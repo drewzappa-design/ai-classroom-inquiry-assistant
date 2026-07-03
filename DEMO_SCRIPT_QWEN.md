@@ -12,6 +12,13 @@ Run from the repository root:
 py -m http.server 8000
 ```
 
+For Live Qwen Mode, also run the backend proxy:
+
+```powershell
+cd server
+npm start
+```
+
 Open:
 
 ```text
@@ -70,19 +77,19 @@ What to show:
 
 - animated agent completion sequence:
   - Learning Analyst
-  - Intervention Designer
   - Standards Coach
+  - Intervention Designer
   - Communication Agent
   - Opportunity Advisor
   - Teacher Approval Ready
 
 What to say:
 
-> Now Qwen generates a mock class-level STEM report. It gives us a class health score, students who may need intervention, students ready for enrichment, misconception clusters, and recommended whole-class and small-group moves.
+> Now Qwen analyzes the entire classroom. Qwen is not generating one paragraph. It is running a sequence of specialized teaching agents, each building on the previous agent's structured output. The Learning Analyst studies evidence, the Standards Coach maps it to learning goals, the Intervention Designer plans teacher actions, the Communication Agent prepares drafts, and the Opportunity Advisor identifies enrichment possibilities.
 
 Judging point:
 
-- Clear track fit: Autopilot Agent workflow with lightweight mock timing and human approval.
+- Clear track fit: chained Autopilot Agent workflow with structured JSON handoffs and human approval.
 
 ### 4. Class Summary - 30 seconds
 
@@ -132,11 +139,12 @@ What to show:
 
 What to say:
 
-> The workflow starts with student evidence, then routes through specialized agents. Notice each agent now explains the input evidence it used, its reasoning, confidence, recommended action, and approval status. This makes the agent team more auditable and less like a black box.
+> The workflow starts with student evidence, then routes through specialized agents. Each agent has a strict role and JSON schema. The backend validates the JSON from every live Qwen agent. If an agent returns invalid JSON, the backend retries once. If retry fails, the pipeline records a structured error and continues rather than crashing.
 
 Judging point:
 
 - Multi-agent design is visible and purposeful.
+- Shows this is not a single chatbot; it is structured orchestration.
 
 ### 7. Teacher Approval - 55 seconds
 
@@ -193,9 +201,11 @@ Say:
 ## Key Judging Points
 
 - Strong Qwen Autopilot Agent track fit
-- Multi-agent workflow is clear
+- Chained multi-agent workflow is clear
+- Not a single chatbot: agents pass structured JSON to the next agent
 - Analyze Entire Classroom produces a memorable class-level report
 - Agent reasoning is evidence-based and reviewable
+- Backend validates agent JSON and retries invalid output once
 - Human approval checkpoint is interactive
 - Demo has visible safety boundaries
 - Opportunity recommendations are teacher-review suggestions, not automatic placement
