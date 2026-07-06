@@ -148,7 +148,8 @@
 
 .amd-edge-runtime-grid,
 .amd-edge-privacy-grid,
-.amd-edge-performance-grid {
+.amd-edge-performance-grid,
+.amd-edge-monitor-grid {
   display: grid;
   gap: 12px;
 }
@@ -165,6 +166,8 @@
 .amd-edge-runtime-card,
 .amd-edge-privacy-card,
 .amd-edge-performance-card,
+.amd-edge-monitor-card,
+.amd-edge-route-card,
 .amd-edge-scenario article {
   min-height: 138px;
   padding: 16px;
@@ -225,6 +228,140 @@
   line-height: 1;
 }
 
+.amd-edge-monitor {
+  background:
+    linear-gradient(90deg, rgba(237, 28, 36, 0.16), transparent 34%),
+    linear-gradient(135deg, #11141d 0%, #171a22 46%, #0d0f15 100%);
+}
+
+.amd-edge-monitor-layout {
+  display: grid;
+  grid-template-columns: minmax(260px, 0.72fr) minmax(0, 1.28fr);
+  gap: 12px;
+  align-items: stretch;
+}
+
+.amd-edge-route-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 100%;
+  background:
+    linear-gradient(155deg, rgba(237, 28, 36, 0.18), rgba(255, 255, 255, 0.08)),
+    var(--amd-panel);
+}
+
+.amd-edge-label,
+.amd-edge-monitor-card span {
+  color: var(--amd-orange);
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.amd-edge-route-card h4 {
+  margin: 16px 0 10px;
+  color: #fff;
+  font-size: clamp(1.9rem, 4vw, 3rem);
+  line-height: 1;
+}
+
+.amd-edge-route-card p,
+.amd-edge-monitor-card p {
+  margin: 0;
+  color: var(--amd-muted);
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+.amd-edge-route-options {
+  display: grid;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.amd-edge-route-options span,
+.amd-edge-disclaimer-row span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 7px 10px;
+  border: 1px solid var(--amd-line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #dbe1ec;
+  font-size: 0.78rem;
+  font-weight: 850;
+}
+
+.amd-edge-route-options span.active {
+  border-color: rgba(255, 138, 0, 0.72);
+  background: rgba(255, 138, 0, 0.14);
+  color: #fff;
+}
+
+.amd-edge-monitor-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.amd-edge-monitor-card strong {
+  display: block;
+  margin: 7px 0;
+  color: #fff;
+  font-size: 1.15rem;
+  line-height: 1.1;
+}
+
+.amd-edge-disclaimer-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.amd-edge-routing-flow {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.amd-edge-routing-flow article {
+  position: relative;
+  min-height: 118px;
+  padding: 14px;
+  border: 1px solid var(--amd-line);
+  border-radius: 8px;
+  background: var(--amd-panel);
+}
+
+.amd-edge-routing-flow article:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: -10px;
+  width: 10px;
+  height: 2px;
+  background: linear-gradient(90deg, var(--amd-orange), rgba(255, 138, 0, 0));
+}
+
+.amd-edge-route-node {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: linear-gradient(135deg, var(--amd-red), var(--amd-orange));
+  color: #fff;
+  font-weight: 900;
+}
+
+.amd-edge-routing-flow h4 {
+  margin: 18px 0 0;
+  color: #fff;
+  font-size: 0.95rem;
+  line-height: 1.25;
+}
+
 .amd-edge-scenario {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -254,6 +391,9 @@
   .amd-edge-runtime-grid,
   .amd-edge-privacy-grid,
   .amd-edge-performance-grid,
+  .amd-edge-monitor-layout,
+  .amd-edge-monitor-grid,
+  .amd-edge-routing-flow,
   .amd-edge-scenario {
     grid-template-columns: 1fr 1fr;
   }
@@ -280,11 +420,24 @@
   .amd-edge-runtime-grid,
   .amd-edge-privacy-grid,
   .amd-edge-performance-grid,
+  .amd-edge-monitor-layout,
+  .amd-edge-monitor-grid,
+  .amd-edge-routing-flow,
   .amd-edge-scenario {
     grid-template-columns: 1fr;
   }
 
   .amd-edge-hero {
     min-height: auto;
+  }
+
+  .amd-edge-routing-flow article:not(:last-child)::after {
+    top: auto;
+    right: auto;
+    left: 28px;
+    bottom: -10px;
+    width: 2px;
+    height: 10px;
+    background: linear-gradient(180deg, var(--amd-orange), rgba(255, 138, 0, 0));
   }
 }
