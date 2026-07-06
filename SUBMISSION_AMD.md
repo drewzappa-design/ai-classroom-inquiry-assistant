@@ -26,6 +26,7 @@ AI Classroom Edge is a privacy-first edge AI classroom platform that keeps stude
 - Edge Runtime Status
 - Edge Runtime Monitor
 - Routing visualization
+- Rural Connectivity Simulator
 - Privacy cards
 - Performance cards
 - Rural connectivity panel
@@ -40,6 +41,8 @@ AI Classroom Edge is a privacy-first edge AI classroom platform that keeps stude
 - Cloud calls avoided
 - CPU/GPU/NPU path readiness
 - Local classroom server status
+- Connectivity scenario status
+- Intermittent reconnect animation
 
 ## Real Project Assets Reused
 
@@ -64,4 +67,3 @@ The project does not claim real Ryzen AI NPU execution in this phase. It present
 - Durable offline sync queue
 - School-owned local evidence database
 - Teacher-controlled speech or vision evidence tools
-

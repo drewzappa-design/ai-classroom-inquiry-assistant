@@ -42,7 +42,13 @@ The important privacy story is that cloud assist is optional and appears after t
 
 ### 5. Rural Connectivity
 
-Show the rural connectivity scenario: internet loss, local AI continues, cloud sync later. This is the classroom resilience story for schools with inconsistent connectivity.
+Open the Rural Connectivity Simulator. Click through Normal Connectivity, Limited Bandwidth, Intermittent Internet, and Internet Outage.
+
+For Internet Outage, point out that cloud connection becomes offline while Edge Runtime remains active, Teacher Workflow remains fully operational, Student Evidence stays local, and Cloud Sync is queued.
+
+For Limited Bandwidth, point out hybrid routing, cloud assist only when necessary, and priority sync.
+
+For Intermittent Internet, let the animated state cycle. Show edge taking over, cloud reconnecting, and the sync queue changing.
 
 ### 6. Teacher Workflow
 
@@ -51,4 +57,3 @@ Click `Run Edge Classroom Analysis`. This opens the existing teacher intelligenc
 ## Closing
 
 AI Classroom Edge keeps student intelligence close to the school, lets teachers remain in control, and positions AMD AI PCs as the future local inference layer for classrooms.
-

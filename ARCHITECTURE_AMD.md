@@ -36,6 +36,19 @@ Student Evidence
 - Offline queue depth
 - Cloud calls avoided
 
+## Rural Connectivity Simulator
+
+The AMD module includes an interactive simulator for rural school connectivity:
+
+- Normal Connectivity
+- Limited Bandwidth
+- Intermittent Internet
+- Internet Outage
+
+Each mode updates the dashboard readout for cloud connection, edge runtime, teacher workflow, student evidence, cloud sync queue, inference route, latency, and expected behavior. The intermittent mode cycles through simulated reconnecting states every few seconds.
+
+No real networking changes occur.
+
 ## Real Components
 
 - `modules/amd-edge-classroom/amd-edge-classroom.js`
@@ -61,4 +74,3 @@ Future versions can add:
 - Persisted offline sync queue
 
 No current file claims real NPU inference.
-

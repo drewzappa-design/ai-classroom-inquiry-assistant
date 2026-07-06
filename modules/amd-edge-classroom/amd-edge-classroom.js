@@ -1,6 +1,7 @@
 (function () {
   let currentState = null;
   let currentHelpers = {};
+  let intermittentTimer = null;
 
   const runtimeItems = [
     ["Local Classroom Server", "Online", "localhost edge gateway ready for classroom traffic."],
@@ -45,10 +46,120 @@
     "Optional Cloud Assist",
   ];
 
+  const connectivityModes = {
+    normal: {
+      icon: "●",
+      label: "Normal Connectivity",
+      tone: "green",
+      cloudConnection: "Online",
+      edgeRuntime: "Active",
+      teacherWorkflow: "Fully Operational",
+      studentEvidence: "Local + background sync",
+      cloudSyncQueue: "0",
+      inferenceRoute: "Hybrid edge/cloud",
+      latency: "84 ms",
+      expectedBehavior: "Hybrid edge/cloud routing is available. Background sync is active, while student evidence remains available locally for teacher review.",
+    },
+    limited: {
+      icon: "●",
+      label: "Limited Bandwidth",
+      tone: "yellow",
+      cloudConnection: "Constrained",
+      edgeRuntime: "Active",
+      teacherWorkflow: "Operational",
+      studentEvidence: "Local first",
+      cloudSyncQueue: "2 priority items",
+      inferenceRoute: "Hybrid routing",
+      latency: "118 ms",
+      expectedBehavior: "Cloud assist runs only when necessary. Priority sync keeps teacher-approved summaries moving while local evidence and edge agents carry the workflow.",
+    },
+    intermittent: {
+      icon: "●",
+      label: "Intermittent Internet",
+      tone: "orange",
+      cloudConnection: "Reconnecting",
+      edgeRuntime: "Taking over",
+      teacherWorkflow: "Operational",
+      studentEvidence: "Local with queued sync",
+      cloudSyncQueue: "4 and changing",
+      inferenceRoute: "Edge takeover",
+      latency: "46 ms",
+      expectedBehavior: "The edge runtime takes over when the connection drops, then reconnects and drains the queue as cloud access returns.",
+    },
+    outage: {
+      icon: "●",
+      label: "Internet Outage",
+      tone: "red",
+      cloudConnection: "Offline",
+      edgeRuntime: "Active",
+      teacherWorkflow: "Fully Operational",
+      studentEvidence: "Local Only",
+      cloudSyncQueue: "Queued",
+      inferenceRoute: "Local Edge Agents",
+      latency: "32 ms",
+      expectedBehavior: "Teacher continues working normally. Student evidence remains available. Recommendations are generated locally. Cloud synchronization resumes automatically when connectivity returns.",
+    },
+  };
+
+  const intermittentFrames = [
+    {
+      cloudConnection: "Dropped",
+      edgeRuntime: "Taking over",
+      teacherWorkflow: "Operational",
+      studentEvidence: "Local only",
+      cloudSyncQueue: "5 queued",
+      inferenceRoute: "Local Edge Agents",
+      latency: "34 ms",
+      expectedBehavior: "Connection dropped. Edge agents continue the teacher workflow and preserve student evidence locally.",
+    },
+    {
+      cloudConnection: "Reconnecting",
+      edgeRuntime: "Active",
+      teacherWorkflow: "Operational",
+      studentEvidence: "Local with queued sync",
+      cloudSyncQueue: "7 queued",
+      inferenceRoute: "Edge takeover",
+      latency: "41 ms",
+      expectedBehavior: "Internet is unstable. The edge runtime keeps recommendations local while sync jobs wait for a reliable connection.",
+    },
+    {
+      cloudConnection: "Online burst",
+      edgeRuntime: "Active",
+      teacherWorkflow: "Operational",
+      studentEvidence: "Local + priority sync",
+      cloudSyncQueue: "3 draining",
+      inferenceRoute: "Hybrid recovery",
+      latency: "76 ms",
+      expectedBehavior: "Cloud access briefly returns. Priority sync resumes, then the system remains ready to fall back to edge operation.",
+    },
+  ];
+
+  const simulatorFields = [
+    ["Cloud Connection", "cloudConnection"],
+    ["Edge Runtime", "edgeRuntime"],
+    ["Teacher Workflow", "teacherWorkflow"],
+    ["Student Evidence", "studentEvidence"],
+    ["Cloud Sync Queue", "cloudSyncQueue"],
+    ["Inference Route", "inferenceRoute"],
+    ["Latency", "latency"],
+  ];
+
+  const architectureNodes = [
+    "Browser",
+    "Teacher Laptop",
+    "AMD AI PC",
+    "Local Classroom Server",
+    "Edge Agents",
+    "Local Evidence Store",
+    "Optional Cloud Sync",
+  ];
+
   function render({ state, helpers }) {
     currentState = state;
     currentHelpers = helpers || {};
     const h = currentHelpers;
+    ensureSimulatorState();
+    syncIntermittentTimer();
     return `<section class="amd-edge-classroom">
       ${h.pageHead(
         "AI Classroom Edge",
@@ -59,6 +170,7 @@
       ${runtimeStatus(h)}
       ${edgeRuntimeMonitor(h)}
       ${routingVisualization(h)}
+      ${ruralConnectivitySimulator(h)}
       ${privacyCards(h)}
       ${performanceCards(h)}
       ${ruralConnectivity(h)}
@@ -145,6 +257,68 @@
     </section>`;
   }
 
+  function ruralConnectivitySimulator(h) {
+    const selectedKey = currentState.amdEdgeConnectivity.mode;
+    const selectedMode = connectivityModes[selectedKey] || connectivityModes.normal;
+    const snapshot = simulatorSnapshot();
+    return `<section class="amd-edge-section amd-edge-simulator" id="amd-rural-simulator">
+      <div class="amd-edge-section-head">
+        <h3>Rural Connectivity Simulator</h3>
+        <p>Demo Scenario. No real networking changes occur. This simulator shows why edge AI matters when school connectivity changes.</p>
+      </div>
+      <div class="amd-edge-demo-labels">
+        <span>Demo Scenario</span>
+        <span>No real networking changes occur</span>
+        <span>Everything is simulated</span>
+      </div>
+      <div class="amd-edge-simulator-layout">
+        <div class="amd-edge-mode-panel">
+          ${Object.entries(connectivityModes).map(([key, mode]) => `<button type="button" class="amd-edge-mode-button ${selectedKey === key ? "active" : ""} ${mode.tone}" onclick="AMDEdgeClassroom.setConnectivityMode('${h.esc(key)}')">
+            <span aria-hidden="true">${h.esc(mode.icon)}</span>
+            <strong>${h.esc(mode.label)}</strong>
+          </button>`).join("")}
+        </div>
+        <article class="amd-edge-simulator-readout ${selectedMode.tone}">
+          <div class="amd-edge-simulator-title">
+            <span>${h.esc(selectedMode.icon)}</span>
+            <div>
+              <h4>${h.esc(selectedMode.label)}</h4>
+              <p>${selectedKey === "intermittent" ? "Animated demo state changes every few seconds." : "Static demo state."}</p>
+            </div>
+          </div>
+          <div class="amd-edge-simulator-grid">
+            ${simulatorFields.map(([label, key]) => `<div>
+              <span>${h.esc(label)}</span>
+              <strong>${h.esc(snapshot[key])}</strong>
+            </div>`).join("")}
+          </div>
+          <div class="amd-edge-expected-behavior">
+            <span>Expected Behavior</span>
+            <p>${h.esc(snapshot.expectedBehavior)}</p>
+          </div>
+        </article>
+      </div>
+      <div class="amd-edge-architecture-panel">
+        <div class="amd-edge-section-head">
+          <h3>Architecture Visualization</h3>
+          <p>Local-first classroom path from browser workflow to optional cloud synchronization.</p>
+        </div>
+        <div class="amd-edge-architecture-flow">
+          ${architectureNodes.map((node, index) => `<article>
+            <span>${index + 1}</span>
+            <strong>${h.esc(node)}</strong>
+          </article>`).join("")}
+        </div>
+      </div>
+      <div class="amd-edge-actions amd-edge-simulator-actions">
+        <button class="btn secondary" onclick="AMDEdgeClassroom.simulateOutage()">Simulate Outage</button>
+        <button class="btn secondary" onclick="AMDEdgeClassroom.restoreInternet()">Restore Internet</button>
+        <button class="btn secondary" onclick="AMDEdgeClassroom.flushSyncQueue()">Flush Sync Queue</button>
+        <button class="btn" onclick="AMDEdgeClassroom.runEdgeAnalysis()">Run Edge Analysis</button>
+      </div>
+    </section>`;
+  }
+
   function privacyCards(h) {
     return `<section class="amd-edge-section" id="amd-privacy-console">
       <div class="amd-edge-section-head">
@@ -202,8 +376,86 @@
       <button class="btn" onclick="AMDEdgeClassroom.runEdgeAnalysis()">Run Edge Classroom Analysis</button>
       <button class="btn secondary" onclick="AMDEdgeClassroom.openTeacherWorkspace()">Open Teacher Workspace</button>
       <button class="btn secondary" onclick="AMDEdgeClassroom.openRuntimeMonitor()">Open Edge Runtime Monitor</button>
+      <button class="btn secondary" onclick="AMDEdgeClassroom.openRuralSimulator()">Open Rural Connectivity Simulator</button>
       <button class="btn secondary" onclick="AMDEdgeClassroom.openPrivacyConsole()">Open Privacy Console</button>
     </section>`;
+  }
+
+  function ensureSimulatorState() {
+    currentState.amdEdgeConnectivity ||= {};
+    currentState.amdEdgeConnectivity.mode ||= "normal";
+    currentState.amdEdgeConnectivity.intermittentStep ||= 0;
+    currentState.amdEdgeConnectivity.queueFlushed ||= false;
+  }
+
+  function simulatorSnapshot() {
+    ensureSimulatorState();
+    const mode = currentState.amdEdgeConnectivity.mode;
+    if (mode === "intermittent") {
+      const step = currentState.amdEdgeConnectivity.intermittentStep || 0;
+      return intermittentFrames[step % intermittentFrames.length];
+    }
+    const base = connectivityModes[mode] || connectivityModes.normal;
+    if (currentState.amdEdgeConnectivity.queueFlushed && mode !== "outage") {
+      return {
+        ...base,
+        cloudSyncQueue: "0 flushed",
+        expectedBehavior: `${base.expectedBehavior} The demo sync queue has been flushed.`,
+      };
+    }
+    return base;
+  }
+
+  function setConnectivityMode(mode) {
+    ensureSimulatorState();
+    currentState.amdEdgeConnectivity.mode = connectivityModes[mode] ? mode : "normal";
+    currentState.amdEdgeConnectivity.queueFlushed = false;
+    if (mode === "intermittent") currentState.amdEdgeConnectivity.intermittentStep = 0;
+    currentHelpers.save?.();
+    currentHelpers.render?.();
+  }
+
+  function syncIntermittentTimer() {
+    const mode = currentState?.amdEdgeConnectivity?.mode;
+    if (mode !== "intermittent") {
+      if (intermittentTimer) {
+        clearInterval(intermittentTimer);
+        intermittentTimer = null;
+      }
+      return;
+    }
+    if (intermittentTimer) return;
+    intermittentTimer = setInterval(() => {
+      if (!currentState?.amdEdgeConnectivity || currentState.amdEdgeConnectivity.mode !== "intermittent") {
+        clearInterval(intermittentTimer);
+        intermittentTimer = null;
+        return;
+      }
+      currentState.amdEdgeConnectivity.intermittentStep = (currentState.amdEdgeConnectivity.intermittentStep + 1) % intermittentFrames.length;
+      currentHelpers.save?.();
+      currentHelpers.render?.();
+    }, 3200);
+  }
+
+  function simulateOutage() {
+    setConnectivityMode("outage");
+    scrollToPanel("amd-rural-simulator");
+  }
+
+  function restoreInternet() {
+    setConnectivityMode("normal");
+    scrollToPanel("amd-rural-simulator");
+  }
+
+  function flushSyncQueue() {
+    ensureSimulatorState();
+    currentState.amdEdgeConnectivity.queueFlushed = true;
+    if (currentState.amdEdgeConnectivity.mode === "outage") {
+      currentState.amdEdgeConnectivity.mode = "limited";
+    }
+    currentHelpers.save?.();
+    currentHelpers.render?.();
+    scrollToPanel("amd-rural-simulator");
   }
 
   function routeStatus() {
@@ -239,15 +491,24 @@
     scrollToPanel("amd-runtime-monitor");
   }
 
+  function openRuralSimulator() {
+    scrollToPanel("amd-rural-simulator");
+  }
+
   function openPrivacyConsole() {
     scrollToPanel("amd-privacy-console");
   }
 
   window.AMDEdgeClassroom = {
     render,
+    setConnectivityMode,
     runEdgeAnalysis,
     openTeacherWorkspace,
     openRuntimeMonitor,
+    openRuralSimulator,
     openPrivacyConsole,
+    simulateOutage,
+    restoreInternet,
+    flushSyncQueue,
   };
 })();
