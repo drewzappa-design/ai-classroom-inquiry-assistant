@@ -1,0 +1,290 @@
+.amd-edge-classroom {
+  --amd-black: #111318;
+  --amd-ink: #f7f9fb;
+  --amd-muted: #aab3c2;
+  --amd-panel: rgba(255, 255, 255, 0.075);
+  --amd-panel-strong: rgba(255, 255, 255, 0.12);
+  --amd-line: rgba(255, 255, 255, 0.16);
+  --amd-red: #ed1c24;
+  --amd-orange: #ff8a00;
+  --amd-green: #7bd88f;
+  display: grid;
+  gap: 18px;
+  color: var(--amd-ink);
+}
+
+.amd-edge-classroom .page-head {
+  padding: 18px;
+  border: 1px solid #20242d;
+  border-radius: 8px;
+  background: #14171f;
+  color: #fff;
+}
+
+.amd-edge-classroom .page-head p {
+  color: var(--amd-muted);
+}
+
+.amd-edge-hero,
+.amd-edge-section,
+.amd-edge-rural-panel,
+.amd-edge-actions {
+  border: 1px solid #20242d;
+  border-radius: 8px;
+  background:
+    radial-gradient(circle at 18% 12%, rgba(237, 28, 36, 0.22), transparent 28%),
+    linear-gradient(135deg, #151821 0%, #0f1117 58%, #19120f 100%);
+  box-shadow: 0 18px 42px rgba(10, 12, 18, 0.18);
+}
+
+.amd-edge-hero {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(240px, 340px);
+  gap: 22px;
+  align-items: center;
+  min-height: 300px;
+  overflow: hidden;
+  padding: 34px;
+}
+
+.amd-edge-hero::after {
+  content: "";
+  position: absolute;
+  inset: auto -90px -120px auto;
+  width: 320px;
+  height: 320px;
+  border: 1px solid rgba(255, 138, 0, 0.26);
+  transform: rotate(18deg);
+}
+
+.amd-edge-hero-copy {
+  position: relative;
+  z-index: 1;
+}
+
+.amd-edge-hero h2 {
+  margin: 0 0 10px;
+  color: #fff;
+  font-size: clamp(2.4rem, 6vw, 5.6rem);
+  line-height: 0.95;
+  letter-spacing: 0;
+}
+
+.amd-edge-hero p {
+  max-width: 760px;
+  margin: 0;
+  color: #d9dee8;
+  font-size: clamp(1.2rem, 2.1vw, 1.8rem);
+  line-height: 1.25;
+  font-weight: 800;
+}
+
+.amd-edge-hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 24px;
+}
+
+.amd-edge-classroom .btn.sun {
+  border-color: transparent;
+  background: linear-gradient(135deg, var(--amd-red), var(--amd-orange));
+  color: #fff;
+}
+
+.amd-edge-classroom .btn.secondary {
+  border-color: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+.amd-edge-chip-stack {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 10px;
+}
+
+.amd-edge-chip-stack span {
+  min-height: 52px;
+  display: flex;
+  align-items: center;
+  padding: 14px;
+  border: 1px solid var(--amd-line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  font-size: 0.92rem;
+  font-weight: 850;
+}
+
+.amd-edge-section,
+.amd-edge-rural-panel {
+  padding: 22px;
+}
+
+.amd-edge-section-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 16px;
+}
+
+.amd-edge-section-head h3 {
+  margin: 0;
+  color: #fff;
+  font-size: 1.25rem;
+}
+
+.amd-edge-section-head p {
+  max-width: 620px;
+  margin: 0;
+  color: var(--amd-muted);
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.amd-edge-runtime-grid,
+.amd-edge-privacy-grid,
+.amd-edge-performance-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.amd-edge-runtime-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.amd-edge-privacy-grid,
+.amd-edge-performance-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.amd-edge-runtime-card,
+.amd-edge-privacy-card,
+.amd-edge-performance-card,
+.amd-edge-scenario article {
+  min-height: 138px;
+  padding: 16px;
+  border: 1px solid var(--amd-line);
+  border-radius: 8px;
+  background: var(--amd-panel);
+}
+
+.amd-edge-runtime-card {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 9px;
+  align-content: start;
+}
+
+.amd-edge-status-dot {
+  width: 10px;
+  height: 10px;
+  margin-top: 4px;
+  border-radius: 50%;
+  background: var(--amd-green);
+  box-shadow: 0 0 18px rgba(123, 216, 143, 0.75);
+}
+
+.amd-edge-runtime-card span,
+.amd-edge-performance-card span {
+  color: var(--amd-orange);
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.amd-edge-runtime-card h4,
+.amd-edge-privacy-card h4,
+.amd-edge-scenario h4 {
+  grid-column: 1 / -1;
+  margin: 11px 0 8px;
+  color: #fff;
+  font-size: 1rem;
+}
+
+.amd-edge-runtime-card p,
+.amd-edge-privacy-card p,
+.amd-edge-performance-card p,
+.amd-edge-scenario p {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--amd-muted);
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+.amd-edge-performance-card strong {
+  display: block;
+  margin: 8px 0;
+  color: #fff;
+  font-size: clamp(2rem, 4vw, 3.2rem);
+  line-height: 1;
+}
+
+.amd-edge-scenario {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.amd-edge-step-number {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: linear-gradient(135deg, var(--amd-red), var(--amd-orange));
+  color: #fff;
+  font-weight: 900;
+}
+
+.amd-edge-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 18px;
+}
+
+@media (max-width: 980px) {
+  .amd-edge-hero,
+  .amd-edge-runtime-grid,
+  .amd-edge-privacy-grid,
+  .amd-edge-performance-grid,
+  .amd-edge-scenario {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .amd-edge-section-head {
+    display: block;
+  }
+
+  .amd-edge-section-head h3 {
+    margin-bottom: 8px;
+  }
+}
+
+@media (max-width: 680px) {
+  .amd-edge-classroom .page-head,
+  .amd-edge-hero,
+  .amd-edge-section,
+  .amd-edge-rural-panel,
+  .amd-edge-actions {
+    padding: 16px;
+  }
+
+  .amd-edge-hero,
+  .amd-edge-runtime-grid,
+  .amd-edge-privacy-grid,
+  .amd-edge-performance-grid,
+  .amd-edge-scenario {
+    grid-template-columns: 1fr;
+  }
+
+  .amd-edge-hero {
+    min-height: auto;
+  }
+}

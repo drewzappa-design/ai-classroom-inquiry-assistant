@@ -588,6 +588,7 @@ function teacherNav() {
     ["students", icons.users, "Students"],
     ["moderation", icons.message, "DQB moderation"],
     ["analytics", icons.chart, "Analytics"],
+    ["amdEdge", icons.chart, "AI Classroom Edge"],
     ["qwenTeacher", icons.message, "Qwen Intelligence"],
     ["usage", icons.coins, "Inquiry Credits"],
     ["resources", icons.folder, "Resources"],
@@ -602,7 +603,7 @@ function teacherShell() {
   return `<div class="app">${topbar("Ms. Rivera · 7th Grade Science")}<div class="layout">${teacherNav()}<main class="content">${teacherPage()}</main></div>${activePanelMarkup()}</div>`;
 }
 function teacherPage() {
-  return ({ overview: overviewPage, setup: setupPage, lessonBuilderDashboard: lessonBuilderDashboardPage, students: studentsPage, studentProfile: studentProfilePage, resourceViewer: resourceViewerPage, moderation: moderationPage, analytics: analyticsPage, qwenTeacher: qwenTeacherPage, usage: usagePage, resources: resourcesPage }[state.teacherTab] || overviewPage)();
+  return ({ overview: overviewPage, setup: setupPage, lessonBuilderDashboard: lessonBuilderDashboardPage, students: studentsPage, studentProfile: studentProfilePage, resourceViewer: resourceViewerPage, moderation: moderationPage, analytics: analyticsPage, amdEdge: amdEdgePage, qwenTeacher: qwenTeacherPage, usage: usagePage, resources: resourcesPage }[state.teacherTab] || overviewPage)();
 }
 function pageHead(title, subtitle, actions = "") {
   return `<header class="page-head"><div><h1>${title}</h1><p>${subtitle}</p></div><div class="role-actions">${actions}</div></header>`;
@@ -2702,6 +2703,23 @@ function qwenTeacherPage() {
       studentInsightFlags,
       studentInsightProfile,
       teacherAlertStudents,
+    },
+  });
+}
+
+function amdEdgePage() {
+  const module = window.AMDEdgeClassroom;
+  if (!module?.render) {
+    return `${pageHead("AI Classroom Edge", "The AMD edge classroom module did not load.", `<button class="btn secondary" onclick="teacherTab('overview')">Back to overview</button>`)}
+      <article class="card card-pad empty"><h3>Module unavailable.</h3><p>Check that the AMD Edge Classroom module script is loaded before app.js.</p></article>`;
+  }
+  return module.render({
+    state,
+    helpers: {
+      esc,
+      pageHead,
+      render,
+      save,
     },
   });
 }
