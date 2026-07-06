@@ -154,11 +154,52 @@
     "Optional Cloud Sync",
   ];
 
+  const dataBoundaryItems = [
+    ["Student Evidence", "Local by default", "Evidence is read from the school-local classroom context first."],
+    ["Teacher Notes", "Local by default", "Teacher observations stay in the local evidence workspace in this demo."],
+    ["Approved Actions", "Local audit log", "Approved recommendations are represented as teacher-reviewed local records."],
+    ["Cloud Assist", "Optional", "Cloud support is framed as a policy-controlled assistive route."],
+    ["Sync Queue", "Teacher/district controlled", "Sync is shown as a governed queue instead of automatic upload."],
+  ];
+
+  const policyControls = [
+    ["localOnly", "Local Only Mode"],
+    ["hybridAssist", "Hybrid Cloud Assist Allowed"],
+    ["teacherApproval", "Teacher Approval Required"],
+    ["cloudSyncPaused", "Cloud Sync Paused"],
+    ["auditTrail", "Audit Trail Enabled"],
+  ];
+
+  const privacyFlowSteps = [
+    "Student Evidence",
+    "Local Evidence Graph",
+    "Edge Agent Analysis",
+    "Teacher Approval",
+    "Local Action Log",
+    "Optional Cloud Sync",
+  ];
+
+  const safetyNotes = [
+    "Demo policy controls",
+    "No real student data",
+    "No automatic student decisions",
+    "No cloud upload without approval in the product vision",
+    "No legal compliance claim is made",
+  ];
+
+  const baseAuditEntries = [
+    ["09:12 AM", "Recommendation generated locally", "Edge Agent Analysis"],
+    ["09:14 AM", "Teacher approved intervention", "Teacher Approval"],
+    ["09:16 AM", "Cloud sync queued", "Sync Queue"],
+    ["09:17 AM", "Cloud assist denied by policy", "Policy Control"],
+  ];
+
   function render({ state, helpers }) {
     currentState = state;
     currentHelpers = helpers || {};
     const h = currentHelpers;
     ensureSimulatorState();
+    ensurePrivacyState();
     syncIntermittentTimer();
     return `<section class="amd-edge-classroom">
       ${h.pageHead(
@@ -171,6 +212,7 @@
       ${edgeRuntimeMonitor(h)}
       ${routingVisualization(h)}
       ${ruralConnectivitySimulator(h)}
+      ${privacyDataOwnershipConsole(h)}
       ${privacyCards(h)}
       ${performanceCards(h)}
       ${ruralConnectivity(h)}
@@ -320,7 +362,7 @@
   }
 
   function privacyCards(h) {
-    return `<section class="amd-edge-section" id="amd-privacy-console">
+    return `<section class="amd-edge-section" id="amd-privacy-cards">
       <div class="amd-edge-section-head">
         <h3>Privacy Console</h3>
         <p>Designed around school-owned context, educator judgment, and transparent routing.</p>
@@ -330,6 +372,66 @@
           <h4>${h.esc(title)}</h4>
           <p>${h.esc(detail)}</p>
         </article>`).join("")}
+      </div>
+    </section>`;
+  }
+
+  function privacyDataOwnershipConsole(h) {
+    const policy = currentState.amdEdgePrivacy;
+    const auditEntries = auditTrailEntries();
+    return `<section class="amd-edge-section amd-edge-privacy-console" id="amd-privacy-console">
+      <div class="amd-edge-section-head">
+        <h3>Privacy & Local Data Ownership</h3>
+        <p>Student intelligence stays close to the school by default. Cloud use is optional, policy-controlled, and teacher-mediated in the product vision.</p>
+      </div>
+      <div class="amd-edge-demo-labels">
+        ${safetyNotes.map((item) => `<span>${h.esc(item)}</span>`).join("")}
+      </div>
+      <div class="amd-edge-boundary-grid">
+        ${dataBoundaryItems.map(([title, status, detail]) => `<article class="amd-edge-boundary-card">
+          <span>${h.esc(status)}</span>
+          <h4>${h.esc(title)}</h4>
+          <p>${h.esc(detail)}</p>
+        </article>`).join("")}
+      </div>
+      <div class="amd-edge-policy-layout">
+        <article class="amd-edge-policy-panel">
+          <div class="amd-edge-section-head">
+            <h3>Policy Controls</h3>
+            <p>Demo status chips only. They update the local UI state and do not enforce real network, storage, or compliance policy.</p>
+          </div>
+          <div class="amd-edge-policy-grid">
+            ${policyControls.map(([key, label]) => `<button type="button" class="amd-edge-policy-chip ${policy[key] ? "active" : ""}" onclick="AMDEdgeClassroom.togglePrivacyPolicy('${h.esc(key)}')">
+              <span>${policy[key] ? "On" : "Off"}</span>
+              <strong>${h.esc(label)}</strong>
+            </button>`).join("")}
+          </div>
+        </article>
+        <article class="amd-edge-audit-panel" id="amd-local-audit-log">
+          <div class="amd-edge-section-head">
+            <h3>Audit Trail Preview</h3>
+            <p>Sample local audit events for teacher review and district policy conversations.</p>
+          </div>
+          <div class="amd-edge-audit-list">
+            ${auditEntries.map(([time, event, source]) => `<div class="amd-edge-audit-row">
+              <span>${h.esc(time)}</span>
+              <strong>${h.esc(event)}</strong>
+              <small>${h.esc(source)}</small>
+            </div>`).join("")}
+          </div>
+        </article>
+      </div>
+      <div class="amd-edge-privacy-flow" aria-label="Privacy data flow">
+        ${privacyFlowSteps.map((step, index) => `<article>
+          <span>${index + 1}</span>
+          <strong>${h.esc(step)}</strong>
+        </article>`).join("")}
+      </div>
+      <div class="amd-edge-actions amd-edge-privacy-actions">
+        <button class="btn secondary" onclick="AMDEdgeClassroom.enableLocalOnlyMode()">Enable Local Only Mode</button>
+        <button class="btn secondary" onclick="AMDEdgeClassroom.allowHybridAssist()">Allow Hybrid Assist</button>
+        <button class="btn secondary" onclick="AMDEdgeClassroom.pauseCloudSync()">Pause Cloud Sync</button>
+        <button class="btn" onclick="AMDEdgeClassroom.viewLocalAuditLog()">View Local Audit Log</button>
       </div>
     </section>`;
   }
@@ -386,6 +488,83 @@
     currentState.amdEdgeConnectivity.mode ||= "normal";
     currentState.amdEdgeConnectivity.intermittentStep ||= 0;
     currentState.amdEdgeConnectivity.queueFlushed ||= false;
+  }
+
+  function ensurePrivacyState() {
+    currentState.amdEdgePrivacy ||= {};
+    const policy = currentState.amdEdgePrivacy;
+    if (typeof policy.localOnly !== "boolean") policy.localOnly = true;
+    if (typeof policy.hybridAssist !== "boolean") policy.hybridAssist = false;
+    if (typeof policy.teacherApproval !== "boolean") policy.teacherApproval = true;
+    if (typeof policy.cloudSyncPaused !== "boolean") policy.cloudSyncPaused = true;
+    if (typeof policy.auditTrail !== "boolean") policy.auditTrail = true;
+    policy.lastPolicyAction ||= "Local Only Mode enabled";
+  }
+
+  function auditTrailEntries() {
+    ensurePrivacyState();
+    const policy = currentState.amdEdgePrivacy;
+    const entries = [...baseAuditEntries];
+    if (policy.lastPolicyAction) entries.unshift(["Now", policy.lastPolicyAction, "Demo Policy Control"]);
+    if (policy.localOnly) entries.push(["09:18 AM", "Local Only Mode active", "Privacy Console"]);
+    if (policy.hybridAssist) entries.push(["09:19 AM", "Hybrid assist allowed by demo policy", "Privacy Console"]);
+    if (policy.cloudSyncPaused) entries.push(["09:20 AM", "Cloud sync paused by teacher/district control", "Privacy Console"]);
+    return entries.slice(0, 7);
+  }
+
+  function setPrivacyPolicy(nextPolicy, action) {
+    ensurePrivacyState();
+    currentState.amdEdgePrivacy = {
+      ...currentState.amdEdgePrivacy,
+      ...nextPolicy,
+      lastPolicyAction: action,
+    };
+    currentHelpers.save?.();
+    currentHelpers.render?.();
+  }
+
+  function togglePrivacyPolicy(key) {
+    ensurePrivacyState();
+    if (!Object.prototype.hasOwnProperty.call(currentState.amdEdgePrivacy, key)) return;
+    setPrivacyPolicy({ [key]: !currentState.amdEdgePrivacy[key] }, `${policyLabel(key)} ${currentState.amdEdgePrivacy[key] ? "disabled" : "enabled"}`);
+  }
+
+  function policyLabel(key) {
+    return policyControls.find(([policyKey]) => policyKey === key)?.[1] || "Demo policy";
+  }
+
+  function enableLocalOnlyMode() {
+    setPrivacyPolicy({
+      localOnly: true,
+      hybridAssist: false,
+      cloudSyncPaused: true,
+      teacherApproval: true,
+      auditTrail: true,
+    }, "Local Only Mode enabled");
+    scrollToPanel("amd-privacy-console");
+  }
+
+  function allowHybridAssist() {
+    setPrivacyPolicy({
+      localOnly: false,
+      hybridAssist: true,
+      cloudSyncPaused: false,
+      teacherApproval: true,
+      auditTrail: true,
+    }, "Hybrid Cloud Assist allowed by demo policy");
+    scrollToPanel("amd-privacy-console");
+  }
+
+  function pauseCloudSync() {
+    setPrivacyPolicy({
+      cloudSyncPaused: true,
+      auditTrail: true,
+    }, "Cloud Sync paused");
+    scrollToPanel("amd-privacy-console");
+  }
+
+  function viewLocalAuditLog() {
+    scrollToPanel("amd-local-audit-log");
   }
 
   function simulatorSnapshot() {
@@ -507,6 +686,11 @@
     openRuntimeMonitor,
     openRuralSimulator,
     openPrivacyConsole,
+    togglePrivacyPolicy,
+    enableLocalOnlyMode,
+    allowHybridAssist,
+    pauseCloudSync,
+    viewLocalAuditLog,
     simulateOutage,
     restoreInternet,
     flushSyncQueue,

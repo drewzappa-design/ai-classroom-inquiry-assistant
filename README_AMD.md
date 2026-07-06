@@ -13,6 +13,7 @@ AI Classroom Edge is the Edge AI Operating System for Education: a local-first c
 - Edge Runtime Monitor with demo route, latency, load, queue, and cloud-avoidance metrics
 - Routing visualization from student evidence to optional cloud assist
 - Rural Connectivity Simulator with Normal, Limited Bandwidth, Intermittent Internet, and Internet Outage modes
+- Privacy & Local Data Ownership console with demo policy controls and audit preview
 - Privacy console cards
 - Rural connectivity scenario
 - Quick actions into the existing teacher workspace and Qwen analysis flow
@@ -35,10 +36,16 @@ AI Classroom Edge is the Edge AI Operating System for Education: a local-first c
 - Local classroom server status on the AMD dashboard
 - Connectivity mode changes and sync queue behavior
 - Intermittent internet animation
+- Local-only, hybrid assist, cloud sync pause, and audit trail policy controls
+- Local audit log preview
 
 ## Hardware Claim Boundary
 
 This phase does not claim real Ryzen AI NPU execution. The dashboard says "NPU-ready architecture" and "Future hardware acceleration path" because real ONNX Runtime, DirectML, or Ryzen AI SDK inference is not wired into the application yet.
+
+## Privacy Claim Boundary
+
+This phase uses privacy-first product language, not legal compliance language. It does not claim FERPA, COPPA, HIPAA, district policy, or security certification compliance. It shows a product direction where student evidence is local by default, cloud assist is optional, and teacher approval remains required before student-impacting actions.
 
 ## Run
 

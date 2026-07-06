@@ -49,6 +49,29 @@ Each mode updates the dashboard readout for cloud connection, edge runtime, teac
 
 No real networking changes occur.
 
+## Privacy And Local Data Ownership Console
+
+The privacy console is a simulated policy surface inside the AMD module. It shows:
+
+- Student Evidence: local by default
+- Teacher Notes: local by default
+- Approved Actions: local audit log
+- Cloud Assist: optional
+- Sync Queue: teacher/district controlled
+
+Demo controls include Local Only Mode, Hybrid Cloud Assist Allowed, Teacher Approval Required, Cloud Sync Paused, and Audit Trail Enabled. These controls update local UI state only; they do not enforce real storage, network, security, or legal compliance policy.
+
+The privacy data flow is:
+
+```text
+Student Evidence
+  -> Local Evidence Graph
+  -> Edge Agent Analysis
+  -> Teacher Approval
+  -> Local Action Log
+  -> Optional Cloud Sync
+```
+
 ## Real Components
 
 - `modules/amd-edge-classroom/amd-edge-classroom.js`

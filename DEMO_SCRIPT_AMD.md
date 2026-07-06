@@ -54,6 +54,14 @@ For Intermittent Internet, let the animated state cycle. Show edge taking over, 
 
 Click `Run Edge Classroom Analysis`. This opens the existing teacher intelligence workflow and triggers the classroom analysis path. Teacher approval remains the boundary before recommendations become actions.
 
+### 7. Privacy And Local Data Ownership
+
+Open the Privacy & Local Data Ownership console. Show the data boundary overview: student evidence and teacher notes are local by default, approved actions are part of a local audit log, cloud assist is optional, and sync is teacher/district controlled.
+
+Click `Enable Local Only Mode`, `Allow Hybrid Assist`, and `Pause Cloud Sync` to show that these are demo policy controls. Point out the labels: no real student data, no automatic student decisions, and no cloud upload without approval in the product vision.
+
+Open the local audit log preview. Explain that this is a sample audit trail, not a legal compliance claim.
+
 ## Closing
 
 AI Classroom Edge keeps student intelligence close to the school, lets teachers remain in control, and positions AMD AI PCs as the future local inference layer for classrooms.

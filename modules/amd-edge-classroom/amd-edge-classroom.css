@@ -130,6 +130,12 @@
     linear-gradient(135deg, #12151d 0%, #0d1017 55%, #161820 100%);
 }
 
+.amd-edge-privacy-console {
+  background:
+    radial-gradient(circle at 12% 0%, rgba(123, 216, 143, 0.13), transparent 28%),
+    linear-gradient(135deg, #10141c 0%, #121721 48%, #0b0e14 100%);
+}
+
 .amd-edge-section-head {
   display: flex;
   align-items: flex-end;
@@ -308,6 +314,198 @@
 
 .amd-edge-monitor-grid {
   grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.amd-edge-boundary-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.amd-edge-boundary-card,
+.amd-edge-policy-panel,
+.amd-edge-audit-panel {
+  padding: 15px;
+  border: 1px solid var(--amd-line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.075);
+}
+
+.amd-edge-boundary-card span {
+  color: var(--amd-green);
+  font-size: 0.7rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.amd-edge-boundary-card h4 {
+  margin: 11px 0 8px;
+  color: #fff;
+  font-size: 0.98rem;
+  line-height: 1.2;
+}
+
+.amd-edge-boundary-card p {
+  margin: 0;
+  color: var(--amd-muted);
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
+.amd-edge-policy-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 0.9fr);
+  gap: 12px;
+}
+
+.amd-edge-policy-panel .amd-edge-section-head,
+.amd-edge-audit-panel .amd-edge-section-head {
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.amd-edge-policy-panel .amd-edge-section-head h3,
+.amd-edge-audit-panel .amd-edge-section-head h3 {
+  font-size: 1rem;
+}
+
+.amd-edge-policy-panel .amd-edge-section-head p,
+.amd-edge-audit-panel .amd-edge-section-head p {
+  font-size: 0.8rem;
+}
+
+.amd-edge-policy-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.amd-edge-policy-chip {
+  min-height: 64px;
+  padding: 11px;
+  border: 1px solid var(--amd-line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.055);
+  color: #fff;
+  text-align: left;
+  transition: border-color 0.16s ease, background 0.16s ease, transform 0.16s ease;
+}
+
+.amd-edge-policy-chip:hover,
+.amd-edge-policy-chip:focus {
+  transform: translateY(-1px);
+  border-color: rgba(123, 216, 143, 0.52);
+  background: rgba(255, 255, 255, 0.09);
+  outline: none;
+}
+
+.amd-edge-policy-chip.active {
+  border-color: rgba(123, 216, 143, 0.62);
+  background: rgba(123, 216, 143, 0.12);
+}
+
+.amd-edge-policy-chip span {
+  display: inline-flex;
+  margin-bottom: 7px;
+  color: var(--amd-green);
+  font-size: 0.68rem;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.amd-edge-policy-chip strong {
+  display: block;
+  font-size: 0.88rem;
+  line-height: 1.18;
+}
+
+.amd-edge-audit-list {
+  display: grid;
+  gap: 8px;
+}
+
+.amd-edge-audit-row {
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  gap: 8px 10px;
+  align-items: start;
+  padding: 10px;
+  border: 1px solid var(--amd-line);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.14);
+}
+
+.amd-edge-audit-row span {
+  color: var(--amd-orange);
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+.amd-edge-audit-row strong {
+  color: #fff;
+  font-size: 0.84rem;
+  line-height: 1.25;
+}
+
+.amd-edge-audit-row small {
+  grid-column: 2;
+  color: var(--amd-muted);
+  font-size: 0.72rem;
+  font-weight: 750;
+}
+
+.amd-edge-privacy-flow {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.amd-edge-privacy-flow article {
+  position: relative;
+  min-height: 104px;
+  padding: 13px;
+  border: 1px solid var(--amd-line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.065);
+}
+
+.amd-edge-privacy-flow article:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: -10px;
+  width: 10px;
+  height: 2px;
+  background: linear-gradient(90deg, rgba(123, 216, 143, 0.95), rgba(123, 216, 143, 0));
+}
+
+.amd-edge-privacy-flow span {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #2fb36d, var(--amd-green));
+  color: #06100b;
+  font-weight: 950;
+}
+
+.amd-edge-privacy-flow strong {
+  display: block;
+  margin-top: 14px;
+  color: #fff;
+  font-size: 0.88rem;
+  line-height: 1.2;
+}
+
+.amd-edge-privacy-actions {
+  margin-top: 14px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 .amd-edge-monitor-card strong {
@@ -614,6 +812,10 @@
   .amd-edge-performance-grid,
   .amd-edge-monitor-layout,
   .amd-edge-monitor-grid,
+  .amd-edge-boundary-grid,
+  .amd-edge-policy-layout,
+  .amd-edge-policy-grid,
+  .amd-edge-privacy-flow,
   .amd-edge-routing-flow,
   .amd-edge-simulator-layout,
   .amd-edge-simulator-grid,
@@ -646,6 +848,10 @@
   .amd-edge-performance-grid,
   .amd-edge-monitor-layout,
   .amd-edge-monitor-grid,
+  .amd-edge-boundary-grid,
+  .amd-edge-policy-layout,
+  .amd-edge-policy-grid,
+  .amd-edge-privacy-flow,
   .amd-edge-routing-flow,
   .amd-edge-simulator-layout,
   .amd-edge-simulator-grid,
@@ -676,5 +882,15 @@
     width: 2px;
     height: 10px;
     background: linear-gradient(180deg, var(--amd-orange), rgba(255, 138, 0, 0));
+  }
+
+  .amd-edge-privacy-flow article:not(:last-child)::after {
+    top: auto;
+    right: auto;
+    left: 28px;
+    bottom: -10px;
+    width: 2px;
+    height: 10px;
+    background: linear-gradient(180deg, var(--amd-green), rgba(123, 216, 143, 0));
   }
 }
