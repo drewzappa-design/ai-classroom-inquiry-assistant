@@ -47,9 +47,10 @@ Fireworks AI is part of the AMD hackathon technology stack. AI Classroom Edge in
 
 Current status:
 
-- Real architecture scaffold: present
-- Simulated routing decisions: present
-- Live Fireworks API call: not implemented yet
+- Real backend route: `POST /api/amd/route-inference`
+- Real route decision rules: present
+- Live Fireworks API call: available when `FIREWORKS_API_KEY` is configured
+- Simulated Fireworks response: returned when `FIREWORKS_API_KEY` is missing
 - Frontend API keys: not exposed
 
 ## Hardware Claim Boundary

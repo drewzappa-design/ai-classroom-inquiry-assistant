@@ -448,6 +448,70 @@
   line-height: 1.45;
 }
 
+.amd-edge-router-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.amd-edge-router-actions .btn:disabled {
+  cursor: wait;
+  opacity: 0.72;
+}
+
+.amd-edge-router-error {
+  margin-top: 12px;
+  padding: 11px;
+  border: 1px solid rgba(255, 90, 95, 0.42);
+  border-radius: 8px;
+  background: rgba(255, 90, 95, 0.1);
+  color: #ffd7d9;
+  font-size: 0.84rem;
+  line-height: 1.4;
+}
+
+.amd-edge-router-result {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.amd-edge-router-result div,
+.amd-edge-router-result article {
+  padding: 11px;
+  border: 1px solid var(--amd-line);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.15);
+}
+
+.amd-edge-router-result article {
+  grid-column: span 4;
+}
+
+.amd-edge-router-result span {
+  color: var(--amd-orange);
+  font-size: 0.68rem;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.amd-edge-router-result strong {
+  display: block;
+  margin-top: 7px;
+  color: #fff;
+  font-size: 0.96rem;
+  line-height: 1.2;
+}
+
+.amd-edge-router-result p {
+  margin: 7px 0 0;
+  color: #dce2ec;
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
 .amd-edge-twin-map,
 .amd-edge-twin-status {
   border: 1px solid var(--amd-line);
@@ -1160,6 +1224,7 @@
   .amd-edge-boundary-grid,
   .amd-edge-router-layout,
   .amd-edge-router-grid,
+  .amd-edge-router-result,
   .amd-edge-twin-layout,
   .amd-edge-policy-layout,
   .amd-edge-policy-grid,
@@ -1199,6 +1264,7 @@
   .amd-edge-boundary-grid,
   .amd-edge-router-layout,
   .amd-edge-router-grid,
+  .amd-edge-router-result,
   .amd-edge-twin-layout,
   .amd-edge-policy-layout,
   .amd-edge-policy-grid,

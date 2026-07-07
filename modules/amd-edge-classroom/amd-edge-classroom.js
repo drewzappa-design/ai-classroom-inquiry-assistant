@@ -50,38 +50,42 @@
     intervention: {
       label: "Student intervention recommendation",
       taskType: "Teacher decision support",
-      privacyLevel: "Sensitive student context",
-      connectivityStatus: "Available but optional",
-      estimatedComplexity: "Medium",
+      privacyLevel: "sensitive",
+      connectivityStatus: "normal",
+      estimatedComplexity: "medium",
       recommendedRoute: "Offline Edge Mode",
       rationale: "Uses student evidence and teacher notes, so the safest demo route keeps reasoning local and requires teacher approval.",
+      prompt: "Draft a teacher-reviewed intervention recommendation from local student evidence.",
     },
     summary: {
       label: "Classroom trend summary",
       taskType: "Aggregated classroom analysis",
-      privacyLevel: "De-identified aggregate",
-      connectivityStatus: "Online",
-      estimatedComplexity: "High",
+      privacyLevel: "anonymized",
+      connectivityStatus: "normal",
+      estimatedComplexity: "high",
       recommendedRoute: "Fireworks AI / AMD Cloud Assist",
       rationale: "Eligible aggregate work can route to Fireworks AI as AMD Cloud Assist when policy allows and sensitive details remain local-first.",
+      prompt: "Summarize anonymized classroom trends and suggest teacher-reviewed next steps.",
     },
     offline: {
       label: "Offline evidence review",
       taskType: "Local evidence lookup",
-      privacyLevel: "Local classroom record",
-      connectivityStatus: "Internet outage",
-      estimatedComplexity: "Low",
+      privacyLevel: "restricted",
+      connectivityStatus: "offline",
+      estimatedComplexity: "low",
       recommendedRoute: "Local Classroom Server",
       rationale: "The classroom server and local evidence graph continue operating even when cloud access is unavailable.",
+      prompt: "Review local evidence while internet connectivity is unavailable.",
     },
     enrichment: {
       label: "STEM opportunity draft",
       taskType: "Teacher-reviewed enrichment",
-      privacyLevel: "Teacher-approved summary",
-      connectivityStatus: "Limited bandwidth",
-      estimatedComplexity: "Medium",
+      privacyLevel: "anonymized",
+      connectivityStatus: "limited",
+      estimatedComplexity: "medium",
       recommendedRoute: "Local Classroom Server",
       rationale: "The edge server can draft from local evidence and queue optional cloud enrichment until bandwidth improves.",
+      prompt: "Draft teacher-reviewed STEM enrichment opportunities from an anonymized summary.",
     },
   };
 
@@ -643,6 +647,9 @@
   function amdModelRouter(h) {
     const selectedTask = currentState.amdEdgeModelRouter.task;
     const task = modelRoutingTasks[selectedTask] || modelRoutingTasks.intervention;
+    const result = currentState.amdEdgeModelRouter.result;
+    const isLoading = currentState.amdEdgeModelRouter.status === "routing";
+    const error = currentState.amdEdgeModelRouter.error || "";
     return `<section class="amd-edge-section amd-edge-model-router" id="amd-model-router">
       <div class="amd-edge-section-head">
         <h3>AMD Model Router</h3>
@@ -682,21 +689,106 @@
             </div>`).join("")}
           </div>
           <p>${h.esc(task.rationale)}</p>
+          <div class="amd-edge-router-actions">
+            <button type="button" class="btn" onclick="AMDEdgeClassroom.runAmdRouteInference()" ${isLoading ? "disabled" : ""}>${isLoading ? "Routing..." : "Route With Backend"}</button>
+          </div>
+          ${error ? `<div class="amd-edge-router-error">${h.esc(error)}</div>` : ""}
+          ${result ? amdModelRouterResult(result, h) : ""}
         </article>
       </div>
     </section>`;
   }
 
+  function amdModelRouterResult(result, h) {
+    return `<div class="amd-edge-router-result">
+      <div>
+        <span>Selected route</span>
+        <strong>${h.esc(result.routeLabel || result.route || "Unknown")}</strong>
+      </div>
+      <div>
+        <span>Provider</span>
+        <strong>${h.esc(result.provider || "unknown")}</strong>
+      </div>
+      <div>
+        <span>Latency</span>
+        <strong>${h.esc(`${result.latencyMs ?? "--"} ms`)}</strong>
+      </div>
+      <div>
+        <span>Status</span>
+        <strong>${result.simulated ? "Simulated" : "Live"}</strong>
+      </div>
+      <article>
+        <span>Decision reason</span>
+        <p>${h.esc(result.decisionReason || "")}</p>
+      </article>
+      <article>
+        <span>Safety note</span>
+        <p>${h.esc(result.safetyNote || "")}</p>
+      </article>
+      <article>
+        <span>Model response</span>
+        <p>${h.esc(result.response || "")}</p>
+      </article>
+    </div>`;
+  }
+
   function ensureModelRouterState() {
     currentState.amdEdgeModelRouter ||= {};
     currentState.amdEdgeModelRouter.task ||= "intervention";
+    currentState.amdEdgeModelRouter.status ||= "idle";
+    currentState.amdEdgeModelRouter.error ||= "";
   }
 
   function setModelRouterTask(task) {
     ensureModelRouterState();
     currentState.amdEdgeModelRouter.task = modelRoutingTasks[task] ? task : "intervention";
+    currentState.amdEdgeModelRouter.error = "";
     currentHelpers.save?.();
     currentHelpers.render?.();
+  }
+
+  async function runAmdRouteInference() {
+    ensureModelRouterState();
+    const task = modelRoutingTasks[currentState.amdEdgeModelRouter.task] || modelRoutingTasks.intervention;
+    currentState.amdEdgeModelRouter.status = "routing";
+    currentState.amdEdgeModelRouter.error = "";
+    currentHelpers.save?.();
+    currentHelpers.render?.();
+
+    try {
+      const response = await fetch(amdRouteInferenceApiUrl(), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          taskType: task.taskType,
+          privacyLevel: task.privacyLevel,
+          connectivity: task.connectivityStatus,
+          complexity: task.estimatedComplexity,
+          prompt: task.prompt,
+          classroomContext: {
+            source: "AI Classroom Edge AMD Model Router",
+            demoOnly: true,
+            selectedTask: task.label,
+          },
+        }),
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok || !payload.ok) {
+        throw new Error(payload.error || payload.details || `Route inference failed with HTTP ${response.status}.`);
+      }
+      currentState.amdEdgeModelRouter.result = payload;
+      currentState.amdEdgeModelRouter.status = "complete";
+    } catch (error) {
+      currentState.amdEdgeModelRouter.status = "error";
+      currentState.amdEdgeModelRouter.error = error instanceof Error ? error.message : String(error);
+    }
+    currentHelpers.save?.();
+    currentHelpers.render?.();
+    scrollToPanel("amd-model-router");
+  }
+
+  function amdRouteInferenceApiUrl() {
+    return window.AMD_EDGE_ROUTE_INFERENCE_API_URL || "http://localhost:3001/api/amd/route-inference";
   }
 
   function twinSummary(scenarioKey) {
@@ -953,6 +1045,7 @@
     openPrivacyConsole,
     setTwinScenario,
     setModelRouterTask,
+    runAmdRouteInference,
     resetTwinSimulation,
     runTwinOutageScenario,
     restoreTwinConnectivity,

@@ -9,6 +9,8 @@ const port = Number(process.env.PORT || 3001);
 const model = process.env.QWEN_MODEL || "qwen3.7-plus";
 const defaultBaseUrl = "https://dashscope-intl.aliyuncs.com/compatible-mode/v1";
 const dashScopeBaseUrl = (process.env.DASHSCOPE_BASE_URL || defaultBaseUrl).replace(/\/$/, "");
+const fireworksBaseUrl = (process.env.FIREWORKS_BASE_URL || "https://api.fireworks.ai/inference/v1").replace(/\/$/, "");
+const fireworksModel = process.env.FIREWORKS_MODEL || "accounts/fireworks/models/llama-v3p1-70b-instruct";
 
 app.use(cors());
 app.use(express.json({ limit: "1mb" }));
@@ -161,6 +163,79 @@ app.post("/api/qwen/classroom-analysis", async (req, res) => {
       ok: false,
       error: "Unable to complete Qwen classroom analysis.",
       details: error instanceof Error ? error.message : String(error),
+    });
+  }
+});
+
+app.post("/api/amd/route-inference", async (req, res) => {
+  const startedAt = Date.now();
+  const request = normalizeAmdRouteRequest(req.body || {});
+  const decision = decideAmdInferenceRoute(request);
+  const safetyNote = amdRouteSafetyNote(decision, request);
+
+  if (decision.route !== "fireworks_amd_cloud") {
+    return res.json({
+      ok: true,
+      route: decision.route,
+      routeLabel: amdRouteLabel(decision.route),
+      decisionReason: decision.reason,
+      provider: "classroom_edge",
+      simulated: true,
+      latencyMs: Date.now() - startedAt,
+      response: simulatedAmdRouteResponse(request, decision),
+      safetyNote,
+    });
+  }
+
+  const apiKey = process.env.FIREWORKS_API_KEY || "";
+  if (!apiKey) {
+    return res.json({
+      ok: true,
+      route: decision.route,
+      routeLabel: amdRouteLabel(decision.route),
+      decisionReason: decision.reason,
+      provider: "fireworks_ai",
+      simulated: true,
+      latencyMs: Date.now() - startedAt,
+      response: simulatedAmdRouteResponse(request, decision),
+      safetyNote: `${safetyNote} FIREWORKS_API_KEY is not configured, so this is a simulated Fireworks AI response.`,
+    });
+  }
+
+  try {
+    const fireworks = await callFireworksAmdCloud(request, { apiKey });
+    return res.json({
+      ok: true,
+      route: decision.route,
+      routeLabel: amdRouteLabel(decision.route),
+      decisionReason: decision.reason,
+      provider: "fireworks_ai",
+      simulated: false,
+      latencyMs: Date.now() - startedAt,
+      model: fireworksModel,
+      response: fireworks.content,
+      usage: fireworks.usage,
+      safetyNote,
+    });
+  } catch (error) {
+    console.error("Fireworks AMD Cloud Assist error", {
+      status: null,
+      responseBody: error instanceof Error ? error.message : String(error),
+      baseUrl: fireworksBaseUrl,
+      model: fireworksModel,
+      hasApiKey: Boolean(apiKey),
+    });
+    return res.status(502).json({
+      ok: false,
+      route: decision.route,
+      routeLabel: amdRouteLabel(decision.route),
+      decisionReason: decision.reason,
+      provider: "fireworks_ai",
+      simulated: false,
+      latencyMs: Date.now() - startedAt,
+      error: "Unable to complete Fireworks AI / AMD Cloud Assist request.",
+      details: error instanceof Error ? error.message : String(error),
+      safetyNote,
     });
   }
 });
@@ -614,6 +689,148 @@ function normalizePriorityStudents(value) {
     estimatedTeacherTime: normalizeText(item?.estimatedTeacherTime, "5 minutes"),
   })).filter((item) => item.name);
   return normalized.length ? normalized.slice(0, 6) : fallback;
+}
+
+function normalizeAmdRouteRequest(body) {
+  return {
+    taskType: normalizeRouteText(body.taskType, "Teacher decision support"),
+    privacyLevel: normalizeRouteText(body.privacyLevel, "sensitive").toLowerCase(),
+    connectivity: normalizeRouteText(body.connectivity, "normal").toLowerCase(),
+    complexity: normalizeRouteText(body.complexity, "medium").toLowerCase(),
+    prompt: normalizeRouteText(body.prompt, "Route this classroom task using AI Classroom Edge policy."),
+    classroomContext: body.classroomContext && typeof body.classroomContext === "object" && !Array.isArray(body.classroomContext)
+      ? body.classroomContext
+      : {},
+  };
+}
+
+function normalizeRouteText(value, fallback) {
+  const text = String(value || "").trim();
+  return text || fallback;
+}
+
+function decideAmdInferenceRoute(request) {
+  const privacy = request.privacyLevel;
+  const connectivity = request.connectivity;
+  const complexity = request.complexity;
+  const isSensitive = privacy === "sensitive" || privacy === "restricted";
+  const isCloudEligiblePrivacy = privacy === "anonymized" || privacy === "public_sample";
+
+  if (isSensitive) {
+    return {
+      route: "offline_edge",
+      reason: "Privacy level is sensitive or restricted, so the backend privacy guard keeps the task on the classroom edge.",
+    };
+  }
+  if (connectivity === "offline") {
+    return {
+      route: "offline_edge",
+      reason: "Connectivity is offline, so the task must use Offline Edge Mode.",
+    };
+  }
+  if ((connectivity === "limited" || connectivity === "intermittent") && complexity === "high") {
+    return {
+      route: "local_classroom_server",
+      reason: "Connectivity is limited or intermittent and complexity is high, so the Local Classroom Server handles the task.",
+    };
+  }
+  if (isCloudEligiblePrivacy && connectivity === "normal" && complexity === "high") {
+    return {
+      route: "fireworks_amd_cloud",
+      reason: "The task is high complexity, connectivity is normal, and privacy is anonymized or public sample, so it is eligible for Fireworks AI / AMD Cloud Assist.",
+    };
+  }
+  if (complexity === "low") {
+    return {
+      route: "local_classroom_server",
+      reason: "Low-complexity work is handled by the Local Classroom Server.",
+    };
+  }
+  return {
+    route: "local_classroom_server",
+    reason: "Default route uses the Local Classroom Server to keep classroom workflow local-first.",
+  };
+}
+
+function amdRouteLabel(route) {
+  if (route === "offline_edge") return "Offline Edge Mode";
+  if (route === "fireworks_amd_cloud") return "Fireworks AI / AMD Cloud Assist";
+  return "Local Classroom Server";
+}
+
+function amdRouteSafetyNote(decision, request) {
+  if (request.privacyLevel === "sensitive" || request.privacyLevel === "restricted") {
+    return "Backend privacy guard active: Fireworks AI is never called for sensitive or restricted classroom tasks.";
+  }
+  if (decision.route === "fireworks_amd_cloud") {
+    return "Cloud Assist is eligible only because the task is anonymized/public sample, high complexity, and connectivity is normal. API keys remain server-side.";
+  }
+  return "Local-first routing active: no Fireworks AI call is made for this route.";
+}
+
+function simulatedAmdRouteResponse(request, decision) {
+  if (decision.route === "fireworks_amd_cloud") {
+    return "Simulated Fireworks AI / AMD Cloud Assist response: aggregate classroom trends can be summarized in the cloud when policy allows and sensitive details remain local-first.";
+  }
+  if (decision.route === "offline_edge") {
+    return "Offline Edge response: the classroom can continue using local evidence, local edge agents, and teacher approval without cloud connectivity.";
+  }
+  return "Local Classroom Server response: the school-owned edge server handles this task locally and can queue optional sync when policy allows.";
+}
+
+async function callFireworksAmdCloud(request, options) {
+  const response = await fetch(`${fireworksBaseUrl}/chat/completions`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${options.apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: fireworksModel,
+      messages: [
+        {
+          role: "system",
+          content: [
+            "You are AI Classroom Edge AMD Cloud Assist.",
+            "Provide teacher decision support only.",
+            "Do not make automatic student decisions.",
+            "Use only sanitized, anonymized, or public-sample classroom context.",
+            "Keep the response concise and classroom-practical.",
+          ].join(" "),
+        },
+        {
+          role: "user",
+          content: JSON.stringify({
+            taskType: request.taskType,
+            privacyLevel: request.privacyLevel,
+            connectivity: request.connectivity,
+            complexity: request.complexity,
+            prompt: request.prompt,
+            classroomContext: request.classroomContext,
+          }, null, 2),
+        },
+      ],
+      temperature: 0.2,
+      stream: false,
+    }),
+  });
+
+  const text = await response.text();
+  let data;
+  try {
+    data = text ? JSON.parse(text) : {};
+  } catch {
+    data = { raw: text };
+  }
+
+  if (!response.ok) {
+    throw new Error(`Fireworks AI request failed with HTTP ${response.status}: ${JSON.stringify(data)}`);
+  }
+
+  return {
+    content: data?.choices?.[0]?.message?.content || "",
+    usage: data?.usage || null,
+  };
 }
 
 app.use((err, _req, res, _next) => {

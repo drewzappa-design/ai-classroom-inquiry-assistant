@@ -36,7 +36,7 @@ Open the AMD Model Router. Walk through task type, privacy level, connectivity s
 
 Say: Fireworks AI is part of the AMD hackathon technology stack. Cloud Assist routes eligible tasks to Fireworks AI while sensitive or local-first tasks remain on the classroom edge.
 
-Clarify that the current router is a real architecture scaffold with simulated routing decisions. The live Fireworks API connection is future work, and no keys are exposed in frontend code.
+Click `Route With Backend`. Clarify that the router now calls a real backend endpoint. Without `FIREWORKS_API_KEY`, eligible cloud tasks return a simulated Fireworks response labeled `Simulated`. With the key configured, eligible anonymized/public-sample high-complexity tasks can call Fireworks AI from the server. Sensitive and restricted tasks never call Fireworks.
 
 ### 5. Routing Visualization
 

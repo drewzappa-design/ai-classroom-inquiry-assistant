@@ -1,6 +1,6 @@
 # Future Fireworks AI / AMD Cloud Assist Endpoint
 
-This document describes the planned server-side endpoint for AI Classroom Edge. It is documentation only in this phase.
+This document describes the server-side endpoint for AI Classroom Edge.
 
 ## Goal
 
@@ -9,7 +9,9 @@ Route eligible classroom tasks to Fireworks AI as AMD Cloud Assist while keeping
 ## Current Status
 
 - Real architecture scaffold: yes
-- Live Fireworks API call: no
+- Real backend endpoint: yes
+- Live Fireworks API call: yes, when `FIREWORKS_API_KEY` is configured
+- Simulated Fireworks response: yes, when `FIREWORKS_API_KEY` is missing
 - Frontend API key exposure: no
 - Existing Qwen backend modified: no
 
@@ -25,7 +27,7 @@ FIREWORKS_MODEL=accounts/fireworks/models/llama-v3p1-70b-instruct
 
 These values should remain server-side.
 
-## Proposed Endpoint
+## Endpoint
 
 ```text
 POST /api/amd/fireworks/route
@@ -45,12 +47,14 @@ Request body:
 
 Decision rules:
 
-- Sensitive student context stays on Offline Edge Mode or Local Classroom Server.
-- De-identified aggregate tasks may use Fireworks AI / AMD Cloud Assist.
-- Internet outage routes to Local Classroom Server.
+- `privacyLevel` sensitive or restricted routes to `offline_edge`.
+- Offline connectivity routes to `offline_edge`.
+- Limited/intermittent connectivity with high complexity routes to `local_classroom_server`.
+- Anonymized or public-sample high-complexity tasks with normal connectivity may use `fireworks_amd_cloud`.
+- Low complexity routes to `local_classroom_server`.
+- Default route is `local_classroom_server`.
 - Teacher approval remains required before student-impacting actions.
 
 ## Safety Boundary
 
 This future endpoint should not receive raw student records by default. The router should pass only sanitized, teacher-approved, or aggregate context when Cloud Assist is allowed by policy.
-

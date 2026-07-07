@@ -55,12 +55,20 @@ Fireworks AI is part of the AMD hackathon technology stack. Cloud Assist routes 
 
 Current phase:
 
-- Real architecture scaffold
-- Simulated routing decisions
-- Future Fireworks API connection
+- Real backend route at `POST /api/amd/route-inference`
+- Real server-side route decision rules
+- Fireworks AI live call when `FIREWORKS_API_KEY` is configured
+- Simulated Fireworks response when `FIREWORKS_API_KEY` is missing
 - No API keys in frontend code
 
-Future endpoint documentation lives in `FIREWORKS_AMD_ENDPOINT.md`.
+Endpoint documentation lives in `FIREWORKS_AMD_ENDPOINT.md`.
+
+Backend privacy guard:
+
+- Sensitive or restricted tasks always route to Offline Edge Mode.
+- Fireworks AI is never called for sensitive or restricted tasks.
+- Offline connectivity routes to Offline Edge Mode.
+- Eligible anonymized/public-sample high-complexity tasks on normal connectivity may route to Fireworks AI / AMD Cloud Assist.
 
 ## Rural Connectivity Simulator
 

@@ -57,11 +57,12 @@ This satisfies AMD platform alignment by showing how the classroom edge can comb
 
 Current state:
 
-- Real architecture scaffold
+- Real backend route at `POST /api/amd/route-inference`
+- Real privacy guard and routing rules
 - Server-side environment placeholders in `server/.env.example`
-- Future endpoint documentation in `FIREWORKS_AMD_ENDPOINT.md`
-- Simulated routing decisions in the AMD dashboard
-- No live Fireworks API call yet
+- Endpoint documentation in `FIREWORKS_AMD_ENDPOINT.md`
+- Live Fireworks AI call when `FIREWORKS_API_KEY` exists
+- Simulated Fireworks response when `FIREWORKS_API_KEY` is missing
 - No frontend API key exposure
 
 ## Real Project Assets Reused
