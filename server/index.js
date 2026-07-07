@@ -7,8 +7,17 @@ dotenv.config();
 const app = express();
 const port = Number(process.env.PORT || 3001);
 const model = process.env.QWEN_MODEL || "qwen3.7-plus";
+const classroomAnalysisModel = process.env.QWEN_CLASSROOM_ANALYSIS_MODEL || "qwen-turbo";
 const defaultBaseUrl = "https://dashscope-intl.aliyuncs.com/compatible-mode/v1";
 const dashScopeBaseUrl = (process.env.DASHSCOPE_BASE_URL || defaultBaseUrl).replace(/\/$/, "");
+const qwenRequestTimeoutMs = 58_000;
+
+app.use((req, res, next) => {
+  console.log(
+    `[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`
+  );
+  next();
+});
 
 app.use(cors());
 app.use(express.json({ limit: "1mb" }));
@@ -37,6 +46,7 @@ app.post("/api/qwen/chat", async (req, res) => {
   const apiKey = process.env.DASHSCOPE_API_KEY;
 
   if (!apiKey) {
+    console.log("Returning response to frontend");
     return res.status(500).json({
       ok: false,
       error: "DASHSCOPE_API_KEY is not configured on the server.",
@@ -45,6 +55,7 @@ app.post("/api/qwen/chat", async (req, res) => {
 
   const messages = Array.isArray(req.body?.messages) ? req.body.messages : null;
   if (!messages || messages.length === 0) {
+    console.log("Returning response to frontend");
     return res.status(400).json({
       ok: false,
       error: "Request body must include a non-empty messages array.",
@@ -52,7 +63,7 @@ app.post("/api/qwen/chat", async (req, res) => {
   }
 
   try {
-    const response = await fetch(`${dashScopeBaseUrl}/chat/completions`, {
+    const response = await fetchDashScopeWithTimeout(`${dashScopeBaseUrl}/chat/completions`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,
@@ -63,13 +74,12 @@ app.post("/api/qwen/chat", async (req, res) => {
         messages,
         temperature: typeof req.body?.temperature === "number" ? req.body.temperature : 0.2,
         stream: false,
-        extra_body: {
-          enable_thinking: true,
-        },
       }),
     });
 
+    console.log("DashScope response status", response.status);
     const text = await response.text();
+    if (response.status !== 200) console.log("DashScope response text", text);
     let data;
     try {
       data = text ? JSON.parse(text) : {};
@@ -85,6 +95,7 @@ app.post("/api/qwen/chat", async (req, res) => {
         model,
         hasApiKey: Boolean(apiKey),
       });
+      console.log("Returning response to frontend");
       return res.status(response.status).json({
         ok: false,
         error: "DashScope request failed.",
@@ -93,6 +104,7 @@ app.post("/api/qwen/chat", async (req, res) => {
       });
     }
 
+    console.log("Returning response to frontend");
     return res.json({
       ok: true,
       model,
@@ -102,6 +114,10 @@ app.post("/api/qwen/chat", async (req, res) => {
       usage: data?.usage || null,
     });
   } catch (error) {
+    if (isLiveQwenTimeoutError(error)) {
+      console.log("Returning response to frontend");
+      return res.status(504).json(liveQwenTimeoutPayload());
+    }
     console.error("DashScope request error", {
       status: null,
       responseBody: error instanceof Error ? error.message : String(error),
@@ -109,6 +125,7 @@ app.post("/api/qwen/chat", async (req, res) => {
       model,
       hasApiKey: Boolean(apiKey),
     });
+    console.log("Returning response to frontend");
     return res.status(502).json({
       ok: false,
       error: "Unable to reach DashScope Chat Completions API.",
@@ -118,9 +135,12 @@ app.post("/api/qwen/chat", async (req, res) => {
 });
 
 app.post("/api/qwen/classroom-analysis", async (req, res) => {
+  console.log("classroom-analysis started");
+  console.log("Entered classroom-analysis handler");
   const apiKey = process.env.DASHSCOPE_API_KEY;
 
   if (!apiKey) {
+    console.log("Returning response to frontend");
     return res.status(500).json({
       ok: false,
       error: "DASHSCOPE_API_KEY is not configured on the server.",
@@ -129,6 +149,7 @@ app.post("/api/qwen/classroom-analysis", async (req, res) => {
 
   const snapshot = req.body?.snapshot;
   if (!snapshot || typeof snapshot !== "object" || Array.isArray(snapshot)) {
+    console.log("Returning response to frontend");
     return res.status(400).json({
       ok: false,
       error: "Request body must include a sanitized classroom snapshot object.",
@@ -136,20 +157,25 @@ app.post("/api/qwen/classroom-analysis", async (req, res) => {
   }
 
   try {
-    const orchestration = await runLiveAgentOrchestration(snapshot, {
+    const orchestration = await runLiveSingleQwenOrchestration(snapshot, {
       apiKey,
       temperature: typeof req.body?.temperature === "number" ? req.body.temperature : 0.2,
     });
 
+    console.log("Returning response to frontend");
     return res.json({
       ok: true,
-      model,
+      model: classroomAnalysisModel,
       provider: "dashscope",
       analysis: orchestration.analysis,
       agentOutputs: orchestration.agentOutputs,
       usage: orchestration.usage,
     });
   } catch (error) {
+    if (isLiveQwenTimeoutError(error)) {
+      console.log("Returning response to frontend");
+      return res.status(504).json(liveQwenTimeoutPayload());
+    }
     console.error("DashScope classroom analysis error", {
       status: null,
       responseBody: error instanceof Error ? error.message : String(error),
@@ -157,6 +183,7 @@ app.post("/api/qwen/classroom-analysis", async (req, res) => {
       model,
       hasApiKey: Boolean(apiKey),
     });
+    console.log("Returning response to frontend");
     return res.status(502).json({
       ok: false,
       error: "Unable to complete Qwen classroom analysis.",
@@ -164,6 +191,180 @@ app.post("/api/qwen/classroom-analysis", async (req, res) => {
     });
   }
 });
+
+async function fetchDashScopeWithTimeout(url, options = {}) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), qwenRequestTimeoutMs);
+  try {
+    console.log("Calling DashScope...");
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+    console.log("DashScope responded");
+    return response;
+  } catch (error) {
+    if (error?.name === "AbortError") {
+      const timeoutError = new Error("Live Qwen timeout");
+      timeoutError.name = "LiveQwenTimeoutError";
+      throw timeoutError;
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+function isLiveQwenTimeoutError(error) {
+  return error?.name === "LiveQwenTimeoutError" || error?.name === "AbortError" || error?.message === "Live Qwen timeout";
+}
+
+function liveQwenTimeoutPayload() {
+  return {
+    error: "Live Qwen timeout",
+    message: "Live Qwen timeout — fell back to Mock Mode.",
+    fallback: true,
+  };
+}
+
+async function runLiveSingleQwenOrchestration(snapshot, options) {
+  console.log("single Qwen orchestration call started");
+  const result = await requestSingleQwenOrchestration(compactClassroomSnapshot(snapshot), options);
+  console.log("single Qwen orchestration call returned");
+  const content = result.content || {};
+  const analysisInput = content.analysis && typeof content.analysis === "object" ? content.analysis : content;
+  const agentOutputs = normalizeLiveAgentOutputs(content.agentOutputs);
+  const analysis = normalizeClassroomAnalysis({
+    ...analysisInput,
+    agentOutputs,
+    orchestrationMode: analysisInput.orchestrationMode || "Live Qwen single-call multi-agent orchestration",
+  });
+  analysis.agentOutputs = agentOutputs;
+  analysis.orchestrationMode = "Live Qwen single-call multi-agent orchestration";
+
+  return {
+    analysis,
+    agentOutputs,
+    usage: result.usage ? [{ agent: "Single Qwen Orchestration", usage: result.usage }] : [],
+  };
+}
+
+async function requestSingleQwenOrchestration(snapshot, options) {
+  const response = await fetchDashScopeWithTimeout(`${dashScopeBaseUrl}/chat/completions`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${options.apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: classroomAnalysisModel,
+      messages: singleQwenOrchestrationMessages(snapshot),
+      temperature: options.temperature,
+      max_tokens: 900,
+      stream: false,
+      extra_body: {
+        enable_thinking: false,
+      },
+    }),
+  });
+
+  console.log("DashScope response status", response.status);
+  const text = await response.text();
+  if (response.status !== 200) console.log("DashScope response text", text);
+  let data;
+  try {
+    data = text ? JSON.parse(text) : {};
+  } catch {
+    data = { raw: text };
+  }
+
+  if (!response.ok) {
+    console.error("DashScope single orchestration failed", {
+      status: response.status,
+      responseBody: data,
+      baseUrl: dashScopeBaseUrl,
+      model: classroomAnalysisModel,
+      hasApiKey: Boolean(options.apiKey),
+    });
+    throw new Error(`Single Qwen orchestration failed with HTTP ${response.status}.`);
+  }
+
+  const content = parseJsonFromText(data?.choices?.[0]?.message?.content || "");
+  if (!content) throw new Error("Single Qwen orchestration did not return parseable JSON.");
+  return { content, usage: data?.usage || null };
+}
+
+function singleQwenOrchestrationMessages(snapshot) {
+  return [
+    {
+      role: "system",
+      content: [
+        "You are Qwen Teacher Intelligence.",
+        "Return compact valid JSON only.",
+        "Teacher decision support only; no automated student decisions.",
+        "Keep every string short.",
+      ].join(" "),
+    },
+    {
+      role: "user",
+      content: JSON.stringify({
+        task: "Return concise classroom analysis JSON.",
+        requiredOutputShape: {
+          analysis: {
+            overallClassHealthScore: "78%",
+            studentEngagement: "82%",
+            assignmentCompletion: "76%",
+            reflectionQuality: "70%",
+            engineeringDesignProgress: "84%",
+            studentsNeedingIntervention: 2,
+            studentsReadyForEnrichment: 3,
+            priorityStudents: [{ name: "Maya", priority: "high", reason: "short", recommendedAction: "short", confidence: "85%" }],
+            majorMisconceptionClusters: ["short"],
+            recommendedWholeClassAction: "short",
+            smallGroupRecommendation: "short",
+            opportunityRecommendations: ["short"],
+            teacherDecisionSupportNote: "Teacher decision support only -- no automated student decisions.",
+          },
+          agentOutputs: qwenAgentSpecs.map((spec) => ({ agent: spec.name, key: spec.key, output: { summary: "short", confidence: "85%" } })),
+        },
+        originalClassroomEvidence: snapshot,
+      }, null, 2),
+    },
+  ];
+}
+
+function compactClassroomSnapshot(snapshot = {}) {
+  return {
+    lesson: snapshot.lesson || {},
+    classMetrics: snapshot.classMetrics || {},
+    students: Array.isArray(snapshot.students)
+      ? snapshot.students.slice(0, 8).map((student) => ({
+        name: student.name,
+        level: student.level,
+        proficiency: student.proficiency,
+        progress: student.progress,
+        support: student.support,
+        flags: student.flags,
+      }))
+      : [],
+    knownMisconceptions: Array.isArray(snapshot.knownMisconceptions) ? snapshot.knownMisconceptions.slice(0, 5) : [],
+    opportunityOptions: Array.isArray(snapshot.opportunityOptions) ? snapshot.opportunityOptions.slice(0, 5) : [],
+    safetyBoundary: snapshot.safetyBoundary || "Teacher decision support only -- no automated student decisions.",
+  };
+}
+
+function normalizeLiveAgentOutputs(value) {
+  const expected = qwenAgentSpecs.map((spec) => ({ key: spec.key, agent: spec.name }));
+  const provided = Array.isArray(value) ? value : [];
+  return expected.map((spec) => {
+    const match = provided.find((item) => item?.key === spec.key || item?.agent === spec.agent);
+    return {
+      agent: spec.agent,
+      key: spec.key,
+      output: match?.output && typeof match.output === "object" ? match.output : match?.output || {},
+    };
+  });
+}
 
 const qwenAgentSpecs = [
   {
@@ -330,7 +531,7 @@ async function runQwenAgent(spec, snapshot, previousOutputs, options) {
 }
 
 async function requestQwenAgent(spec, snapshot, previousOutputs, options, validationError = "") {
-  const response = await fetch(`${dashScopeBaseUrl}/chat/completions`, {
+  const response = await fetchDashScopeWithTimeout(`${dashScopeBaseUrl}/chat/completions`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${options.apiKey}`,
@@ -341,14 +542,12 @@ async function requestQwenAgent(spec, snapshot, previousOutputs, options, valida
       messages: agentMessages(spec, snapshot, previousOutputs, validationError),
       temperature: options.temperature,
       stream: false,
-      response_format: { type: "json_object" },
-      extra_body: {
-        enable_thinking: true,
-      },
     }),
   });
 
+  console.log("DashScope response status", response.status);
   const text = await response.text();
+  if (response.status !== 200) console.log("DashScope response text", text);
   let data;
   try {
     data = text ? JSON.parse(text) : {};

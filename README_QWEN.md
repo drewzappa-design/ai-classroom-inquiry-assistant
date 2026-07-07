@@ -47,7 +47,7 @@ Set `DASHSCOPE_API_KEY`, `QWEN_MODEL`, and `DASHSCOPE_BASE_URL` in `server\.env`
 **Track fit:** Qwen Autopilot Agent workflow for education  
 **Modes:** Mock Mode and Live Qwen Mode through an Express backend proxy
 
-Qwen Teacher Intelligence is a teacher-facing Autopilot Agent workflow inside the Inquiry Classroom prototype. It is not a single chatbot. `Analyze Entire Classroom` runs a chained multi-agent pipeline that turns classroom evidence into structured, reviewable teacher decision support.
+Qwen Teacher Intelligence is a teacher-facing Autopilot Agent workflow inside the Inquiry Classroom prototype. It is not a generic chatbot. `Analyze Entire Classroom` presents a chained multi-agent pipeline that turns classroom evidence into structured, reviewable teacher decision support. In Live Qwen Mode, the backend asks Qwen for that complete structured orchestration in one call for demo reliability.
 
 The core message:
 
@@ -64,11 +64,11 @@ Generic AI dashboards can make this worse if they jump straight from signal to d
 Qwen Teacher Intelligence demonstrates a safer teacher-centered agent workflow:
 
 1. Student learning evidence is collected into a sanitized classroom snapshot.
-2. `Analyze Entire Classroom` runs a chained sequence of specialized teaching agents.
-3. Each agent receives the original classroom evidence plus structured JSON from previous agents.
-4. Each agent returns only structured JSON according to its role and schema.
-5. The backend validates every live Qwen agent response.
-6. Invalid JSON is retried once; if retry fails, a structured agent error is recorded and the pipeline continues.
+2. `Analyze Entire Classroom` presents a chained sequence of specialized teaching agents.
+3. The live backend sends the original classroom evidence and required agent roles to Qwen in one structured orchestration call.
+4. Qwen returns structured JSON for the class analysis and all five agent outputs.
+5. The backend normalizes the live JSON into the existing teacher dashboard shape.
+6. Mock Mode keeps the local multi-agent orchestration pattern for offline/fallback demos.
 7. The teacher reviews the recommendation.
 8. The teacher can approve, edit, reject, or request more evidence.
 9. Only approved recommendations appear in Approved Action History.
@@ -146,12 +146,12 @@ Live Qwen Mode runs through the Express backend proxy in `server/`. The frontend
 Browser UI
   -> Express backend proxy
   -> DashScope / Qwen
-  -> chained agent JSON
+  -> single structured orchestration JSON with five agent outputs
   -> normalized class analysis
   -> existing teacher dashboard
 ```
 
-Mock Mode uses the same orchestration pattern locally for offline demos and fallback. It still runs the same ordered agent flow, but the agent outputs are generated locally instead of calling Qwen.
+Mock Mode uses the same orchestration pattern locally for offline demos and fallback. It still runs the same ordered agent flow locally, while Live Qwen Mode uses one structured Qwen call for reliability during judging.
 
 ## Human-In-The-Loop Workflow
 

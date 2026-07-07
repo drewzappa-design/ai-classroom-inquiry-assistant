@@ -180,7 +180,7 @@
       ${h.pageHead(
         screenLabels[view],
         "Mock Autopilot Agent workflow for planning, review, and teacher-approved support.",
-        `<button class="btn secondary" onclick="QwenTeacherIntelligence.analyzeClassroom()">Analyze Entire Classroom</button><button class="btn secondary" onclick="teacherTab('analytics')">Class analytics</button>`
+        `<button type="button" class="btn secondary" onclick="QwenTeacherIntelligence.analyzeClassroom()">Analyze Entire Classroom</button><button type="button" class="btn secondary" onclick="teacherTab('analytics')">Class analytics</button>`
       )}
       ${decisionSupportBanner()}
       ${moduleNav(view, h)}
@@ -571,7 +571,7 @@
       ["Opportunity recommendations", "TSA Engineering Design, FIRST LEGO League, Samsung Solve for Tomorrow, Kentucky STEM camps, and local ATC pathways.", "strong"],
     ];
     return `<section class="card card-pad qwen-teacher-os-insights">
-      <div class="card-action-head"><div><span class="qwen-teacher-kicker">Class Insights</span><h3 class="section-title">What the AI teaching team sees</h3></div><button class="btn secondary" onclick="QwenTeacherIntelligence.analyzeClassroom()">Refresh analysis</button></div>
+      <div class="card-action-head"><div><span class="qwen-teacher-kicker">Class Insights</span><h3 class="section-title">What the AI teaching team sees</h3></div><button type="button" class="btn secondary" onclick="QwenTeacherIntelligence.analyzeClassroom()">Refresh analysis</button></div>
       <div class="qwen-teacher-os-insight-grid">
         ${insights.map(([title, body, tone]) => `<article class="qwen-teacher-os-insight qwen-teacher-tone-${tone}"><strong>${h.esc(title)}</strong><p>${h.esc(body)}</p></article>`).join("")}
       </div>
@@ -583,7 +583,7 @@
       <div><span class="qwen-teacher-kicker">Quick Actions</span><h3 class="section-title">What should I do next?</h3></div>
       <div class="qwen-teacher-action-grid">
         <button type="button" class="btn" onclick="window.QwenTeacherIntelligence.enterDemoMode()">Demo Mode</button>
-        <button class="btn" onclick="QwenTeacherIntelligence.analyzeClassroom()">Analyze Entire Classroom</button>
+        <button type="button" class="btn" onclick="QwenTeacherIntelligence.analyzeClassroom()">Analyze Entire Classroom</button>
         <button class="btn secondary" onclick="QwenTeacherIntelligence.setView('approval')">Review Pending Approvals</button>
         <button class="btn secondary" onclick="QwenTeacherIntelligence.setView('communications')">Generate Parent Updates</button>
         <button class="btn secondary" onclick="QwenTeacherIntelligence.setView('intervention')">View Intervention Plans</button>
@@ -793,7 +793,7 @@
     const report = context.qwen.classAnalysis;
     if (!report) {
       return `<article class="card card-pad qwen-teacher-class-health">
-        <div class="card-action-head"><div><h3 class="section-title">Class Health Panel</h3><p class="subtle">Run the classroom analysis to generate a mock STEM insight report.</p></div><button class="btn" onclick="QwenTeacherIntelligence.analyzeClassroom()">Analyze Entire Classroom</button></div>
+        <div class="card-action-head"><div><h3 class="section-title">Class Health Panel</h3><p class="subtle">Run the classroom analysis to generate a mock STEM insight report.</p></div><button type="button" class="btn" onclick="QwenTeacherIntelligence.analyzeClassroom()">Analyze Entire Classroom</button></div>
         <p class="qwen-teacher-safety-label">The report will be mock/demo only and will not update student records.</p>
       </article>`;
     }
@@ -1167,6 +1167,7 @@
   async function analyzeClassroom() {
     ensureQwenState(currentState);
     const qwen = currentState.qwenTeacherIntelligence;
+    if (qwen.orchestrationRun?.status === "running") return;
     qwen.liveLastCheckedAt = nowLabel();
     qwen.providerStatusMessage = qwen.provider === "live" ? "Contacting Qwen backend..." : "Mock Mode uses local demo data only.";
     startOrchestrationRun(qwen);
@@ -1254,23 +1255,37 @@
     persist();
   }
 
+  const liveClassAnalysisTimeoutMs = 480_000;
+
   async function requestLiveClassAnalysis() {
-    const response = await fetch(qwenClassroomAnalysisApiUrl(), {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        snapshot: sanitizedClassroomSnapshot(),
-      }),
-    });
+    const classroomSnapshot = {
+      snapshot: sanitizedClassroomSnapshot(),
+    };
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), liveClassAnalysisTimeoutMs);
+    try {
+      const response = await fetch("http://localhost:3001/api/qwen/classroom-analysis", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(classroomSnapshot),
+        signal: controller.signal,
+      });
 
-    if (!response.ok) throw new Error(`Backend returned HTTP ${response.status}.`);
-    const result = await response.json();
-    if (!result.ok) throw new Error(result.error || "Backend returned an error.");
-    return normalizeLiveClassAnalysis(result.analysis || result.content || result.data?.choices?.[0]?.message?.content || "");
-  }
-
-  function qwenClassroomAnalysisApiUrl() {
-    return window.QWEN_TEACHER_CLASSROOM_ANALYSIS_API_URL || "http://localhost:3001/api/qwen/classroom-analysis";
+      const result = await response.json().catch(() => ({}));
+      if (response.status === 504 || result.fallback) {
+        throw new Error(result.message || "Live Qwen timeout — fell back to Mock Mode.");
+      }
+      if (!response.ok) throw new Error(result.error || `Backend returned HTTP ${response.status}.`);
+      if (!result.ok) throw new Error(result.error || "Backend returned an error.");
+      return normalizeLiveClassAnalysis(result.analysis || result.content || result.data?.choices?.[0]?.message?.content || "");
+    } catch (error) {
+      if (error?.name === "AbortError") {
+        throw new Error("Live Qwen timeout — fell back to Mock Mode.");
+      }
+      throw error;
+    } finally {
+      window.clearTimeout(timeout);
+    }
   }
 
   function sanitizedClassroomSnapshot() {

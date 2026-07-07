@@ -19,7 +19,7 @@ Teachers have rich evidence about student learning, but it is scattered across w
 ## Features
 
 - Qwen Teacher Dashboard
-- Chained multi-agent `Analyze Entire Classroom` pipeline
+- Chained multi-agent `Analyze Entire Classroom` experience, with Live Qwen using one structured orchestration call for reliability
 - Live Qwen Mode through an Express backend proxy
 - Mock Mode with the same orchestration pattern for offline/fallback demos
 - Student Insight Page for Maya Rodriguez
@@ -47,16 +47,17 @@ This is not a single chatbot. Analyze Entire Classroom runs agents in this order
 4. Communication Agent
 5. Opportunity Advisor
 
-Each agent receives the original classroom evidence plus structured output from previous agents. Each agent has a strict role and JSON schema. The backend validates every live Qwen JSON response, retries invalid JSON once, and records a structured error if retry fails.
+Conceptually, each agent receives the original classroom evidence plus structured output from previous agents. For final-demo reliability, Live Qwen Mode asks Qwen for one structured orchestration response that includes all five conceptual agent outputs; Mock Mode keeps the local step-by-step agent pipeline.
 
 ## Live Qwen Proof
 
 - Live classroom analysis endpoint: `POST /api/qwen/classroom-analysis`
 - Safe configuration check endpoint: `GET /api/qwen/config-check`
-- Model is read from `QWEN_MODEL` in `server/.env`
+- Classroom analysis uses `QWEN_CLASSROOM_ANALYSIS_MODEL` when set, otherwise `qwen-turbo`; general chat still uses `QWEN_MODEL`
 - DashScope API key is read from `DASHSCOPE_API_KEY` on the server only
 - The frontend never receives or stores the API key
 - Live Qwen Mode calls the Express backend proxy instead of calling Qwen directly from browser code
+- For final-demo reliability, the live endpoint uses one structured Qwen orchestration call that returns the class analysis plus all five conceptual agent outputs
 - If the provider fails, the app automatically falls back to Mock Mode and keeps the dashboard usable
 - Mock Mode uses the same orchestration pattern for offline and fallback demos
 
@@ -76,11 +77,11 @@ Each agent receives the original classroom evidence plus structured output from 
 - Static HTML/CSS/JavaScript
 - Existing Inquiry Classroom app shell
 - Express backend proxy
-- DashScope / Qwen via `QWEN_MODEL`
+- DashScope / Qwen via `QWEN_CLASSROOM_ANALYSIS_MODEL` for classroom analysis and `QWEN_MODEL` for general chat
 - Local browser state through `localStorage`
 - Namespaced state: `state.qwenTeacherIntelligence`
 - Chained Qwen Autopilot Agent workflow
-- Backend JSON validation and one retry for failed agent JSON
+- Backend JSON validation and timeout fallback
 - Mock Mode fallback using the same orchestration pattern
 
 ## Future Roadmap

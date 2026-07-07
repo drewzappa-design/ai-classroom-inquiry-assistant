@@ -73,7 +73,9 @@ No API key is exposed in frontend code. Live Qwen Mode sends only a sanitized cl
 
 ## Agent Workflow
 
-This is not a single chatbot. `Analyze Entire Classroom` runs a chained multi-agent pipeline. Each agent receives:
+This is not a generic chatbot. `Analyze Entire Classroom` presents a chained multi-agent pipeline. For final-demo reliability, Live Qwen Mode requests the complete structured orchestration in one Qwen call; Mock Mode keeps the local ordered agent pipeline.
+
+The conceptual agent workflow uses:
 
 - original classroom evidence
 - structured JSON output from previous agents
@@ -107,22 +109,20 @@ Each agent card presents:
 - recommended action
 - teacher approval status
 
-## JSON Validation And Retry
+## JSON Validation And Fallback
 
-In Live Qwen Mode, the backend validates every agent response against that agent's required JSON fields.
+In Live Qwen Mode, the backend validates and normalizes the single structured orchestration response that includes all five agent outputs. The local Mock Mode pipeline still models each agent step separately.
 
 Validation rules:
 
-- agent response must be parseable JSON
+- live orchestration response must be parseable JSON
 - response must be a JSON object
-- required string fields must be strings
-- required array fields must be arrays
 
-If validation fails:
+If validation fails or the live provider times out:
 
-1. the backend retries that agent once with a validation repair instruction
-2. if retry fails, the backend records a structured agent error object
-3. orchestration continues instead of crashing the pipeline
+1. the backend returns an error or timeout response
+2. the frontend clears the loading state
+3. the app falls back to Mock Mode and keeps the dashboard usable
 
 This keeps the demo resilient while making the agent handoff auditable.
 
@@ -231,11 +231,10 @@ Browser UI
 The backend/proxy:
 
 - keep API keys out of the browser
-- enforces agent-specific system prompts
-- uses `QWEN_MODEL` from `.env`
-- validates structured JSON from each agent
-- retries invalid JSON once
-- records structured agent errors if retry fails
+- sends the Live Mode classroom-analysis request as one structured orchestration prompt
+- uses `QWEN_CLASSROOM_ANALYSIS_MODEL` for classroom analysis and `QWEN_MODEL` for general chat
+- validates and normalizes the structured JSON response
+- keeps timeout handling and Mock Mode fallback available
 - returns normalized class analysis JSON to the frontend
 
 Teacher approvals remain local UI actions. No recommendation becomes an action until the teacher approves it.
