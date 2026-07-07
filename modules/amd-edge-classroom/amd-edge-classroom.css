@@ -136,6 +136,13 @@
     linear-gradient(135deg, #10141c 0%, #121721 48%, #0b0e14 100%);
 }
 
+.amd-edge-twin {
+  background:
+    radial-gradient(circle at 72% 10%, rgba(237, 28, 36, 0.15), transparent 30%),
+    radial-gradient(circle at 12% 82%, rgba(255, 138, 0, 0.12), transparent 32%),
+    linear-gradient(135deg, #0d1018 0%, #121722 48%, #080b10 100%);
+}
+
 .amd-edge-section-head {
   display: flex;
   align-items: flex-end;
@@ -314,6 +321,226 @@
 
 .amd-edge-monitor-grid {
   grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.amd-edge-twin-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(300px, 0.75fr);
+  gap: 14px;
+  align-items: stretch;
+}
+
+.amd-edge-twin-map,
+.amd-edge-twin-status {
+  border: 1px solid var(--amd-line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.amd-edge-twin-map {
+  position: relative;
+  min-height: 560px;
+  overflow: hidden;
+  padding: 16px;
+}
+
+.amd-edge-twin-map::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+  background-size: 34px 34px;
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.9), transparent);
+  pointer-events: none;
+}
+
+.amd-edge-twin-scenarios {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.amd-edge-twin-scenarios button {
+  min-height: 34px;
+  padding: 7px 10px;
+  border: 1px solid var(--amd-line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.065);
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 850;
+}
+
+.amd-edge-twin-scenarios button.active.green { border-color: rgba(123, 216, 143, 0.68); background: rgba(123, 216, 143, 0.12); }
+.amd-edge-twin-scenarios button.active.yellow { border-color: rgba(255, 209, 102, 0.7); background: rgba(255, 209, 102, 0.12); }
+.amd-edge-twin-scenarios button.active.red { border-color: rgba(255, 90, 95, 0.75); background: rgba(255, 90, 95, 0.13); }
+.amd-edge-twin-scenarios button.active.orange { border-color: rgba(255, 159, 28, 0.78); background: rgba(255, 159, 28, 0.13); }
+
+.amd-edge-twin-stack {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 15px;
+  max-width: 620px;
+  margin: 0 auto;
+}
+
+.amd-edge-twin-node {
+  position: relative;
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  gap: 6px 12px;
+  align-items: center;
+  min-height: 68px;
+  padding: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 8px;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.055)),
+    rgba(0, 0, 0, 0.16);
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.12);
+}
+
+.amd-edge-twin-node:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  left: 32px;
+  bottom: -16px;
+  width: 2px;
+  height: 16px;
+  background: linear-gradient(180deg, rgba(255, 138, 0, 0.95), rgba(255, 138, 0, 0.08));
+  animation: amd-edge-flow-down 1.9s linear infinite;
+}
+
+.amd-edge-twin-node span {
+  grid-row: 1 / span 2;
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: linear-gradient(135deg, var(--amd-red), var(--amd-orange));
+  color: #fff;
+  font-weight: 950;
+}
+
+.amd-edge-twin-node strong {
+  color: #fff;
+  font-size: 1rem;
+  line-height: 1.2;
+}
+
+.amd-edge-twin-node small {
+  color: var(--amd-muted);
+  font-size: 0.78rem;
+  line-height: 1.25;
+}
+
+.amd-edge-twin-node.cloud {
+  border-style: dashed;
+  opacity: 0.92;
+}
+
+.amd-edge-twin-stack.throttled .amd-edge-twin-node:not(:last-child)::after {
+  animation-duration: 3.2s;
+  opacity: 0.68;
+}
+
+.amd-edge-twin-stack.edge .amd-edge-twin-node.cloud {
+  opacity: 0.48;
+}
+
+.amd-edge-twin-stack.edge .amd-edge-twin-node:not(:last-child)::after {
+  background: linear-gradient(180deg, rgba(123, 216, 143, 0.96), rgba(123, 216, 143, 0.05));
+  animation-duration: 1.35s;
+}
+
+.amd-edge-twin-stack.recovering .amd-edge-twin-node:not(:last-child)::after {
+  background: linear-gradient(180deg, rgba(255, 159, 28, 0.98), rgba(123, 216, 143, 0.1));
+}
+
+.amd-edge-twin-status {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+}
+
+.amd-edge-twin-current {
+  padding: 14px;
+  border: 1px solid var(--amd-line);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.14);
+}
+
+.amd-edge-twin-current span,
+.amd-edge-twin-metrics span {
+  color: var(--amd-orange);
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.amd-edge-twin-current strong {
+  display: block;
+  margin: 10px 0;
+  color: #fff;
+  font-size: clamp(1.8rem, 4vw, 2.7rem);
+  line-height: 1;
+}
+
+.amd-edge-twin-current p {
+  margin: 0;
+  color: var(--amd-muted);
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.amd-edge-twin-metrics {
+  display: grid;
+  gap: 9px;
+}
+
+.amd-edge-twin-metrics div {
+  min-height: 72px;
+  padding: 12px;
+  border: 1px solid var(--amd-line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.amd-edge-twin-metrics strong {
+  display: block;
+  margin-top: 7px;
+  color: #fff;
+  font-size: 0.98rem;
+  line-height: 1.2;
+}
+
+.amd-edge-twin-actions {
+  margin-top: 14px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+@keyframes amd-edge-flow-down {
+  0% { opacity: 0.25; transform: translateY(-4px); }
+  45% { opacity: 1; }
+  100% { opacity: 0.25; transform: translateY(4px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .amd-edge-twin-node:not(:last-child)::after {
+    animation: none;
+  }
 }
 
 .amd-edge-boundary-grid {
@@ -813,6 +1040,7 @@
   .amd-edge-monitor-layout,
   .amd-edge-monitor-grid,
   .amd-edge-boundary-grid,
+  .amd-edge-twin-layout,
   .amd-edge-policy-layout,
   .amd-edge-policy-grid,
   .amd-edge-privacy-flow,
@@ -849,6 +1077,7 @@
   .amd-edge-monitor-layout,
   .amd-edge-monitor-grid,
   .amd-edge-boundary-grid,
+  .amd-edge-twin-layout,
   .amd-edge-policy-layout,
   .amd-edge-policy-grid,
   .amd-edge-privacy-flow,

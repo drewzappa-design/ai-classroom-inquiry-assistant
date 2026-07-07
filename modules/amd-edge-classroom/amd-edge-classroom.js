@@ -154,6 +154,67 @@
     "Optional Cloud Sync",
   ];
 
+  const twinNodes = [
+    ["Teacher Laptop", "Teacher command surface"],
+    ["AMD AI PC", "Local inference-ready classroom device"],
+    ["Local Classroom Server", "School-owned edge gateway"],
+    ["Edge Agent Cluster", "Learning, intervention, privacy, sync agents"],
+    ["Local Evidence Graph", "Student context stays close to school"],
+    ["Student Devices", "Classroom activity and evidence capture"],
+    ["Optional Cloud Sync", "Policy-controlled external route"],
+  ];
+
+  const twinScenarios = {
+    normal: {
+      label: "Normal",
+      tone: "green",
+      edgeRuntime: "Active",
+      syncQueue: "0",
+      teacherWorkflow: "Fully Operational",
+      evidenceFlow: "Bidirectional local + background sync",
+      cloudStatus: "Online",
+      pulse: "steady",
+    },
+    limited: {
+      label: "Limited Bandwidth",
+      tone: "yellow",
+      edgeRuntime: "Active",
+      syncQueue: "2 priority",
+      teacherWorkflow: "Operational",
+      evidenceFlow: "Local first, priority sync",
+      cloudStatus: "Constrained",
+      pulse: "throttled",
+    },
+    outage: {
+      label: "Internet Outage",
+      tone: "red",
+      edgeRuntime: "Active",
+      syncQueue: "8 queued",
+      teacherWorkflow: "Fully Operational",
+      evidenceFlow: "Local only",
+      cloudStatus: "Offline",
+      pulse: "edge",
+    },
+    recovery: {
+      label: "Recovery",
+      tone: "orange",
+      edgeRuntime: "Active",
+      syncQueue: "3 draining",
+      teacherWorkflow: "Operational",
+      evidenceFlow: "Local plus queued sync drain",
+      cloudStatus: "Reconnecting",
+      pulse: "recovering",
+    },
+  };
+
+  const twinMetrics = [
+    ["Edge Runtime Active", "edgeRuntime"],
+    ["Sync Queue", "syncQueue"],
+    ["Teacher Workflow", "teacherWorkflow"],
+    ["Evidence Flow", "evidenceFlow"],
+    ["Cloud Status", "cloudStatus"],
+  ];
+
   const dataBoundaryItems = [
     ["Student Evidence", "Local by default", "Evidence is read from the school-local classroom context first."],
     ["Teacher Notes", "Local by default", "Teacher observations stay in the local evidence workspace in this demo."],
@@ -200,6 +261,7 @@
     const h = currentHelpers;
     ensureSimulatorState();
     ensurePrivacyState();
+    ensureDigitalTwinState();
     syncIntermittentTimer();
     return `<section class="amd-edge-classroom">
       ${h.pageHead(
@@ -210,6 +272,7 @@
       ${hero(h)}
       ${runtimeStatus(h)}
       ${edgeRuntimeMonitor(h)}
+      ${classroomDigitalTwin(h)}
       ${routingVisualization(h)}
       ${ruralConnectivitySimulator(h)}
       ${privacyDataOwnershipConsole(h)}
@@ -478,9 +541,66 @@
       <button class="btn" onclick="AMDEdgeClassroom.runEdgeAnalysis()">Run Edge Classroom Analysis</button>
       <button class="btn secondary" onclick="AMDEdgeClassroom.openTeacherWorkspace()">Open Teacher Workspace</button>
       <button class="btn secondary" onclick="AMDEdgeClassroom.openRuntimeMonitor()">Open Edge Runtime Monitor</button>
+      <button class="btn secondary" onclick="AMDEdgeClassroom.openDigitalTwin()">Open Classroom Digital Twin</button>
       <button class="btn secondary" onclick="AMDEdgeClassroom.openRuralSimulator()">Open Rural Connectivity Simulator</button>
       <button class="btn secondary" onclick="AMDEdgeClassroom.openPrivacyConsole()">Open Privacy Console</button>
     </section>`;
+  }
+
+  function classroomDigitalTwin(h) {
+    const scenarioKey = currentState.amdEdgeDigitalTwin.scenario;
+    const scenario = twinScenarios[scenarioKey] || twinScenarios.normal;
+    return `<section class="amd-edge-section amd-edge-twin ${scenario.tone}" id="amd-digital-twin">
+      <div class="amd-edge-section-head">
+        <h3>Classroom Digital Twin</h3>
+        <p>Operations-center view of the simulated classroom edge stack, from teacher laptop to optional cloud sync.</p>
+      </div>
+      <div class="amd-edge-demo-labels">
+        <span>Everything is simulated</span>
+        <span>Demo operations center</span>
+        <span>No real networking or hardware control</span>
+      </div>
+      <div class="amd-edge-twin-layout">
+        <article class="amd-edge-twin-map">
+          <div class="amd-edge-twin-scenarios" aria-label="Digital twin scenarios">
+            ${Object.entries(twinScenarios).map(([key, item]) => `<button type="button" class="${scenarioKey === key ? "active" : ""} ${item.tone}" onclick="AMDEdgeClassroom.setTwinScenario('${h.esc(key)}')">${h.esc(item.label)}</button>`).join("")}
+          </div>
+          <div class="amd-edge-twin-stack ${scenario.pulse}">
+            ${twinNodes.map(([title, detail], index) => `<div class="amd-edge-twin-node ${index === twinNodes.length - 1 ? "cloud" : ""}">
+              <span>${index + 1}</span>
+              <strong>${h.esc(title)}</strong>
+              <small>${h.esc(detail)}</small>
+            </div>`).join("")}
+          </div>
+        </article>
+        <aside class="amd-edge-twin-status">
+          <div class="amd-edge-twin-current">
+            <span>Active Simulation</span>
+            <strong>${h.esc(scenario.label)}</strong>
+            <p>${h.esc(twinSummary(scenarioKey))}</p>
+          </div>
+          <div class="amd-edge-twin-metrics">
+            ${twinMetrics.map(([label, key]) => `<div>
+              <span>${h.esc(label)}</span>
+              <strong>${h.esc(scenario[key])}</strong>
+            </div>`).join("")}
+          </div>
+        </aside>
+      </div>
+      <div class="amd-edge-actions amd-edge-twin-actions">
+        <button class="btn secondary" onclick="AMDEdgeClassroom.resetTwinSimulation()">Reset Simulation</button>
+        <button class="btn secondary" onclick="AMDEdgeClassroom.runTwinOutageScenario()">Run Outage Scenario</button>
+        <button class="btn secondary" onclick="AMDEdgeClassroom.restoreTwinConnectivity()">Restore Connectivity</button>
+        <button class="btn" onclick="AMDEdgeClassroom.flushTwinQueue()">Flush Queue</button>
+      </div>
+    </section>`;
+  }
+
+  function twinSummary(scenarioKey) {
+    if (scenarioKey === "limited") return "Bandwidth is constrained, so the edge runtime preserves teacher workflow while syncing only priority items.";
+    if (scenarioKey === "outage") return "Cloud is offline, but local evidence, agents, and teacher approval remain operational on the edge.";
+    if (scenarioKey === "recovery") return "Cloud reconnects and the queue drains while the classroom continues using local edge services.";
+    return "All routes are healthy: local edge runtime is active and background cloud sync is available.";
   }
 
   function ensureSimulatorState() {
@@ -488,6 +608,38 @@
     currentState.amdEdgeConnectivity.mode ||= "normal";
     currentState.amdEdgeConnectivity.intermittentStep ||= 0;
     currentState.amdEdgeConnectivity.queueFlushed ||= false;
+  }
+
+  function ensureDigitalTwinState() {
+    currentState.amdEdgeDigitalTwin ||= {};
+    currentState.amdEdgeDigitalTwin.scenario ||= "normal";
+  }
+
+  function setTwinScenario(scenario) {
+    ensureDigitalTwinState();
+    currentState.amdEdgeDigitalTwin.scenario = twinScenarios[scenario] ? scenario : "normal";
+    currentHelpers.save?.();
+    currentHelpers.render?.();
+  }
+
+  function resetTwinSimulation() {
+    setTwinScenario("normal");
+    scrollToPanel("amd-digital-twin");
+  }
+
+  function runTwinOutageScenario() {
+    setTwinScenario("outage");
+    scrollToPanel("amd-digital-twin");
+  }
+
+  function restoreTwinConnectivity() {
+    setTwinScenario("recovery");
+    scrollToPanel("amd-digital-twin");
+  }
+
+  function flushTwinQueue() {
+    setTwinScenario("normal");
+    scrollToPanel("amd-digital-twin");
   }
 
   function ensurePrivacyState() {
@@ -670,6 +822,10 @@
     scrollToPanel("amd-runtime-monitor");
   }
 
+  function openDigitalTwin() {
+    scrollToPanel("amd-digital-twin");
+  }
+
   function openRuralSimulator() {
     scrollToPanel("amd-rural-simulator");
   }
@@ -684,8 +840,14 @@
     runEdgeAnalysis,
     openTeacherWorkspace,
     openRuntimeMonitor,
+    openDigitalTwin,
     openRuralSimulator,
     openPrivacyConsole,
+    setTwinScenario,
+    resetTwinSimulation,
+    runTwinOutageScenario,
+    restoreTwinConnectivity,
+    flushTwinQueue,
     togglePrivacyPolicy,
     enableLocalOnlyMode,
     allowHybridAssist,
