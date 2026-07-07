@@ -143,6 +143,12 @@
     linear-gradient(135deg, #0d1018 0%, #121722 48%, #080b10 100%);
 }
 
+.amd-edge-model-router {
+  background:
+    radial-gradient(circle at 82% 16%, rgba(255, 138, 0, 0.16), transparent 28%),
+    linear-gradient(135deg, #10131b 0%, #151923 48%, #0c0f15 100%);
+}
+
 .amd-edge-section-head {
   display: flex;
   align-items: flex-end;
@@ -328,6 +334,118 @@
   grid-template-columns: minmax(0, 1.25fr) minmax(300px, 0.75fr);
   gap: 14px;
   align-items: stretch;
+}
+
+.amd-edge-fireworks-note {
+  margin-bottom: 14px;
+  padding: 14px;
+  border: 1px solid rgba(255, 138, 0, 0.32);
+  border-radius: 8px;
+  background: rgba(255, 138, 0, 0.1);
+  color: #f4f7fb;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  font-weight: 760;
+}
+
+.amd-edge-router-layout {
+  display: grid;
+  grid-template-columns: minmax(260px, 0.78fr) minmax(0, 1.22fr);
+  gap: 12px;
+}
+
+.amd-edge-router-selector,
+.amd-edge-router-decision {
+  padding: 16px;
+  border: 1px solid var(--amd-line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.075);
+}
+
+.amd-edge-router-selector > span,
+.amd-edge-router-route span,
+.amd-edge-router-grid span {
+  color: var(--amd-orange);
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.amd-edge-router-selector h4 {
+  margin: 10px 0 14px;
+  color: #fff;
+  font-size: 1.4rem;
+  line-height: 1.1;
+}
+
+.amd-edge-router-options {
+  display: grid;
+  gap: 8px;
+}
+
+.amd-edge-router-options button {
+  min-height: 44px;
+  padding: 10px;
+  border: 1px solid var(--amd-line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.055);
+  color: #fff;
+  font-size: 0.84rem;
+  font-weight: 820;
+  text-align: left;
+}
+
+.amd-edge-router-options button:hover,
+.amd-edge-router-options button:focus,
+.amd-edge-router-options button.active {
+  border-color: rgba(255, 138, 0, 0.72);
+  background: rgba(255, 138, 0, 0.13);
+  outline: none;
+}
+
+.amd-edge-router-route {
+  padding: 14px;
+  border: 1px solid rgba(123, 216, 143, 0.24);
+  border-radius: 8px;
+  background: rgba(123, 216, 143, 0.08);
+}
+
+.amd-edge-router-route strong {
+  display: block;
+  margin-top: 8px;
+  color: #fff;
+  font-size: clamp(1.8rem, 4vw, 2.6rem);
+  line-height: 1;
+}
+
+.amd-edge-router-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.amd-edge-router-grid div {
+  min-height: 80px;
+  padding: 12px;
+  border: 1px solid var(--amd-line);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.13);
+}
+
+.amd-edge-router-grid strong {
+  display: block;
+  margin-top: 8px;
+  color: #fff;
+  font-size: 0.96rem;
+  line-height: 1.2;
+}
+
+.amd-edge-router-decision p {
+  margin: 12px 0 0;
+  color: var(--amd-muted);
+  font-size: 0.9rem;
+  line-height: 1.45;
 }
 
 .amd-edge-twin-map,
@@ -1040,6 +1158,8 @@
   .amd-edge-monitor-layout,
   .amd-edge-monitor-grid,
   .amd-edge-boundary-grid,
+  .amd-edge-router-layout,
+  .amd-edge-router-grid,
   .amd-edge-twin-layout,
   .amd-edge-policy-layout,
   .amd-edge-policy-grid,
@@ -1077,6 +1197,8 @@
   .amd-edge-monitor-layout,
   .amd-edge-monitor-grid,
   .amd-edge-boundary-grid,
+  .amd-edge-router-layout,
+  .amd-edge-router-grid,
   .amd-edge-twin-layout,
   .amd-edge-policy-layout,
   .amd-edge-policy-grid,

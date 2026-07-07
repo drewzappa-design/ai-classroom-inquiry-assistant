@@ -36,6 +36,32 @@ Student Evidence
 - Offline queue depth
 - Cloud calls avoided
 
+## AMD Model Router
+
+The AMD Model Router evaluates task metadata and recommends one of three routes:
+
+- Offline Edge Mode
+- Local Classroom Server
+- Fireworks AI / AMD Cloud Assist
+
+Router inputs shown in the UI:
+
+- Task type
+- Privacy level
+- Connectivity status
+- Estimated complexity
+
+Fireworks AI is part of the AMD hackathon technology stack. Cloud Assist routes eligible tasks to Fireworks AI while sensitive/local-first tasks remain on the classroom edge.
+
+Current phase:
+
+- Real architecture scaffold
+- Simulated routing decisions
+- Future Fireworks API connection
+- No API keys in frontend code
+
+Future endpoint documentation lives in `FIREWORKS_AMD_ENDPOINT.md`.
+
 ## Rural Connectivity Simulator
 
 The AMD module includes an interactive simulator for rural school connectivity:

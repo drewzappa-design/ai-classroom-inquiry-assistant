@@ -25,6 +25,7 @@ AI Classroom Edge is a privacy-first edge AI classroom platform that keeps stude
 - AI Classroom Edge dashboard
 - Edge Runtime Status
 - Edge Runtime Monitor
+- AMD Model Router with Fireworks AI / AMD Cloud Assist route
 - Routing visualization
 - Rural Connectivity Simulator
 - Privacy & Local Data Ownership console
@@ -46,6 +47,22 @@ AI Classroom Edge is a privacy-first edge AI classroom platform that keeps stude
 - Intermittent reconnect animation
 - Demo privacy policy controls
 - Local audit trail preview
+- Fireworks AI / AMD Cloud Assist routing scaffold
+
+## Fireworks AI / AMD Platform Usage
+
+AI Classroom Edge includes an AMD Model Router that presents Fireworks AI as the AMD Cloud Assist route for eligible tasks. Sensitive/local-first tasks remain on Offline Edge Mode or the Local Classroom Server.
+
+This satisfies AMD platform alignment by showing how the classroom edge can combine AMD AI PC/local-first workflows with the AMD hackathon cloud technology stack through Fireworks AI.
+
+Current state:
+
+- Real architecture scaffold
+- Server-side environment placeholders in `server/.env.example`
+- Future endpoint documentation in `FIREWORKS_AMD_ENDPOINT.md`
+- Simulated routing decisions in the AMD dashboard
+- No live Fireworks API call yet
+- No frontend API key exposure
 
 ## Real Project Assets Reused
 

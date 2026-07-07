@@ -30,7 +30,15 @@ Show the Edge Runtime Status cards. The key idea is local-first classroom intell
 
 Open the Edge Runtime Monitor. Explain that the current route is Offline Edge by default. CPU and GPU paths are shown as available architecture paths. The NPU path is labeled as ready architecture and future acceleration. This demo does not claim real NPU inference.
 
-### 4. Routing Visualization
+### 4. AMD Model Router
+
+Open the AMD Model Router. Walk through task type, privacy level, connectivity status, and estimated complexity. Show that sensitive student intervention work routes to Offline Edge Mode, local evidence lookup routes to the Local Classroom Server, and eligible aggregate work can route to Fireworks AI / AMD Cloud Assist.
+
+Say: Fireworks AI is part of the AMD hackathon technology stack. Cloud Assist routes eligible tasks to Fireworks AI while sensitive or local-first tasks remain on the classroom edge.
+
+Clarify that the current router is a real architecture scaffold with simulated routing decisions. The live Fireworks API connection is future work, and no keys are exposed in frontend code.
+
+### 5. Routing Visualization
 
 Walk through:
 
@@ -40,7 +48,7 @@ Student Evidence -> Local Evidence Graph -> Classroom Edge Agents -> Teacher App
 
 The important privacy story is that cloud assist is optional and appears after the local evidence and teacher-control layers.
 
-### 5. Rural Connectivity
+### 6. Rural Connectivity
 
 Open the Rural Connectivity Simulator. Click through Normal Connectivity, Limited Bandwidth, Intermittent Internet, and Internet Outage.
 
@@ -50,11 +58,11 @@ For Limited Bandwidth, point out hybrid routing, cloud assist only when necessar
 
 For Intermittent Internet, let the animated state cycle. Show edge taking over, cloud reconnecting, and the sync queue changing.
 
-### 6. Teacher Workflow
+### 7. Teacher Workflow
 
 Click `Run Edge Classroom Analysis`. This opens the existing teacher intelligence workflow and triggers the classroom analysis path. Teacher approval remains the boundary before recommendations become actions.
 
-### 7. Privacy And Local Data Ownership
+### 8. Privacy And Local Data Ownership
 
 Open the Privacy & Local Data Ownership console. Show the data boundary overview: student evidence and teacher notes are local by default, approved actions are part of a local audit log, cloud assist is optional, and sync is teacher/district controlled.
 

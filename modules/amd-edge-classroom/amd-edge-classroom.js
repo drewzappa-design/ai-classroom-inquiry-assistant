@@ -46,6 +46,47 @@
     "Optional Cloud Assist",
   ];
 
+  const modelRoutingTasks = {
+    intervention: {
+      label: "Student intervention recommendation",
+      taskType: "Teacher decision support",
+      privacyLevel: "Sensitive student context",
+      connectivityStatus: "Available but optional",
+      estimatedComplexity: "Medium",
+      recommendedRoute: "Offline Edge Mode",
+      rationale: "Uses student evidence and teacher notes, so the safest demo route keeps reasoning local and requires teacher approval.",
+    },
+    summary: {
+      label: "Classroom trend summary",
+      taskType: "Aggregated classroom analysis",
+      privacyLevel: "De-identified aggregate",
+      connectivityStatus: "Online",
+      estimatedComplexity: "High",
+      recommendedRoute: "Fireworks AI / AMD Cloud Assist",
+      rationale: "Eligible aggregate work can route to Fireworks AI as AMD Cloud Assist when policy allows and sensitive details remain local-first.",
+    },
+    offline: {
+      label: "Offline evidence review",
+      taskType: "Local evidence lookup",
+      privacyLevel: "Local classroom record",
+      connectivityStatus: "Internet outage",
+      estimatedComplexity: "Low",
+      recommendedRoute: "Local Classroom Server",
+      rationale: "The classroom server and local evidence graph continue operating even when cloud access is unavailable.",
+    },
+    enrichment: {
+      label: "STEM opportunity draft",
+      taskType: "Teacher-reviewed enrichment",
+      privacyLevel: "Teacher-approved summary",
+      connectivityStatus: "Limited bandwidth",
+      estimatedComplexity: "Medium",
+      recommendedRoute: "Local Classroom Server",
+      rationale: "The edge server can draft from local evidence and queue optional cloud enrichment until bandwidth improves.",
+    },
+  };
+
+  const modelRouterOptions = Object.keys(modelRoutingTasks);
+
   const connectivityModes = {
     normal: {
       icon: "●",
@@ -262,6 +303,7 @@
     ensureSimulatorState();
     ensurePrivacyState();
     ensureDigitalTwinState();
+    ensureModelRouterState();
     syncIntermittentTimer();
     return `<section class="amd-edge-classroom">
       ${h.pageHead(
@@ -272,6 +314,7 @@
       ${hero(h)}
       ${runtimeStatus(h)}
       ${edgeRuntimeMonitor(h)}
+      ${amdModelRouter(h)}
       ${classroomDigitalTwin(h)}
       ${routingVisualization(h)}
       ${ruralConnectivitySimulator(h)}
@@ -541,6 +584,7 @@
       <button class="btn" onclick="AMDEdgeClassroom.runEdgeAnalysis()">Run Edge Classroom Analysis</button>
       <button class="btn secondary" onclick="AMDEdgeClassroom.openTeacherWorkspace()">Open Teacher Workspace</button>
       <button class="btn secondary" onclick="AMDEdgeClassroom.openRuntimeMonitor()">Open Edge Runtime Monitor</button>
+      <button class="btn secondary" onclick="AMDEdgeClassroom.openModelRouter()">Open AMD Model Router</button>
       <button class="btn secondary" onclick="AMDEdgeClassroom.openDigitalTwin()">Open Classroom Digital Twin</button>
       <button class="btn secondary" onclick="AMDEdgeClassroom.openRuralSimulator()">Open Rural Connectivity Simulator</button>
       <button class="btn secondary" onclick="AMDEdgeClassroom.openPrivacyConsole()">Open Privacy Console</button>
@@ -594,6 +638,65 @@
         <button class="btn" onclick="AMDEdgeClassroom.flushTwinQueue()">Flush Queue</button>
       </div>
     </section>`;
+  }
+
+  function amdModelRouter(h) {
+    const selectedTask = currentState.amdEdgeModelRouter.task;
+    const task = modelRoutingTasks[selectedTask] || modelRoutingTasks.intervention;
+    return `<section class="amd-edge-section amd-edge-model-router" id="amd-model-router">
+      <div class="amd-edge-section-head">
+        <h3>AMD Model Router</h3>
+        <p>Real architecture scaffold for routing classroom tasks between Offline Edge Mode, the Local Classroom Server, and Fireworks AI / AMD Cloud Assist.</p>
+      </div>
+      <div class="amd-edge-demo-labels">
+        <span>Real architecture scaffold</span>
+        <span>Simulated routing decisions</span>
+        <span>Future Fireworks API connection</span>
+        <span>No frontend API keys</span>
+      </div>
+      <div class="amd-edge-fireworks-note">
+        Fireworks AI is part of the AMD hackathon technology stack. Cloud Assist routes eligible tasks to Fireworks AI while sensitive/local-first tasks remain on the classroom edge.
+      </div>
+      <div class="amd-edge-router-layout">
+        <article class="amd-edge-router-selector">
+          <span>Task type</span>
+          <h4>${h.esc(task.label)}</h4>
+          <div class="amd-edge-router-options">
+            ${modelRouterOptions.map((key) => `<button type="button" class="${selectedTask === key ? "active" : ""}" onclick="AMDEdgeClassroom.setModelRouterTask('${h.esc(key)}')">${h.esc(modelRoutingTasks[key].label)}</button>`).join("")}
+          </div>
+        </article>
+        <article class="amd-edge-router-decision">
+          <div class="amd-edge-router-route">
+            <span>Recommended route</span>
+            <strong>${h.esc(task.recommendedRoute)}</strong>
+          </div>
+          <div class="amd-edge-router-grid">
+            ${[
+              ["Task type", task.taskType],
+              ["Privacy level", task.privacyLevel],
+              ["Connectivity status", task.connectivityStatus],
+              ["Estimated complexity", task.estimatedComplexity],
+            ].map(([label, value]) => `<div>
+              <span>${h.esc(label)}</span>
+              <strong>${h.esc(value)}</strong>
+            </div>`).join("")}
+          </div>
+          <p>${h.esc(task.rationale)}</p>
+        </article>
+      </div>
+    </section>`;
+  }
+
+  function ensureModelRouterState() {
+    currentState.amdEdgeModelRouter ||= {};
+    currentState.amdEdgeModelRouter.task ||= "intervention";
+  }
+
+  function setModelRouterTask(task) {
+    ensureModelRouterState();
+    currentState.amdEdgeModelRouter.task = modelRoutingTasks[task] ? task : "intervention";
+    currentHelpers.save?.();
+    currentHelpers.render?.();
   }
 
   function twinSummary(scenarioKey) {
@@ -822,6 +925,10 @@
     scrollToPanel("amd-runtime-monitor");
   }
 
+  function openModelRouter() {
+    scrollToPanel("amd-model-router");
+  }
+
   function openDigitalTwin() {
     scrollToPanel("amd-digital-twin");
   }
@@ -840,10 +947,12 @@
     runEdgeAnalysis,
     openTeacherWorkspace,
     openRuntimeMonitor,
+    openModelRouter,
     openDigitalTwin,
     openRuralSimulator,
     openPrivacyConsole,
     setTwinScenario,
+    setModelRouterTask,
     resetTwinSimulation,
     runTwinOutageScenario,
     restoreTwinConnectivity,
