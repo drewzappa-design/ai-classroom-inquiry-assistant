@@ -1,0 +1,8 @@
+.git
+.gitignore
+.DS_Store
+server/.env
+server/node_modules
+node_modules
+docs/hackathon
+sui-contracts

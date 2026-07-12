@@ -1,0 +1,18 @@
+services:
+  backend:
+    build:
+      context: .
+      target: backend
+    env_file:
+      - ./server/.env
+    ports:
+      - "3001:3001"
+
+  frontend:
+    build:
+      context: .
+      target: frontend
+    ports:
+      - "8000:8000"
+    depends_on:
+      - backend

@@ -1,116 +1,115 @@
-# Qwen Teacher Intelligence Server
+# AI Classroom Intelligence Backend
 
-Small Express backend for live Qwen Teacher Intelligence demos.
+Express backend for classroom intelligence provider routes used by the local prototype.
 
-The frontend must not contain `DASHSCOPE_API_KEY`. This server reads the key from `.env`, calls Alibaba Cloud Model Studio / DashScope, and returns JSON to the static app.
+## Routes
 
-This backend is not a single chatbot proxy for classroom analysis. `POST /api/qwen/classroom-analysis` runs a chained multi-agent pipeline where each specialized agent receives the original classroom evidence plus structured JSON from previous agents.
+### Qwen / DashScope
 
-## Install
+- `GET /api/qwen/config-check`
+- `POST /api/qwen/chat`
+- `POST /api/qwen/classroom-analysis`
+
+DashScope environment variables:
+
+```text
+DASHSCOPE_API_KEY=your_dashscope_api_key_here
+DASHSCOPE_BASE_URL=https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+QWEN_MODEL=qwen3.7-plus
+QWEN_CLASSROOM_ANALYSIS_MODEL=qwen-turbo
+```
+
+### AMD / Fireworks
+
+- `POST /api/amd/route-inference`
+
+Fireworks environment variables:
+
+```text
+FIREWORKS_API_KEY=your_fireworks_api_key_here
+FIREWORKS_BASE_URL=https://api.fireworks.ai/inference/v1
+FIREWORKS_MODEL=accounts/fireworks/models/qwen3p7-plus
+```
+
+The AMD route performs a real backend routing decision and calls Fireworks Serverless only when the task is eligible for cloud assist.
+
+Cloud-eligible conditions:
+
+- `privacyLevel` is `anonymized` or `public_sample`
+- `connectivity` is `normal`
+- `complexity` is `high`
+
+Privacy guard:
+
+- `sensitive` and `restricted` tasks never call Fireworks AI
+- offline connectivity routes to Offline Edge Mode
+- limited or intermittent high-complexity tasks route to the Local Classroom Server
+- low-complexity tasks route to the Local Classroom Server
+
+Live vs simulated behavior:
+
+- Eligible cloud route with `FIREWORKS_API_KEY`: live Fireworks Serverless call
+- Eligible cloud route without `FIREWORKS_API_KEY`: simulated Fireworks response, clearly labeled
+- Offline Edge and Local Classroom Server routes: simulated classroom-edge responses
+
+## Setup
 
 ```bash
 cd server
 npm install
-```
-
-## Configure
-
-```bash
 copy .env.example .env
-```
-
-Then edit `.env`:
-
-```bash
-DASHSCOPE_API_KEY=your_real_key
-PORT=3001
-QWEN_MODEL=qwen3.7-plus
-DASHSCOPE_BASE_URL=https://dashscope-intl.aliyuncs.com/compatible-mode/v1
-```
-
-Use the Model Studio endpoint for your key's region. For some regions, Alibaba recommends workspace-specific domains.
-
-## Run
-
-```bash
 npm start
 ```
 
-Health check:
+On macOS/Linux:
+
+```bash
+cd server
+npm install
+cp .env.example .env
+npm start
+```
+
+Keep `.env` local. Do not commit API keys.
+
+## Health Check
 
 ```bash
 curl http://localhost:3001/health
 ```
 
-Safe Qwen configuration check:
+## AMD Route Test Without Fireworks Key
+
+This verifies the route and privacy guard without making a live cloud call:
 
 ```bash
-curl http://localhost:3001/api/qwen/config-check
-```
-
-This returns whether a key is loaded, the first three key characters only, key length, base URL, model, and server time. It never returns the full API key.
-
-Qwen chat endpoint:
-
-```bash
-curl -X POST http://localhost:3001/api/qwen/chat \
+curl -X POST http://localhost:3001/api/amd/route-inference \
   -H "Content-Type: application/json" \
-  -d "{\"messages\":[{\"role\":\"user\",\"content\":\"Summarize this class evidence.\"}]}"
+  -d "{\"taskType\":\"Teacher decision support\",\"privacyLevel\":\"sensitive\",\"connectivity\":\"normal\",\"complexity\":\"high\",\"prompt\":\"Test privacy guard\",\"classroomContext\":{}}"
 ```
 
-Classroom analysis endpoint:
+Expected result: route is `offline_edge`, provider is `classroom_edge`, and `simulated` is `true`.
+
+## AMD Live Fireworks Test
+
+After setting `FIREWORKS_API_KEY` in `server/.env`:
 
 ```bash
-curl -X POST http://localhost:3001/api/qwen/classroom-analysis \
+curl -X POST http://localhost:3001/api/amd/route-inference \
   -H "Content-Type: application/json" \
-  -d "{\"snapshot\":{\"lesson\":{\"title\":\"OpenSciEd 7.5 Lesson 6\",\"subject\":\"Science\",\"gradeLevel\":\"7\"},\"students\":[],\"safetyBoundary\":\"Teacher decision support only -- no automated student decisions.\"}}"
+  -d "{\"taskType\":\"Aggregated classroom analysis\",\"privacyLevel\":\"anonymized\",\"connectivity\":\"normal\",\"complexity\":\"high\",\"prompt\":\"Summarize anonymized classroom trends and suggest teacher-reviewed next steps.\",\"classroomContext\":{\"source\":\"manual backend test\"}}"
 ```
 
-## Chained Agent Pipeline
+Expected live result:
 
-`POST /api/qwen/classroom-analysis` runs agents in this order:
-
-1. Learning Analyst
-2. Standards Coach
-3. Intervention Designer
-4. Communication Agent
-5. Opportunity Advisor
-
-Every agent receives:
-
-- original sanitized classroom evidence
-- structured JSON output from all previous agents
-
-Every agent has a dedicated system prompt and strict JSON schema:
-
-- **Learning Analyst:** outputs `strengths`, `misconceptions`, `evidenceObserved`, `confidence`, and `learningTrends`. It must not recommend interventions.
-- **Standards Coach:** outputs `priorityStandards`, `prerequisiteConcepts`, `learningObjectives`, and `progressionNotes`. It must not create lesson plans.
-- **Intervention Designer:** outputs `tomorrowsIntervention`, `nextWeeksIntervention`, `differentiationStrategy`, `assessmentSuggestion`, and `estimatedTeacherTime`. It must not communicate with parents.
-- **Communication Agent:** outputs `parentEmail`, `studentConferenceNotes`, and `administratorSummary`. It must never discuss grading changes.
-- **Opportunity Advisor:** outputs `opportunities[]`, each with `opportunity`, `reason`, `confidence`, and `preparationNeeded`.
-
-## Validation And Retry
-
-The backend validates every agent response:
-
-- response must be parseable JSON
-- response must be a JSON object
-- required string fields must be strings
-- required array fields must be arrays
-
-If validation fails, the backend retries that agent once with a correction instruction. If retry also fails, the pipeline records a structured agent error and continues instead of crashing.
-
-The normalized response includes:
-
-- `analysis`
-- `agentOutputs`
-- `usage`
-
-Teacher approval is still required in the frontend before any recommendation becomes an approved action.
+- `route`: `fireworks_amd_cloud`
+- `provider`: `fireworks_ai`
+- `simulated`: `false`
+- `model`: `accounts/fireworks/models/qwen3p7-plus`
 
 ## Frontend
 
-Run the static app separately from the repository root:
+Serve the static frontend from the repository root:
 
 ```bash
 py -m http.server 8000
@@ -122,8 +121,4 @@ Open:
 http://localhost:8000/?role=teacher
 ```
 
-Go to `Qwen Intelligence`, switch to `Live Qwen Mode`, then run `Analyze Entire Classroom`.
-
-If this backend is unavailable or returns an error, the frontend automatically falls back to Mock Mode.
-
-Mock Mode uses the same orchestration pattern locally for offline/fallback demos.
+Then open `AI Classroom Edge`.

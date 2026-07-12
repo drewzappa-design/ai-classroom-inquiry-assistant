@@ -7,11 +7,11 @@ Browser teacher workspace
   -> AI Classroom Edge module
   -> Local app state / localStorage
   -> Existing classroom evidence helpers
-  -> Existing Qwen Teacher Intelligence module when analysis is triggered
+  -> Existing teacher intelligence workflow when analysis is triggered
   -> Optional Express backend proxy for cloud assist
 ```
 
-The AMD module is additive. It does not modify the Qwen module and does not remove EduMemory.
+The AMD module is additive. It preserves existing non-AMD classroom workflows while presenting AI Classroom Edge as the AMD-focused experience.
 
 ## Edge Routing Model
 

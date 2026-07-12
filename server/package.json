@@ -1,7 +1,7 @@
 {
-  "name": "qwen-teacher-intelligence-server",
+  "name": "ai-classroom-intelligence-server",
   "version": "1.0.0",
-  "description": "Express proxy for Qwen Teacher Intelligence live DashScope calls.",
+  "description": "Express backend for Qwen and AMD/Fireworks classroom intelligence routes.",
   "type": "module",
   "private": true,
   "scripts": {

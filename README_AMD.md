@@ -1,6 +1,6 @@
 # AI Classroom Edge
 
-AI Classroom Edge is the AMD Developer Challenge adaptation of the AI Classroom Inquiry Assistant. It reframes the existing teacher intelligence, EduMemory evidence model, and local fallback workflow as a privacy-first edge AI classroom platform.
+AI Classroom Edge is the AMD Developer Challenge adaptation of the classroom intelligence prototype. It reframes teacher intelligence, student evidence, and local fallback workflows as a privacy-first edge AI classroom platform.
 
 ## Pitch
 
@@ -17,15 +17,14 @@ AI Classroom Edge is the Edge AI Operating System for Education: a local-first c
 - Privacy & Local Data Ownership console with demo policy controls and audit preview
 - Privacy console cards
 - Rural connectivity scenario
-- Quick actions into the existing teacher workspace and Qwen analysis flow
+- Quick actions into the existing teacher workspace and classroom analysis flow
 
 ## Real Implementation
 
 - Static browser module loaded by `index.html`
 - Teacher workspace tab wired in `app.js`
 - Local demo state through the existing app state/localStorage path
-- Existing Qwen module remains separate and unchanged
-- Existing EduMemory flow remains present
+- Existing non-AMD modules remain separate and unchanged
 
 ## Simulated In This Phase
 
@@ -68,13 +67,30 @@ This phase uses privacy-first product language, not legal compliance language. I
 From the repository root:
 
 ```powershell
-py -m http.server 4173
+py -m http.server 8000
 ```
 
 Open:
 
 ```text
-http://localhost:4173/?role=teacher
+http://localhost:8000/?role=teacher
 ```
 
 Click `AI Classroom Edge` in the teacher sidebar.
+
+For live Fireworks Cloud Assist, start the Node/Express backend first:
+
+```powershell
+cd server
+npm install
+copy .env.example .env
+npm start
+```
+
+Set `FIREWORKS_API_KEY` in `server/.env`. The key stays server-side and is ignored by git.
+
+Docker is also supported from the repository root:
+
+```powershell
+docker compose up --build
+```

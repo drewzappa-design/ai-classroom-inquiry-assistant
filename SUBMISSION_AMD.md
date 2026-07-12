@@ -71,10 +71,8 @@ Current state:
 
 - Existing teacher workspace
 - Existing local classroom evidence state
-- Existing Qwen Teacher Intelligence module
 - Existing teacher approval workflow
 - Existing mock/offline fallback concept
-- Existing EduMemory evidence and teacher verification story
 - Existing Express backend proxy pattern
 
 ## Claim Boundary

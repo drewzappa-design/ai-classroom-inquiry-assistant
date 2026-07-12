@@ -15,7 +15,6 @@ Route eligible classroom tasks to Fireworks AI as AMD Cloud Assist while keeping
 - Verified model: `accounts/fireworks/models/qwen3p7-plus`
 - Simulated Fireworks response: yes, when `FIREWORKS_API_KEY` is missing
 - Frontend API key exposure: no
-- Existing Qwen backend modified: no
 
 ## Environment
 
