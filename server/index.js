@@ -10,7 +10,7 @@ const model = process.env.QWEN_MODEL || "qwen3.7-plus";
 const defaultBaseUrl = "https://dashscope-intl.aliyuncs.com/compatible-mode/v1";
 const dashScopeBaseUrl = (process.env.DASHSCOPE_BASE_URL || defaultBaseUrl).replace(/\/$/, "");
 const fireworksBaseUrl = (process.env.FIREWORKS_BASE_URL || "https://api.fireworks.ai/inference/v1").replace(/\/$/, "");
-const fireworksModel = process.env.FIREWORKS_MODEL || "accounts/fireworks/models/llama-v3p1-70b-instruct";
+const fireworksModel = process.env.FIREWORKS_MODEL || "accounts/fireworks/models/qwen3p7-plus";
 
 app.use(cors());
 app.use(express.json({ limit: "1mb" }));

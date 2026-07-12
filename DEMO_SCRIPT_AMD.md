@@ -38,6 +38,8 @@ Say: Fireworks AI is part of the AMD hackathon technology stack. Cloud Assist ro
 
 Click `Route With Backend`. Clarify that the router now calls a real backend endpoint. Without `FIREWORKS_API_KEY`, eligible cloud tasks return a simulated Fireworks response labeled `Simulated`. With the key configured, eligible anonymized/public-sample high-complexity tasks can call Fireworks AI from the server. Sensitive and restricted tasks never call Fireworks.
 
+For the verified live path, select `Classroom trend summary` and route with the backend. The live verification card should show provider `fireworks_ai`, model `accounts/fireworks/models/qwen3p7-plus`, route `Fireworks AI / AMD Cloud Assist`, privacy `anonymized`, status `Live`, latency, timestamp, and the server-side safety note. Explain that API keys stay server-side and only eligible anonymized workloads use Cloud Assist.
+
 ### 5. Routing Visualization
 
 Walk through:

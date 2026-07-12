@@ -39,19 +39,21 @@ AI Classroom Edge is the Edge AI Operating System for Education: a local-first c
 - Intermittent internet animation
 - Local-only, hybrid assist, cloud sync pause, and audit trail policy controls
 - Local audit log preview
-- Fireworks AI / AMD Cloud Assist routing decisions
+- Offline Edge inference, Local Classroom Server inference, and AMD AI PC/GPU/NPU execution
 
 ## Fireworks AI / AMD Cloud Assist
 
-Fireworks AI is part of the AMD hackathon technology stack. AI Classroom Edge includes a model router that shows when eligible tasks could use Fireworks AI / AMD Cloud Assist and when sensitive or local-first tasks should remain on the classroom edge.
+Fireworks AI is part of the AMD hackathon technology stack. AI Classroom Edge includes a verified live model router that uses Fireworks Serverless for eligible anonymized high-complexity tasks while keeping sensitive or local-first tasks on the classroom edge.
 
 Current status:
 
 - Real backend route: `POST /api/amd/route-inference`
 - Real route decision rules: present
-- Live Fireworks API call: available when `FIREWORKS_API_KEY` is configured
+- Live Fireworks Serverless endpoint: verified
+- Verified model: `accounts/fireworks/models/qwen3p7-plus`
 - Simulated Fireworks response: returned when `FIREWORKS_API_KEY` is missing
 - Frontend API keys: not exposed
+- Sensitive and restricted tasks: never routed to Fireworks AI
 
 ## Hardware Claim Boundary
 

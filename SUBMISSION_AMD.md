@@ -47,13 +47,13 @@ AI Classroom Edge is a privacy-first edge AI classroom platform that keeps stude
 - Intermittent reconnect animation
 - Demo privacy policy controls
 - Local audit trail preview
-- Fireworks AI / AMD Cloud Assist routing scaffold
+- Offline Edge inference, Local Classroom Server inference, and AMD AI PC/GPU/NPU execution
 
 ## Fireworks AI / AMD Platform Usage
 
-AI Classroom Edge includes an AMD Model Router that presents Fireworks AI as the AMD Cloud Assist route for eligible tasks. Sensitive/local-first tasks remain on Offline Edge Mode or the Local Classroom Server.
+AI Classroom Edge includes an AMD Model Router that uses Fireworks AI as the AMD Cloud Assist route for eligible anonymized high-complexity tasks. Sensitive/local-first tasks remain on Offline Edge Mode or the Local Classroom Server.
 
-This satisfies AMD platform alignment by showing how the classroom edge can combine AMD AI PC/local-first workflows with the AMD hackathon cloud technology stack through Fireworks AI.
+This satisfies AMD platform alignment by showing how the classroom edge can combine AMD AI PC/local-first workflows with the AMD hackathon cloud technology stack through a verified Fireworks Serverless integration.
 
 Current state:
 
@@ -61,9 +61,11 @@ Current state:
 - Real privacy guard and routing rules
 - Server-side environment placeholders in `server/.env.example`
 - Endpoint documentation in `FIREWORKS_AMD_ENDPOINT.md`
-- Live Fireworks AI call when `FIREWORKS_API_KEY` exists
+- Live Fireworks Serverless endpoint verified
+- Verified model: `accounts/fireworks/models/qwen3p7-plus`
 - Simulated Fireworks response when `FIREWORKS_API_KEY` is missing
 - No frontend API key exposure
+- Sensitive and restricted tasks never route to Fireworks AI
 
 ## Real Project Assets Reused
 
@@ -78,6 +80,8 @@ Current state:
 ## Claim Boundary
 
 The project does not claim real Ryzen AI NPU execution in this phase. It presents an NPU-ready architecture and future hardware acceleration path.
+
+Local edge inference, Local Classroom Server inference, runtime telemetry, Classroom Digital Twin behavior, and rural connectivity scenarios remain simulated/future work.
 
 The project also does not claim legal compliance. Privacy language is framed as product direction: local by default, teacher controlled, cloud optional, and audit visible.
 

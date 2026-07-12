@@ -478,8 +478,8 @@
   margin-top: 12px;
 }
 
-.amd-edge-router-result div,
-.amd-edge-router-result article {
+.amd-edge-router-result > div,
+.amd-edge-router-result > article {
   padding: 11px;
   border: 1px solid var(--amd-line);
   border-radius: 8px;
@@ -488,6 +488,46 @@
 
 .amd-edge-router-result article {
   grid-column: span 4;
+}
+
+.amd-edge-router-result .amd-edge-live-verification {
+  grid-column: span 4;
+  padding: 14px;
+  border-color: rgba(123, 216, 143, 0.38);
+  background:
+    linear-gradient(135deg, rgba(123, 216, 143, 0.12), rgba(255, 138, 0, 0.08)),
+    rgba(0, 0, 0, 0.18);
+}
+
+.amd-edge-live-verification-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: baseline;
+  margin-bottom: 12px;
+}
+
+.amd-edge-live-verification-head strong {
+  color: #fff;
+  font-size: 1rem;
+}
+
+.amd-edge-live-verification-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.amd-edge-live-verification-grid div,
+.amd-edge-live-safety {
+  padding: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.18);
+}
+
+.amd-edge-live-safety {
+  margin-top: 8px;
 }
 
 .amd-edge-router-result span {

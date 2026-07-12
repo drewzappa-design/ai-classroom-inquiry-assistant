@@ -57,7 +57,8 @@ Current phase:
 
 - Real backend route at `POST /api/amd/route-inference`
 - Real server-side route decision rules
-- Fireworks AI live call when `FIREWORKS_API_KEY` is configured
+- Fireworks Serverless live call verified for eligible anonymized workloads
+- Verified model: `accounts/fireworks/models/qwen3p7-plus`
 - Simulated Fireworks response when `FIREWORKS_API_KEY` is missing
 - No API keys in frontend code
 
@@ -69,6 +70,27 @@ Backend privacy guard:
 - Fireworks AI is never called for sensitive or restricted tasks.
 - Offline connectivity routes to Offline Edge Mode.
 - Eligible anonymized/public-sample high-complexity tasks on normal connectivity may route to Fireworks AI / AMD Cloud Assist.
+
+## Verified Live Inference
+
+The AMD Model Router has been verified against the live Fireworks Serverless endpoint through:
+
+```text
+POST /api/amd/route-inference
+```
+
+Observed live result:
+
+- Provider: `fireworks_ai`
+- Model: `accounts/fireworks/models/qwen3p7-plus`
+- Route: Fireworks AI / AMD Cloud Assist
+- Privacy classification: anonymized
+- Connectivity: normal
+- Complexity: high
+- Status: Live, `simulated: false`
+- Latency: approximately 6081 ms
+
+The API key remains server-side. The frontend displays provider, model, route, privacy classification, latency, status, timestamp, response, and safety note after a backend route run.
 
 ## Rural Connectivity Simulator
 
@@ -117,7 +139,7 @@ Student Evidence
 
 ## Simulated Components
 
-The AMD dashboard metrics are demo values. They are intended to communicate the target operating model for an AMD AI PC / classroom edge deployment.
+The AMD dashboard metrics are demo values. They are intended to communicate the target operating model for an AMD AI PC / classroom edge deployment. Offline Edge inference, Local Classroom Server inference, AMD AI PC/NPU/GPU execution, the Classroom Digital Twin, Rural Connectivity Simulator, runtime telemetry, and demo metrics remain simulated/future work.
 
 ## Future Hardware Path
 
